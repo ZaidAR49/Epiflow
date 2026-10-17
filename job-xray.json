@@ -1,0 +1,1600 @@
+{
+  "name": "job-xray",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message",
+          "callback_query"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        368,
+        -176
+      ],
+      "id": "f8bfdeb4-c704-4b7d-a8b8-037051857bb1",
+      "name": "Telegram Trigger",
+      "webhookId": "f0ed6a6b-321c-476d-905d-368ae6903a57",
+      "credentials": {
+        "telegramApi": {
+          "id": "KE6ycH7ebgT5J3IL",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendRichMessage",
+        "chatId": "={{ $('Parse User Input').item.json.telegram_id }}",
+        "richFormat": "markdown",
+        "richMessageText": "={{ $('Authentication Gate').item.json.preferred_language=='ar' ? '⚠️ **الرابط غير صالح.** يرجى إرسال رابط صحيح لمنشور أو وظيفة على لينكد إن.\\n\\n**أمثلة:**\\n`https://www.linkedin.com/posts/johndoe_were-hiring-software-engineer-share-1234567890123456789-aB-C/`\\n\\n`https://www.linkedin.com/jobs/view/1234567890/`' : '⚠️ **Invalid URL.** Please send a valid LinkedIn post or job URL.\\n\\n**Examples:**\\n`https://www.linkedin.com/posts/johndoe_were-hiring-software-engineer-share-1234567890123456789-aB-C/`\\n\\n`https://www.linkedin.com/jobs/view/1234567890/`' }}",
+        "additionalFields": {
+          "message_effect_id": "5046589136895476101",
+          "is_rtl": "={{ $('Authentication Gate').item.json.preferred_language == 'ar' ? true:false}}"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2768,
+        -144
+      ],
+      "id": "5a9fe517-3205-4e51-89c0-f0a4ddb17b06",
+      "name": "Send Invalid URL Error",
+      "webhookId": "04036b24-28be-4751-8140-ae6ce1693636",
+      "credentials": {
+        "telegramApi": {
+          "id": "KE6ycH7ebgT5J3IL",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "Run actor and get dataset",
+        "actorSource": "store",
+        "actorId": {
+          "__rl": true,
+          "value": "d0DhjXPjkkwm4W5xK",
+          "mode": "id"
+        },
+        "customBody": "={\n  \"post_urls\": [\n    \"{{ $('HTTP: Expand URL').isExecuted ? $('HTTP: Expand URL').item.json.headers?.location : $('Parse User Input').item.json.url }}\"\n  ]\n}",
+        "timeout": {},
+        "maxTotalChargeUsd": {},
+        "authentication": "apifyOAuth2Api"
+      },
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [
+        1136,
+        192
+      ],
+      "id": "fce79752-3d67-47f3-a5a2-d85e017b9606",
+      "name": "Apify: Fetch Post Data",
+      "alwaysOutputData": true,
+      "credentials": {
+        "apifyOAuth2Api": {
+          "id": "6x9TStFlZYv2GVDX",
+          "name": "Apify account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "Run actor and get dataset",
+        "actorSource": "store",
+        "actorId": {
+          "__rl": true,
+          "value": "LpVuK3Zozwuipa5bp",
+          "mode": "id"
+        },
+        "customBody": "={\n    \"profileScraperMode\": \n\"Profile details no email ($4 per 1k)\",\n    \"queries\": [\n        \"{{ $('Apify: Fetch Post Data').item.json.author.profile_url }}\"\n    ]\n}",
+        "timeout": {},
+        "maxTotalChargeUsd": {},
+        "authentication": "apifyOAuth2Api"
+      },
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        208
+      ],
+      "id": "3dccc6ad-1f08-431a-bddf-eeeac7c985bf",
+      "name": "Apify: Fetch Author Data",
+      "alwaysOutputData": true,
+      "credentials": {
+        "apifyOAuth2Api": {
+          "id": "6x9TStFlZYv2GVDX",
+          "name": "Apify account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9a255abc-58b7-4da8-85fb-0c8362408061",
+              "leftValue": "={{ $json.author.company_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1696,
+        192
+      ],
+      "id": "8392a591-d5fd-4daa-8798-8414065c92b1",
+      "name": "Is Author a Company?"
+    },
+    {
+      "parameters": {
+        "operation": "Run actor and get dataset",
+        "actorSource": "store",
+        "actorId": {
+          "__rl": true,
+          "value": "UwSdACBp7ymaGUJjS",
+          "mode": "id"
+        },
+        "customBody": "={\n    \"companies\": [\n        \"{{ $json.companyLinkedinUrl?$json.companyLinkedinUrl: `https://www.linkedin.com/company/`+$json['company_id ']}}\"\n    ]\n}",
+        "timeout": {},
+        "maxTotalChargeUsd": {},
+        "authentication": "apifyOAuth2Api"
+      },
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [
+        352,
+        560
+      ],
+      "id": "f2f2e762-f81b-4c84-8703-ae1078e4be38",
+      "name": "Apify: Fetch Company Data",
+      "alwaysOutputData": true,
+      "credentials": {
+        "apifyOAuth2Api": {
+          "id": "6x9TStFlZYv2GVDX",
+          "name": "Apify account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "72b47523-89fb-40e7-880c-43ad80b33b31",
+              "name": "=companyLinkedinUrl",
+              "value": "={{ $(\"Apify: Fetch Author Data\").isExecuted ? ($(\"Apify: Fetch Author Data\").first().json.currentPosition?.last()?.companyLinkedinUrl || \"\") : \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "84d496b5-a33d-40cb-b7da-f2b30f334c02",
+              "name": "company_id ",
+              "value": "={{ $('Apify: Fetch Post Data').item.json.author.company_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2784,
+        176
+      ],
+      "id": "58d983b0-47c7-46fd-bcef-629bcfd848be",
+      "name": "Format Company ID / URL"
+    },
+    {
+      "parameters": {
+        "operation": "sendRichMessage",
+        "chatId": "={{ $('Parse User Input').item.json.telegram_id }}",
+        "richFormat": "markdown",
+        "richMessageText": "={{ $('Authentication Gate').item.json.preferred_language=='ar' ? '⏳ **تم استلام الرابط!** جاري الآن جلب بيانات المنشور. قد يستغرق هذا الأمر بضع دقائق...' : '⏳ **Link received!** I am currently fetching the post data. This might take a few minutes...' }}",
+        "additionalFields": {
+          "message_effect_id": "5107584321108051014",
+          "is_rtl": "={{ $('Authentication Gate').item.json.preferred_language == 'ar'? true:false}}"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        864,
+        192
+      ],
+      "id": "d6b54fef-6f3a-433b-9b24-d29233cacb6f",
+      "name": "Send Process Status",
+      "webhookId": "04036b24-28be-4751-8140-ae6ce1693636",
+      "credentials": {
+        "telegramApi": {
+          "id": "KE6ycH7ebgT5J3IL",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "editMessageText",
+        "chatId": "={{ $('Send Process Status').item.json.result.chat.id }}",
+        "messageId": "={{ $('Send Process Status').item.json.result.message_id }}",
+        "text": "={{ $('Authentication Gate').item.json.preferred_language=='ar' ? '✅ **تم جمع البيانات بنجاح!** جاري الآن تحليل تفاصيل الوظيفة والشركة...' : '✅ **Data collected successfully!** Now analyzing the job and company details...' }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        848,
+        528
+      ],
+      "id": "628751fb-b2b9-4172-95af-8db29d221deb",
+      "name": "Change process Status",
+      "webhookId": "04036b24-28be-4751-8140-ae6ce1693636",
+      "credentials": {
+        "telegramApi": {
+          "id": "KE6ycH7ebgT5J3IL",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const postNodeName = 'Apify: Fetch Post Data';\nconst authorNodeName = 'Apify: Fetch Author Data';\nconst companyNodeName = 'Apify: Fetch Company Data';\n\nconst getSafeData = (nodeName) => {\n    try {\n        const items = $(nodeName).all();\n        if (!items || items.length === 0) return {};\n        const data = items[0].json;\n        return Array.isArray(data) ? data[0] : data;\n    } catch (e) {\n        return {};\n    }\n};\n\nconst postData = getSafeData(postNodeName);\nconst authorData = getSafeData(authorNodeName);\nconst companyData = getSafeData(companyNodeName);\n\n// 1. Post Details\nconst postInfo = {\n    job_description: postData.post?.text || '',\n    url: postData.post?.url || ''\n};\n\n// 2. HR Details\nlet hrDegree = '';\nif (authorData.education?.length > 0) {\n    const ed = authorData.education[0];\n    hrDegree = [ed.degree, ed.fieldOfStudy].filter(Boolean).join(' - ');\n}\n\nlet expYears = 0;\nif (authorData.experience?.length > 0) {\n    const startYears = authorData.experience.map(e => e.startDate?.year).filter(Boolean);\n    if (startYears.length > 0) {\n        expYears = new Date().getFullYear() - Math.min(...startYears);\n    }\n}\n\nconst hrInfo = {\n    name: authorData.firstName ? `${authorData.firstName} ${authorData.lastName}` : (postData.author?.name || ''),\n    headline: authorData.headline || postData.author?.headline || '',\n    location: authorData.location?.linkedinText || '',\n    degree: hrDegree,\n    approx_experience_years: expYears,\n    about: authorData.about || ''\n};\n\n// 3. Company Details\nlet compLocations = '';\n\nif (companyData.peopleStats) {\n    const locStat = companyData.peopleStats.find(s => s.statTitle === 'Locations');\n    if (locStat?.values) compLocations = locStat.values.map(v => v.title).join(', ');\n}\n\nconst companyInfo = {\n    name: companyData.name || '',\n    industry: companyData.industries?.[0]?.name || '',\n    locations: compLocations,\n    size: companyData.employeeCountRange ? `${companyData.employeeCountRange.start}-${companyData.employeeCountRange.end}` : '',\n    website: companyData.website || '',\n    description: companyData.description || ''\n};\n\nreturn {\n  language: $('Authentication Gate').item.json.preferred_language,\n    post: postInfo,\n    hr: hrInfo,\n    company: companyInfo\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        528
+      ],
+      "id": "e581b95b-8d00-4647-9ac1-2a8e1d0fc307",
+      "name": "Extract Key Data"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ JSON.stringify($json, null, 2) }}",
+        "hasOutputParser": true,
+        "needsFallback": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "# Section 1 — Role & Objective  You are the **LinkedIn Opportunity Report Agent**, operating as the report-generation step inside an n8n recruitment-intelligence pipeline. Your task is to transform a single structured JSON object — produced by the \"Extract Key Data\" node — into a structured output containing two parts:  1. **`telegram_report`** — one polished, scannable Markdown report covering the Opportunity, the HR/Poster, the Company, and a short analytical flags section. This text is forwarded to a Telegram user via the Bot API's `sendMessage` (this pipeline's Telegram node uses `richFormat: markdown`), and must use only Markdown syntax already proven to render correctly in this workflow's other Telegram messages. 2. **`opportunity_metadata`** — a small structured object (role, company, HR name, HR email) that a downstream node uses to decide whether an automated follow-up email to the HR/poster can be sent. This object is never shown to the Telegram user; it exists purely for pipeline automation.  Because your output now feeds two different downstream consumers, a parsing step reads your output before anything reaches the human: it forwards `telegram_report` to Telegram as-is, and uses `opportunity_metadata` to decide on the email branch. You must return both pieces in the single fixed envelope defined in Section 6, and nothing else.  **Success criterion:** A single JSON envelope, returned as one Markdown-fenced code block, where (a) `telegram_report` is written entirely in the correct language per Section 4, follows the exact layout and visual style in Section 6, and contains only facts traceable to the input JSON; and (b) `opportunity_metadata` contains only values explicitly present in the input — with `hr_email` populated strictly under the rule in Section 5, and every unavailable field set to `null` rather than guessed.  ---  # Section 2 — Input Context  You receive a single JSON object from the \"Extract Key Data\" node with exactly this shape:  ```json {   \"language\": \"ar\" | \"en\" | null | undefined | \"<any other value>\",   \"post\": {     \"job_description\": \"<raw unstructured post text>\",     \"url\": \"<LinkedIn post URL>\"   },   \"hr\": {     \"name\": \"<string, may be empty>\",     \"headline\": \"<string, may be empty>\",     \"location\": \"<string, may be empty>\",     \"degree\": \"<string, may be empty>\",     \"approx_experience_years\": \"<number, may be 0>\",     \"about\": \"<string, may be empty>\"   },   \"company\": {     \"name\": \"<string, may be empty>\",     \"industry\": \"<string, may be empty>\",     \"locations\": \"<string, may be empty>\",     \"size\": \"<string, may be empty>\",     \"website\": \"<string, may be empty>\",     \"description\": \"<string, may be empty>\"   } } ```  Field rules: - `language`: required by contract, but treat as unreliable — see Section 4.1 for the exact fallback logic. - `post.job_description`: required. Raw, unstructured text — may contain emoji-delimited fields (location, job type, experience, \"how to apply\"), a formal description, or just a casual announcement. - `post.url`: required. Always available as the source reference (not shown as a separate link line in the report, but usable internally if ever needed). - `hr.*`: optional as a group. All five sub-fields can be simultaneously empty/zero — this is a real, expected state (company posted directly), not an error. - `company.*`: optional as a group. Individual sub-fields can be empty independently of one another. `company.locations` is typically a raw, repetitive comma-separated string and must be cleaned per Section 4.3.  Do not reference or assume any field not listed here. If an expected top-level field (`post`, `hr`, `company`) is entirely absent from the input, trigger the fallback behavior defined in Section 4.6.  ---  # Section 3 — Agent Behavior & Thinking Process  **Step 1:** Read and validate the input against the schema in Section 2.  **Step 2:** Resolve the output language using the rule in Section 4.1. This governs every label, header, and note in `telegram_report`.  **Step 3:** From `post.job_description`, extract: the role/job title (for the title line), location, employment type, and experience level (for the meta line), key responsibilities/requirements (for the bullet list), and the application instruction (email, link, or channel).  **Step 4:** Determine HR/Poster status using the heuristic in Section 4.2 (individual recruiter present vs. company-posted-directly), and extract a condensed \"Background\" line (experience + about) when an individual exists.  **Step 5:** Clean `company.locations` per Section 4.3 (deduplicate into a short list of unique countries) and format `company.size` per Section 4.4 (thousands separators, \"employees\" suffix).  **Step 6:** Run the cross-checks defined in Section 4.5 to build the Quick Insights & Flags list — factual observations only, never a score or character judgment.  **Step 7:** Extract `opportunity_metadata` per the strict rule in Section 5. `role`, `company`, and `hr_name` reuse the values already extracted in Steps 3–4; `hr_email` is populated only if it satisfies **both** conditions in Section 5, otherwise `null`. Never fabricate a value for any of these four fields.  **Step 8:** Assemble `telegram_report` in the fixed section order and exact visual style shown in Section 6.2, applying the missing-field rule to `company.*` and (when applicable) `hr.*`.  **Step 9:** Assemble the final JSON envelope (Section 6.1) containing `telegram_report` and `opportunity_metadata`, and return it as a single Markdown-fenced code block — nothing before or after it.  **Step 10:** Verify your output matches the structure and Markdown syntax rules in Section 6 before returning it.  **Step 11:** If any step fails, execute the fallback defined in Section 4.6.  **Self-check (mandatory before returning output):** - Does every fact in `telegram_report` trace directly back to a field in the input JSON or a direct extraction from `post.job_description`? - Is every \"Not available\" label actually backed by an empty field? - Is the entire report in one language, correctly chosen per Section 4.1? - Is every flag in Quick Insights a factual comparison rather than a guess about intent or character? - Is `opportunity_metadata.hr_email` non-null **only** because an email literally appears in `post.job_description` **and** the post explicitly marks it as the application channel? If there's any doubt, is it `null`? - Are all four `opportunity_metadata` fields either a real extracted value or `null` — never a guess? - Is the entire response exactly one JSON code block, matching the envelope in Section 6.1?  If any answer is no, correct it before returning.  ---  # Section 4 — Data Resolution & Business Rules  **4.1 Language Resolution** - If `language` is exactly `\"ar\"` or `\"en\"`, use it for the entire report. - If `language` is `null`, `undefined`, missing, or any other value, ignore it and instead detect the dominant language directly from `post.job_description`: majority Arabic-script → Arabic; otherwise → English. - Exactly one language is used for the whole report — never mix.  **4.2 HR / Poster Determination** - If `hr.name` (or a meaningful majority of `hr.*` fields) is non-empty, treat this as an individual recruiter/poster and include the \"Poster (HR/Recruiter)\" section, with a condensed \"Background\" line built from `hr.approx_experience_years` + `hr.about`. - If all `hr.*` fields are empty, treat this as \"company posted directly\" — expected, not an error. Follow the missing-field display rule in Section 6.2 for this case.  **4.3 Company Locations Cleanup** - `company.locations` often arrives as a repetitive, comma-separated string. Deduplicate into a short list of unique countries, preserving first-seen order, trimmed of whitespace.  **4.4 Company Size Formatting** - Apply thousands separators to numeric values and append the localized \"employees\" label (e.g. `1,001 - 5,000 employees` / `1,001 - 5,000 موظف`). Preserve ranges as given.  **4.5 Quick Insights & Flags (Cross-Checks)** Build this section from factual comparisons only — never a score, a guess about intent, or a character judgment: - **Domain mismatch:** if `opportunity_metadata.hr_email` is populated and its domain differs from the domain in `company.website`, flag the mismatch factually. - **Role/industry mismatch:** if the extracted role looks unrelated to `company.industry`, note the observation factually, without speculating on motive. - **Missing critical fields:** if `company.name`, `company.website`, or the application method is absent from the source data, flag it as missing rather than omitting silently.  **4.6 Fallback Behavior** - If `post`, `hr`, or `company` is entirely absent from the input (not just empty sub-fields), or a required extraction cannot be performed, do not fabricate content. Return a minimal fallback `telegram_report`, in the resolved language, stating which part of the input was unusable, and set `opportunity_metadata` fields to `null` as appropriate — but still return the full envelope from Section 6.1.  ---  # Section 5 — Email Extraction Rule  `opportunity_metadata.hr_email` is the highest-risk field in this workflow, because a populated value can trigger an automated outreach email. Apply this rule with zero tolerance for inference:  - `hr_email` may ONLY be set to a non-null value if **both** are true:   1. The email address literally appears as text inside `post.job_description` — never `hr.about`, never `company.website`, never inferred from a name or domain.   2. The post explicitly designates that email address as the application/contact channel (e.g. \"send your CV to…\", \"apply via email at…\", \"للتقديم يرجى إرسال السيرة الذاتية إلى…\"). An email that merely appears in the post for another reason does not qualify. - If either condition is not met, `hr_email` MUST be `null`. Never guess, construct, or borrow an email from another field. - The remaining `opportunity_metadata` fields follow the same no-fabrication principle:   - `role`: the job title extracted in Step 3; `null` if genuinely indeterminate.   - `company`: `company.name` if non-empty, else `null`.   - `hr_name`: `hr.name` if non-empty, else `null` (expected when the company posted directly).  ---  # Section 6 — Output Contract & Style Guide  **6.1 Envelope** Return exactly one Markdown-fenced code block, language `json`, containing a single JSON object and nothing else:  ```json {   \"telegram_report\": \"<string — the full Markdown report>\",   \"opportunity_metadata\": {     \"role\": \"<string|null>\",     \"company\": \"<string|null>\",     \"hr_name\": \"<string|null>\",     \"hr_email\": \"<string|null>\"   } } ```  No text, explanation, or additional code block before or after it.  **6.2 `telegram_report` Style**\n\nFixed order, matching this reference layout exactly:\n\n## <Role Title> — <Company Name>\n---\n<br>\n\n**📍 Location:** <Location> &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp; **💼 Job Type:** <Employment Type> &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp; **⏳ Experience:** <Experience>\n<br>\n\n---\n\n### 🎯 <Opportunity Details header>\n\n####Role Summary:\n<br>\n<1–3 sentence plain-language summary of the role, derived from `post.job_description`>\n&nbsp;\n\n####Key Responsibilities:\n* <bullet>\n* <bullet>\n&nbsp;\n\n####Requirements:\n* <bullet>\n* **Preferred Skills:** <inline comma-separated list, only if the post distinguishes \"preferred/nice-to-have\" from core requirements>\n&nbsp;\n\n####How to Apply: <short instruction> `<email, only if it satisfies both conditions in Section 5>`\n<br>\n\n---\n\n### 👤 <Poster header>\n\n* **Name:** <hr.name>\n* **Job Title:** <hr.headline>\n* **Location:** <hr.location>\n* **Education:** <hr.degree>\n* **Experience & Bio:** <condensed line built from hr.approx_experience_years + hr.about>\n\nWhen all `hr.*` fields are empty, replace this entire block with a single line: \"Not applicable — posted directly by the company.\" (per Section 4.2).\n\n---\n\n### 🏢 <About the Company header>\n\n* **Name:** <company.name>\n* **Industry:** <company.industry>\n* **Company Size:** <formatted per Section 4.4>\n* **Geographic Presence:** <cleaned locations per Section 4.3>\n* **Website:** [<display text>](<company.website>)\n* **Bio:** <company.description>\n\n<br>\n\n---\n### 💡 <Quick Notes & Analysis header>\n\n* ⚠️ **<flag label>:** <factual observation from Section 4.5>\n<br>\n\n* ℹ️ **<flag label>:** <factual observation from Section 4.5>\n\nFor any field in `company.*` or `hr.*` that is empty (but the section itself is present), print the field's bullet with \"Not available\" as the value rather than omitting the bullet.\n\nMarkdown syntax now used in `telegram_report`: `###` headers, `**bold**` labels, `---` as a visual divider, `<br>` and `&nbsp;` for spacing, `*` bullet lists, inline code for emails, and `[text](url)` links."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1440,
+        528
+      ],
+      "id": "837f1c50-7ebc-4e30-907b-49adf67b6575",
+      "name": "AI: Generate Report",
+      "retryOnFail": true,
+      "alwaysOutputData": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "sendRichMessage",
+        "chatId": "={{ $('Parse User Input').item.json.telegram_id }}",
+        "richFormat": "markdown",
+        "richMessageText": "=\n{{ $json.output.telegram_report }}\n\n",
+        "additionalFields": {
+          "message_effect_id": "5046509860389126442",
+          "is_rtl": "={{$('Authentication Gate').item.json.preferred_language == 'ar' ? true:false}}"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1968,
+        512
+      ],
+      "id": "df4d86f0-6d7e-4693-b141-325fad349ec6",
+      "name": "Send Report",
+      "webhookId": "04036b24-28be-4751-8140-ae6ce1693636",
+      "credentials": {
+        "telegramApi": {
+          "id": "KE6ycH7ebgT5J3IL",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "1634598f-8735-485d-9984-868d195ab1eb",
+              "leftValue": "={{ $json.post }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1440,
+        176
+      ],
+      "id": "d4379f36-a8be-43fb-bdc3-46c5b4474045",
+      "name": "Is Data Empty?"
+    },
+    {
+      "parameters": {
+        "operation": "sendRichMessage",
+        "chatId": "={{ $('Parse User Input').item.json.telegram_id }}",
+        "richFormat": "markdown",
+        "richMessageText": "={{$('Authentication Gate').item.json.preferred_language=='ar' ? '❌ **خطأ:** تعذر استخراج بيانات المنشور. قد يكون الرابط خاصاً أو تم حذفه.' : '❌ **Error:** Failed to extract the LinkedIn post. The link might be private or deleted.' }}",
+        "additionalFields": {
+          "message_effect_id": "5046589136895476101",
+          "is_rtl": "={{ $('Authentication Gate').item.json.preferred_language == 'ar' ? true:false}}"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1696,
+        352
+      ],
+      "id": "4759fb10-cef2-48fe-b285-d46a7c800a89",
+      "name": "Send Fetch Post Error",
+      "webhookId": "04036b24-28be-4751-8140-ae6ce1693636",
+      "credentials": {
+        "telegramApi": {
+          "id": "KE6ycH7ebgT5J3IL",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendRichMessage",
+        "chatId": "={{ $('Parse User Input').item.json.telegram_id }}",
+        "richFormat": "markdown",
+        "richMessageText": "={{ $('Authentication Gate').item.json.preferred_language=='ar' ? '⚠️ **تنبيه:** تم جلب المنشور، ولكن تعذر استرداد تفاصيل الشركة أو الناشر بدقة.' : '⚠️ **Notice:** The post was fetched, but I could not fully retrieve the company or author details.' }}",
+        "additionalFields": {
+          "message_effect_id": "5046589136895476101",
+          "is_rtl": "={{ $('Authentication Gate').item.json.preferred_language=='ar' ? true:false}}"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2560,
+        336
+      ],
+      "id": "ea91f4d7-0f0c-4dfe-8dd2-0549265006e9",
+      "name": "Send Fetch Author Error",
+      "webhookId": "04036b24-28be-4751-8140-ae6ce1693636",
+      "credentials": {
+        "telegramApi": {
+          "id": "KE6ycH7ebgT5J3IL",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendRichMessage",
+        "chatId": "={{ $('Parse User Input').item.json.telegram_id }}",
+        "richFormat": "markdown",
+        "richMessageText": "={{ $('Authentication Gate').item.json.preferred_language=='ar' ? '⚠️ **تنبيه:** تم جلب المنشور، ولكن تعذر استرداد تفاصيل الشركة أو الناشر بدقة.' : '⚠️ **Notice:** The post was fetched, but I could not fully retrieve the company or author details.' }}",
+        "additionalFields": {
+          "message_effect_id": "5046589136895476101",
+          "is_rtl": "={{ $('Authentication Gate').item.json.preferred_language == 'ar' ? true:false}}"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        928,
+        704
+      ],
+      "id": "4ce06002-1031-48de-bd36-690e08243632",
+      "name": "Send Fetch company Error",
+      "webhookId": "04036b24-28be-4751-8140-ae6ce1693636",
+      "credentials": {
+        "telegramApi": {
+          "id": "KE6ycH7ebgT5J3IL",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "67f378f0-fd85-49ad-beaa-7eab6bb854d7",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2304,
+        192
+      ],
+      "id": "31d65ad3-7348-4355-b98e-f640beeee69c",
+      "name": "Is Data Empty?1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "76923d65-7baf-4bbe-a196-8824b07d8682",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        544,
+        544
+      ],
+      "id": "d5d4abfa-128f-441f-9028-8f736af63a56",
+      "name": "Is Data Empty?2"
+    },
+    {
+      "parameters": {
+        "content": "# 💼 JobPost X-Ray in LinkedIn\n\n**Purpose**\nAuthenticates users via PostgreSQL, extracts LinkedIn job posts, HR details, and company data via Apify, uses Gemini (with Claude Sonnet 5 fallback) to send a localized (AR/EN) Markdown report to Telegram, and generates a customized Gmail application draft with the user's CV attached.\n\n**Core Flow**\n1. **Trigger & Parse:** Telegram receives either a LinkedIn URL (`linkedin.com` / `lnkd.in`) or an inline button callback (Yes/No for email draft).\n2. **Auth & Preferences (PostgreSQL):** Validates user permissions/quotas via `authenticate_gatekeeper` and fetches user metadata (`preferred_language`, `cv`, `fullName`, `sendEmail`) from `user_workflow_access`.\n3. **URL Resolution & Scraping:** Expands `lnkd.in` short links if needed, then runs Apify Post -> Apify Author (skipped if posted directly by a company) -> Apify Company.\n4. **AI Analysis:** Gemini (or Claude fallback) generates a localized Markdown report AND structured metadata (role, company, HR name, email).\n5. **Report & Email Prompt:** Sends the report to Telegram. For authorized owners, if a valid application email exists, prompts via inline keyboard (storing metadata in a hidden link).\n6. **Email Draft (Callback Route):** Downloads the user's CV from Google Drive and creates a tailored Gmail draft with the resume attached.\n\n**Design Logic**\n* **Gatekeeper Security:** Unauthorized, expired, or quota-exceeded users are blocked early with specific status messages.\n* **Fail-Fast & Credit Saving:** Halts immediately on empty scrapes; bypasses the Author scraper if `company_id` is present on the post.\n* **Zero-Hallucination Email Rules:** Extracts an email only if it literally appears in the post AND is explicitly designated as the application channel.",
+        "height": 848,
+        "width": 656
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -432,
+        -176
+      ],
+      "typeVersion": 1,
+      "id": "463a47e7-94e3-4be9-943a-6f13837843f1",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"telegram_report\": \"*Software Engineer*\\n...\",\n  \"opportunity_metadata\": {\n    \"hr_name\": \"John Doe\",\n    \"company\": \"Tech Corp\",\n    \"role\": \"Senior Frontend Developer\",\n    \"hr_email\": \"careers@techcorp.com\"\n  }\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1680,
+        720
+      ],
+      "id": "4c60f54c-cfec-4641-aa6e-e36b1e47738d",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "14415f7e-7eb9-4660-8faf-2d587fa16124",
+                    "leftValue": "={{ $('Parse User Input').item.json.send_email===\"yes\" && $('Authentication Gate').item.json.sendemail }}",
+                    "rightValue": false,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Sending Email"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "cdeacb6a-2a6a-4e4c-9c82-24945b0feaf0",
+                    "leftValue": "={{ $('Parse User Input').item.json.send_email }}",
+                    "rightValue": "no",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Stop Workflow"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Parse User Input').item.json.isValid }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    },
+                    "id": "115ca981-38a4-4708-acc6-35436a93b214"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Generate Report"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1424,
+        -224
+      ],
+      "id": "98f7a151-2ad2-4d08-9b08-7c975aca7365",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => {\n// basic data\n  const telegram_id= $('Telegram Trigger')?.item?.json?.message?.from.id || $('Telegram Trigger')?.first()?.json?.callback_query.from?.id;\n  const username=  $('Telegram Trigger')?.item?.json?.message?.from?.username||$('Telegram Trigger')?.first()?.json?.callback_query.from?.username || null;\n  const workflow_slug= $workflow.name;\n  // Support both standard messages and callback queries\n  const payload = item.json.callback_query || item.json;\n  const text = payload.message?.text || payload.message?.caption || payload.text || '';\n// LinkedIn URL\n  // 1. Existing LinkedIn Check\n  const linkedinRegex = /((https?:\\/\\/(?:www\\.)?linkedin\\.com\\/(?:posts|feed\\/update|jobs\\/view)\\/[^\\s]+)|(https?:\\/\\/lnkd\\.in\\/[^\\s]+))/i;\n  const match = text.match(linkedinRegex);\n\n  // 2. Check for \"true\" in callback data\n  const sendEmail = item.json.callback_query?.data;\n\n  // 3. Extract hidden metadata from the URL\n  let metaData = null;\n  const itemString = JSON.stringify(item.json);\n  const metaMatch = itemString.match(/https:\\/\\/hidden\\.data\\/\\?meta=([^\"\\s}\\]]+)/);\n  \n  if (metaMatch && metaMatch[1]) {\n    try {\n      metaData = JSON.parse(decodeURIComponent(metaMatch[1]));\n    } catch (e) {}\n  }\n\n  return {\n    json: {\n      isValid: !!match,\n      url: match ? match[0] : null,\n      text: text,\n      send_email: sendEmail,\n      metadata: metaData,\n       telegram_id,\n      username,\n      workflow_slug\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        592,
+        -176
+      ],
+      "id": "5a6df376-f166-4141-9a8a-1b81253f1320",
+      "name": "Parse User Input"
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "=Application for {{ $('Parse User Input').item.json.metadata.role }} - {{ $('Authentication Gate').item.json.name }}",
+        "message": "=Dear {{ $('Parse User Input').item.json.metadata.hr_name || ($('Parse User Input').item.json.metadata.company ? $('Parse User Input').item.json.metadata.company + ' Team' : 'Hiring Team') }},\n\nI am writing to express my interest in the {{ $('Parse User Input').item.json.metadata.role }} position. \n\nI believe my skills and experience make me a strong candidate for this role, and I am eager to bring my dedication to your team at {{ $('Parse User Input').item.json.metadata.company }}. Please find my resume attached for your review.\n\nThank you for your time and consideration. I look forward to the possibility of discussing this opportunity with you.\n\nBest regards,\n\n{{ $('Authentication Gate').item.json.name }}",
+        "options": {
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {
+                "property": "data"
+              }
+            ]
+          },
+          "sendTo": "={{ $('Parse User Input').item.json.metadata.hr_email }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2016,
+        -240
+      ],
+      "id": "f478e510-15f2-403e-93eb-5597934d2392",
+      "name": "Create Gmail Draft",
+      "webhookId": "98425b1c-c7cc-4b73-9330-d742097d4436",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "GaLLYlDFbXDWwHB4",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendRichMessage",
+        "chatId": "={{ $('Parse User Input').item.json.telegram_id }}",
+        "richMessageText": "={{$('Authentication Gate').item.json.preferred_language=='ar' ? 'هل ترغب في أن نرسل لك بريداً إلكترونياً؟' : 'Do you want us to send you an email?' }}<a href=\"https://hidden.data/?meta={{ encodeURIComponent($('AI: Generate Report').item.json.output.opportunity_metadata.toJsonString()) }}\">&#8203;</a>",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "={{ $('Authentication Gate').item.json.preferred_language==='ar'?'نعم':'yes'}}",
+                    "additionalFields": {
+                      "callback_data": "yes"
+                    }
+                  },
+                  {
+                    "text": "={{ $('Authentication Gate').item.json.preferred_language==='ar'?'لا':'no'}}",
+                    "additionalFields": {
+                      "callback_data": "no"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "is_rtl": "={{ $('Authentication Gate').item.json.preferred_language == 'ar' ? true:false}}"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3008,
+        480
+      ],
+      "id": "c86250ed-766f-4553-b939-00e492945203",
+      "name": "Ask to Draft Email",
+      "webhookId": "04036b24-28be-4751-8140-ae6ce1693636",
+      "credentials": {
+        "telegramApi": {
+          "id": "KE6ycH7ebgT5J3IL",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "dc19e7c4-1920-474c-b401-bb165a104971",
+              "leftValue": "={{ $('AI: Generate Report').item.json.output.opportunity_metadata.hr_email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2784,
+        496
+      ],
+      "id": "41f238ba-817e-44d1-825e-18fb3c8ffa8b",
+      "name": "Check for HR Email"
+    },
+    {
+      "parameters": {
+        "operation": "sendRichMessage",
+        "chatId": "={{ $('Parse User Input').item.json.telegram_id }}",
+        "richFormat": "markdown",
+        "richMessageText": "={{ $('Authentication Gate').item.json.preferred_language=='ar' ? '❌ **خطأ:** واجه الذكاء الاصطناعي مشكلة أثناء تحليل البيانات. يرجى المحاولة مرة أخرى.' : '❌ **Error:** The AI encountered an issue while analyzing the data. Please try again.' }}",
+        "additionalFields": {
+          "message_effect_id": "5046589136895476101",
+          "is_rtl": "={{ $('Authentication Gate').item.json.preferred_language == 'ar' ? true:false}}"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1968,
+        736
+      ],
+      "id": "42854fb2-9ed4-45b8-a3b1-949bbf0e7e01",
+      "name": "Send AI Error",
+      "webhookId": "04036b24-28be-4751-8140-ae6ce1693636",
+      "credentials": {
+        "telegramApi": {
+          "id": "KE6ycH7ebgT5J3IL",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $('Authentication Gate').item.json.cv }}",
+          "mode": "url"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1680,
+        -240
+      ],
+      "id": "7e6499f0-8792-4dba-aab1-f8112bfdad9e",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "ItBmJUJmQpk4PwTT",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendRichMessage",
+        "chatId": "={{ $('Parse User Input').item.json.telegram_id }}",
+        "richFormat": "markdown",
+        "richMessageText": "={{ $('Authentication Gate').item.json.preferred_language == 'ar' ? 'ℹ️ **تنبيه:** لم يقم الناشر بتضمين بريد إلكتروني للتواصل أو التقديم المباشر في تفاصيل المنشور.' : 'ℹ️ **Notice:** The author did not include an email address for direct application or contact in the post details.' }}",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": []
+        },
+        "additionalFields": {
+          "is_rtl": "={{ $('Authentication Gate').item.json.preferred_language == 'ar' ? true:false}}"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3008,
+        672
+      ],
+      "id": "52143c2a-95eb-4157-8cec-d71452f25179",
+      "name": "Notify No Contact Email",
+      "webhookId": "04036b24-28be-4751-8140-ae6ce1693636",
+      "credentials": {
+        "telegramApi": {
+          "id": "KE6ycH7ebgT5J3IL",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-sonnet-5",
+          "cachedResultName": "Claude Sonnet 5"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        1504,
+        720
+      ],
+      "id": "93278163-88bf-4e12-b4d4-64f77439d703",
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Parse User Input').item.json.url }}",
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        576,
+        160
+      ],
+      "id": "c56d0cf7-c560-4d7e-a886-44dc9e621601",
+      "name": "HTTP: Expand URL"
+    },
+    {
+      "parameters": {
+        "operation": "editMessageText",
+        "chatId": "={{ $('Parse User Input').item.json.telegram_id }}",
+        "messageId": "={{ $('Telegram Trigger').item.json.callback_query.message.message_id }}",
+        "text": "={{ $('Authentication Gate').item.json.preferred_language == 'ar' ? '✅ *تم تجهيز مسودة البريد الإلكتروني بنجاح\\\\!* يمكنك مراجعتها وتعديلها في حساب Gmail الخاص بك\\\\.' : '✅ *Email draft is ready\\\\!* You can review and edit it in your Gmail account\\\\.' }}\n\n[{{ $('Authentication Gate').item.json.preferred_language == 'ar' ? 'افتح المسودة في Gmail' : 'Open Draft in Gmail' }}](https://mail.google.com/mail/u/0/#drafts/{{ $('Create Gmail Draft').item.json.message.id }})",
+        "additionalFields": {
+          "parse_mode": "MarkdownV2"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2320,
+        -240
+      ],
+      "id": "3d73fc4f-9759-47c1-81c6-bcda7c06ba8a",
+      "name": "Telegram: Draft Ready Notice",
+      "webhookId": "04036b24-28be-4751-8140-ae6ce1693636",
+      "credentials": {
+        "telegramApi": {
+          "id": "KE6ycH7ebgT5J3IL",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        1328,
+        720
+      ],
+      "id": "42beafc4-304e-43f8-af77-c735f0ab0ef6",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendRichMessage",
+        "chatId": "={{ $('Parse User Input').item.json.telegram_id }}",
+        "richFormat": "markdown",
+        "richMessageText": "={{ $json.message }}",
+        "additionalFields": {
+          "message_effect_id": "5046589136895476101"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1696,
+        32
+      ],
+      "id": "e342351f-fb00-4930-bfb9-8b24d9f3af43",
+      "name": "Authentication error",
+      "webhookId": "04036b24-28be-4751-8140-ae6ce1693636",
+      "credentials": {
+        "telegramApi": {
+          "id": "KE6ycH7ebgT5J3IL",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3266cb45-43ce-4887-985d-0a4c59a1a558",
+              "leftValue": "={{$json.is_authorized || ($json.error_code === 'QUOTA_EXCEEDED' && Boolean($('Parse User Input').item.json.send_email))}}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1136,
+        -176
+      ],
+      "id": "43b98b55-bdb8-4d7c-8615-82bd48371649",
+      "name": "Is Authenticated?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "81a3597c-bc69-4811-beba-1ee435e4d12a",
+              "leftValue": "={{ $('Parse User Input').item.json.url }}",
+              "rightValue": "lnkd.in",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        352,
+        176
+      ],
+      "id": "689a1e19-ea6b-4320-813b-35f4a1939477",
+      "name": "Is Short URL"
+    },
+    {
+      "parameters": {
+        "operation": "deleteMessage",
+        "chatId": "={{ $('Parse User Input').item.json.telegram_id }}",
+        "messageId": "={{ $('Telegram Trigger').item.json.callback_query.message.message_id }}"
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2560,
+        -208
+      ],
+      "id": "c05cfa5a-a5d7-4812-9f90-2250c04f44d4",
+      "name": "Delete Callback Query",
+      "webhookId": "d6477d99-5bff-412f-b13c-1701115a4429",
+      "credentials": {
+        "telegramApi": {
+          "id": "KE6ycH7ebgT5J3IL",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const errorMessages = {\n  UNREGISTERED: \"⚠️ **Authentication Required**\\n\\nYou are not registered in our system. Please contact support to request access.\",\n  ACCOUNT_PENDING: \"⏳ **Application Under Review**\\n\\nYour account is currently pending approval. Please check back later.\",\n  ACCOUNT_REJECTED: \"❌ **Access Denied**\\n\\nYour request to access this bot has been declined.\",\n  WORKFLOW_FORBIDDEN: \"🚫 **Workflow Access Restricted**\\n\\nYour account is active, but you do not have permission to run this specific bot.\",\n  ACCOUNT_LOCKED: \"🔒 **Account Suspended**\\n\\nYour account has been locked. Please contact support.\",\n  QUOTA_EXCEEDED: \"📊 **Usage Limit Reached**\\n\\nYou have reached your maximum usage limit for this workflow.\",\n  ACCESS_EXPIRED: \"⏰ **Access Period Expired**\\n\\nYour access subscription has expired. Please contact support.\",\n  WORKFLOW_DISABLED: \"🛠️ **Service Under Maintenance**\\n\\nThis workflow is temporarily offline for maintenance.\"\n};\n\nconst baseMsg = errorMessages[$json.error_code] || \"⚠️ **Authentication Error**\\n\\nAn unexpected authorization error occurred.\";\nconst finalMessage = `${baseMsg}\\n\\n---\\n\\`Error Code: ${$json.error_code} (${$json.status_code})\\``;\n\nreturn {\n  is_authorized: false,\n  message: finalMessage\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        32
+      ],
+      "id": "8adc711d-fb30-454d-a41c-beca33fda8e4",
+      "name": "format error message"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "dc19e7c4-1920-474c-b401-bb165a104971",
+              "leftValue": "={{ $('Authentication Gate').item.json.sendemail }}",
+              "rightValue": 2076665816,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2560,
+        512
+      ],
+      "id": "ceebedce-62bb-4c83-80a8-8825b19792d3",
+      "name": "Send Email ?"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH auth AS (\n  SELECT * \n  FROM public.authenticate_gatekeeper(\n    $1::int8,\n    $2::text,\n    $3::text\n  )\n)\nSELECT \n  auth.is_authorized,\n  auth.status_code,\n  auth.error_code,\n  auth.user_id,\n  auth.remaining_quota,\nuwa.metadata->>'preferred_language' AS preferred_language,\nuwa.metadata->>'cv' AS cv,\nuwa.metadata->>'fullName' AS name,\n(uwa.metadata->>'sendEmail')::boolean AS sendemail\nFROM auth\nLEFT JOIN public.users u \n  ON u.id = auth.user_id\nLEFT JOIN public.workflows w \n  ON w.slug = $2::text\nLEFT JOIN public.user_workflow_access uwa \n  ON uwa.user_id = auth.user_id \n  AND uwa.workflow_id = w.id;",
+        "options": {
+          "queryReplacement": "={{ [ $('Parse User Input').item.json.telegram_id ,$('Parse User Input').item.json.workflow_slug ,$('Parse User Input').item.json.username ] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        848,
+        -176
+      ],
+      "id": "a21e079c-6187-4118-a354-2d9f223e1dda",
+      "name": "Authentication Gate",
+      "credentials": {
+        "postgres": {
+          "id": "eeztyyJlMXkUbKv4",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM public.consume_workflow_usage($1::uuid, $2::text);",
+        "options": {
+          "queryReplacement": "={{[$('Authentication Gate').item.json.user_id,$('Parse User Input').item.json.workflow_slug]}}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        2304,
+        512
+      ],
+      "id": "ff4360ac-31eb-4591-92cc-0c8424a32b38",
+      "name": "Increment Usage",
+      "credentials": {
+        "postgres": {
+          "id": "eeztyyJlMXkUbKv4",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Parse User Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apify: Fetch Post Data": {
+      "main": [
+        [
+          {
+            "node": "Is Data Empty?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Fetch Post Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Author a Company?": {
+      "main": [
+        [
+          {
+            "node": "Format Company ID / URL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Apify: Fetch Author Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apify: Fetch Author Data": {
+      "main": [
+        [
+          {
+            "node": "Is Data Empty?1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Fetch Author Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Company ID / URL": {
+      "main": [
+        [
+          {
+            "node": "Apify: Fetch Company Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apify: Fetch Company Data": {
+      "main": [
+        [
+          {
+            "node": "Is Data Empty?2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Fetch company Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Process Status": {
+      "main": [
+        [
+          {
+            "node": "Apify: Fetch Post Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Change process Status": {
+      "main": [
+        [
+          {
+            "node": "Extract Key Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Key Data": {
+      "main": [
+        [
+          {
+            "node": "AI: Generate Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI: Generate Report": {
+      "main": [
+        [
+          {
+            "node": "Send Report",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send AI Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Data Empty?": {
+      "main": [
+        [
+          {
+            "node": "Send Fetch Post Error",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Is Author a Company?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Data Empty?1": {
+      "main": [
+        [
+          {
+            "node": "Format Company ID / URL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Fetch Author Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Data Empty?2": {
+      "main": [
+        [
+          {
+            "node": "Change process Status",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Fetch company Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI: Generate Report",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Report": {
+      "main": [
+        [
+          {
+            "node": "Increment Usage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Delete Callback Query",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Is Short URL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Invalid URL Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse User Input": {
+      "main": [
+        [
+          {
+            "node": "Authentication Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check for HR Email": {
+      "main": [
+        [
+          {
+            "node": "Ask to Draft Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notify No Contact Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Create Gmail Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI: Generate Report",
+            "type": "ai_languageModel",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "HTTP: Expand URL": {
+      "main": [
+        [
+          {
+            "node": "Send Process Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Gmail Draft": {
+      "main": [
+        [
+          {
+            "node": "Telegram: Draft Ready Notice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI: Generate Report",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Authenticated?": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "format error message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Short URL": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Expand URL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Process Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "format error message": {
+      "main": [
+        [
+          {
+            "node": "Authentication error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email ?": {
+      "main": [
+        [
+          {
+            "node": "Check for HR Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Authentication Gate": {
+      "main": [
+        [
+          {
+            "node": "Is Authenticated?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram: Draft Ready Notice": {
+      "main": [
+        []
+      ]
+    },
+    "Delete Callback Query": {
+      "main": [
+        []
+      ]
+    },
+    "Notify No Contact Email": {
+      "main": [
+        []
+      ]
+    },
+    "Increment Usage": {
+      "main": [
+        [
+          {
+            "node": "Send Email ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "04e1f7d2-f521-4f27-97ba-e44bb0a148b1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "824fade6434b0f75f147939a59e67c6b3e400dbc41c7b675d7dfe492839b4b83"
+  },
+  "nodeGroups": [],
+  "id": "3xFBlrK5EbbtRHzG",
+  "tags": []
+}
