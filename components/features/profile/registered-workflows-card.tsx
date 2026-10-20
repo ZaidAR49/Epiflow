@@ -12,7 +12,7 @@ import {
   AlertCircle,
   ImageIcon,
 } from "lucide-react";
-import type { RegisteredWorkflowItem } from "@/lib/db/queries/access";
+import type { RegisteredWorkflowItem } from "@/lib/db/queries/workflows";
 
 interface RegisteredWorkflowsCardProps {
   workflows: RegisteredWorkflowItem[];

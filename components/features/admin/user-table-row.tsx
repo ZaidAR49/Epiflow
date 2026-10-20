@@ -10,10 +10,18 @@ import {
   ShieldAlert,
   Sliders,
   XCircle,
+  Trash2,
 } from "lucide-react";
 import type { AdminUserItem } from "@/lib/db/queries/admin";
 
-export type ActionType = "approve" | "lock" | "unlock" | "reject" | "promote" | "demote";
+export type ActionType =
+  | "approve"
+  | "lock"
+  | "unlock"
+  | "reject"
+  | "promote"
+  | "demote"
+  | "delete";
 
 interface UserTableRowProps {
   user: AdminUserItem;
@@ -165,6 +173,17 @@ export function UserTableRow({
               )}
             </button>
           )}
+
+          {/* Delete User Action */}
+          <button
+            type="button"
+            onClick={() => onAction("delete", u)}
+            className="inline-flex items-center gap-1.5 rounded-md border border-rose-500/30 bg-rose-500/10 px-2 py-1 text-[11px] font-semibold text-rose-300 hover:bg-rose-500/20 transition-colors"
+            title="Delete User"
+          >
+            <Trash2 className="h-3 w-3" />
+            <span className="hidden xl:inline">{t("delete")}</span>
+          </button>
         </div>
       </td>
     </tr>

@@ -1,5 +1,7 @@
 import { NextRequest } from "next/server";
 import { executeStreamWorkflow } from "@/lib/services/test-bench/stream-runner";
+import { auth } from "@/auth";
+import { getUserById } from "@/lib/db/queries/users";
 import { z } from "zod";
 
 const streamRequestSchema = z.object({
@@ -10,6 +12,22 @@ const streamRequestSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized: Please sign in" }),
+        { status: 401, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    const caller = await getUserById(session.user.id);
+    if (!caller || caller.role !== "admin") {
+      return new Response(
+        JSON.stringify({ error: "Forbidden: Admin privileges required" }),
+        { status: 403, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     const body: unknown = await req.json();
     const parsed = streamRequestSchema.safeParse(body);
 

@@ -1,15 +1,19 @@
 import React from "react";
 import { getTranslations } from "next-intl/server";
 import { Header } from "@/components/layout/header";
+import { getPrimaryWorkflow } from "@/lib/db/queries/workflows";
 import { GoogleSignInButton } from "@/components/features/auth/google-sign-in-button";
 import { Sparkles, Shield, Zap } from "lucide-react";
 
 export default async function SignInPage() {
-  const t = await getTranslations("auth");
+  const [t, primaryWorkflow] = await Promise.all([
+    getTranslations("auth"),
+    getPrimaryWorkflow(),
+  ]);
 
   return (
     <div className="min-h-screen bg-[var(--bg)] text-[var(--text)] flex flex-col justify-between">
-      <Header />
+      <Header logoUrl={primaryWorkflow?.imageUrl} />
 
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 py-12 sm:px-6">
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-8 shadow-xl backdrop-blur-md">

@@ -2,41 +2,38 @@
 
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
+import {
+  updateWorkflowSchema,
+  updateUserStatusSchema,
+  updateUserQuotaSchema,
+  deleteUserSchema,
+  type UpdateWorkflowInput,
+  type UpdateUserStatusInput,
+  type UpdateUserQuotaInput,
+  type DeleteUserInput,
+} from "@/lib/validation/admin";
 import {
   updateWorkflowDetails,
   updateUserRoleAndStatus,
   updateUserWorkflowQuota,
+  getActiveAdminCount,
+  deleteUserById,
 } from "@/lib/db/queries/admin";
+import { getUserById } from "@/lib/db/queries/users";
 import {
   validateImageFile,
   uploadPublicImage,
 } from "@/lib/services/storage/supabase-storage";
 import { isErr } from "@/lib/result";
 
-const updateWorkflowSchema = z.object({
-  workflowId: z.string().uuid(),
-  isActive: z.boolean().optional(),
-  imageUrl: z.string().url().or(z.literal("")).nullable().optional(),
-  name: z.string().min(1).max(100).optional(),
-});
-
-const updateUserStatusSchema = z.object({
-  userId: z.string().uuid(),
-  role: z.enum(["admin", "user", "guest"]).optional(),
-  status: z.enum(["pending", "approved", "rejected", "locked"]).optional(),
-});
-
-const updateUserQuotaSchema = z.object({
-  userId: z.string().uuid(),
-  workflowSlug: z.string().default("job-xray"),
-  usageLimit: z.number().int().min(0).nullable().optional(),
-  resetCount: z.boolean().optional(),
-});
-
-export async function updateWorkflowAction(input: z.infer<typeof updateWorkflowSchema>) {
+export async function updateWorkflowAction(input: UpdateWorkflowInput) {
   const session = await auth();
-  if (!session?.user?.id || session.user.role !== "admin") {
+  if (!session?.user?.id) {
+    return { success: false, error: "Unauthorized: Please sign in" };
+  }
+
+  const caller = await getUserById(session.user.id);
+  if (!caller || caller.role !== "admin" || caller.status === "locked") {
     return { success: false, error: "Unauthorized: Admin privileges required" };
   }
 
@@ -68,10 +65,10 @@ export async function updateWorkflowAction(input: z.infer<typeof updateWorkflowS
   }
 }
 
-export async function updateUserStatusAction(input: z.infer<typeof updateUserStatusSchema>) {
+export async function updateUserStatusAction(input: UpdateUserStatusInput) {
   const session = await auth();
-  if (!session?.user?.id || session.user.role !== "admin") {
-    return { success: false, error: "Unauthorized: Admin privileges required" };
+  if (!session?.user?.id) {
+    return { success: false, error: "Unauthorized: Please sign in" };
   }
 
   const parsed = updateUserStatusSchema.safeParse(input);
@@ -79,12 +76,33 @@ export async function updateUserStatusAction(input: z.infer<typeof updateUserSta
     return { success: false, error: "Invalid user update parameters" };
   }
 
-  if (
-    parsed.data.userId === session.user.id &&
-    parsed.data.role &&
-    parsed.data.role !== "admin"
-  ) {
-    return { success: false, error: "You cannot revoke your own admin role" };
+  const caller = await getUserById(session.user.id);
+  if (!caller || caller.role !== "admin" || caller.status === "locked") {
+    return { success: false, error: "Unauthorized: Admin privileges required" };
+  }
+
+  const target = await getUserById(parsed.data.userId);
+  if (!target) {
+    return { success: false, error: "User not found" };
+  }
+
+  const isDemotingAdmin =
+    target.role === "admin" &&
+    parsed.data.role !== undefined &&
+    parsed.data.role !== "admin";
+  const isLockingAdmin =
+    target.role === "admin" &&
+    (parsed.data.status === "locked" || parsed.data.status === "rejected");
+
+  if (isDemotingAdmin || isLockingAdmin) {
+    const activeAdminCount = await getActiveAdminCount();
+    if (activeAdminCount <= 1) {
+      return {
+        success: false,
+        error:
+          "Cannot demote or lock this administrator because they are the only administrator. Designate another administrator first.",
+      };
+    }
   }
 
   try {
@@ -107,9 +125,62 @@ export async function updateUserStatusAction(input: z.infer<typeof updateUserSta
   }
 }
 
-export async function updateUserQuotaAction(input: z.infer<typeof updateUserQuotaSchema>) {
+export async function deleteUserAction(input: DeleteUserInput) {
   const session = await auth();
-  if (!session?.user?.id || session.user.role !== "admin") {
+  if (!session?.user?.id) {
+    return { success: false, error: "Unauthorized: Please sign in" };
+  }
+
+  const parsed = deleteUserSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, error: "Invalid user deletion parameters" };
+  }
+
+  const caller = await getUserById(session.user.id);
+  if (!caller || caller.role !== "admin" || caller.status === "locked") {
+    return { success: false, error: "Unauthorized: Admin privileges required" };
+  }
+
+  const target = await getUserById(parsed.data.userId);
+  if (!target) {
+    return { success: false, error: "User not found" };
+  }
+
+  if (target.role === "admin") {
+    const activeAdminCount = await getActiveAdminCount();
+    if (activeAdminCount <= 1) {
+      return {
+        success: false,
+        error:
+          "Cannot delete this administrator because they are the only administrator in the system. Designate another administrator first.",
+      };
+    }
+  }
+
+  try {
+    const success = await deleteUserById(parsed.data.userId);
+    if (!success) {
+      return { success: false, error: "Failed to delete user record" };
+    }
+
+    revalidatePath("/[locale]/admin", "page");
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to delete user",
+    };
+  }
+}
+
+export async function updateUserQuotaAction(input: UpdateUserQuotaInput) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { success: false, error: "Unauthorized: Please sign in" };
+  }
+
+  const caller = await getUserById(session.user.id);
+  if (!caller || caller.role !== "admin" || caller.status === "locked") {
     return { success: false, error: "Unauthorized: Admin privileges required" };
   }
 

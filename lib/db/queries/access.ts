@@ -123,6 +123,7 @@ export async function consumeWorkflowUsage(
 export interface UserWorkflowProfile {
   workflowId: string;
   workflowName: string;
+  imageUrl?: string | null;
   usageCount: number;
   usageLimit: number | null;
   lastUsedAt: Date | null;
@@ -145,6 +146,7 @@ export async function getUserWorkflowDetails(
   const result = await db.execute<{
     workflow_id: string;
     workflow_name: string;
+    image_url: string | null;
     usage_count: number;
     usage_limit: number | null;
     last_used_at: string | null;
@@ -159,6 +161,7 @@ export async function getUserWorkflowDetails(
     SELECT 
       w.id AS workflow_id,
       w.name AS workflow_name,
+      w.image_url,
       uwa.usage_count,
       uwa.usage_limit,
       uwa.last_used_at,
@@ -178,6 +181,7 @@ export async function getUserWorkflowDetails(
   return {
     workflowId: row.workflow_id,
     workflowName: row.workflow_name,
+    imageUrl: row.image_url,
     usageCount: Number(row.usage_count || 0),
     usageLimit: row.usage_limit !== null ? Number(row.usage_limit) : null,
     lastUsedAt: row.last_used_at ? new Date(row.last_used_at) : null,
@@ -237,56 +241,5 @@ export async function updateUserWorkflowMetadata(
   return Boolean(result[0]?.updated);
 }
 
-export interface RegisteredWorkflowItem {
-  id: string;
-  slug: string;
-  name: string;
-  isActive: boolean;
-  imageUrl?: string | null;
-  usageCount: number;
-  usageLimit: number | null;
-  expiresAt: Date | null;
-}
+export { getUserWorkflowsList, type RegisteredWorkflowItem } from "./workflows";
 
-/**
- * Returns all workflows that the user has an access grant for.
- */
-export async function getUserWorkflowsList(
-  userId: string
-): Promise<RegisteredWorkflowItem[]> {
-  const result = await db.execute<{
-    id: string;
-    slug: string;
-    name: string;
-    is_active: boolean;
-    image_url: string | null;
-    usage_count: number;
-    usage_limit: number | null;
-    expires_at: string | null;
-  }>(sql`
-    SELECT 
-      w.id,
-      w.slug,
-      w.name,
-      w.is_active,
-      w.image_url,
-      uwa.usage_count,
-      uwa.usage_limit,
-      uwa.expires_at
-    FROM public.workflows w
-    JOIN public.user_workflow_access uwa ON uwa.workflow_id = w.id
-    WHERE uwa.user_id = ${userId}::uuid
-    ORDER BY w.name ASC;
-  `);
-
-  return result.map((row) => ({
-    id: row.id,
-    slug: row.slug,
-    name: row.name,
-    isActive: Boolean(row.is_active),
-    imageUrl: row.image_url,
-    usageCount: Number(row.usage_count || 0),
-    usageLimit: row.usage_limit !== null ? Number(row.usage_limit) : null,
-    expiresAt: row.expires_at ? new Date(row.expires_at) : null,
-  }));
-}

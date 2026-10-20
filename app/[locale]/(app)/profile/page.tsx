@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { auth } from "@/auth";
 import { getUserById } from "@/lib/db/queries/users";
-import { getUserWorkflowsList } from "@/lib/db/queries/access";
+import { getUserWorkflowsList } from "@/lib/db/queries/workflows";
 import { Header } from "@/components/layout/header";
 import { ProfileForm } from "@/components/features/profile/profile-form";
 import { TelegramLinkCard } from "@/components/features/profile/telegram-link-card";
@@ -28,6 +28,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   }
 
   const workflows = await getUserWorkflowsList(user.id);
+  const primaryLogoUrl = workflows.find((w) => w.slug === "job-xray")?.imageUrl || workflows[0]?.imageUrl;
   const t = await getTranslations("profile");
 
   return (
@@ -36,6 +37,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         userRole={user.role}
         userName={user.fullName}
         userImage={session.user.image}
+        logoUrl={primaryLogoUrl}
         isSignedIn={Boolean(user.id)}
       />
 
@@ -59,7 +61,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                 id: user.id,
                 fullName: user.fullName,
                 email: user.email,
-                image: user.image,
+                image: session.user.image || user.image,
                 role: user.role,
                 status: user.status,
                 preferredLanguage: (user.preferredLanguage as "ar" | "en") || "ar",

@@ -1,14 +1,32 @@
-import { useTranslations } from "next-intl";
+import Link from "next/link";
+import { getTranslations } from "next-intl/server";
+import { auth } from "@/auth";
 import { Header } from "@/components/layout/header";
+import { getPrimaryWorkflow } from "@/lib/db/queries/workflows";
 import { ArrowRight, Layers, UserCheck, Sparkles, Mail } from "lucide-react";
 
-export default function MarketingPage() {
-  const t = useTranslations("landing");
-  const tCommon = useTranslations("common");
+interface MarketingPageProps {
+  params: Promise<{ locale: string }>;
+}
+
+export default async function MarketingPage({ params }: MarketingPageProps) {
+  const { locale } = await params;
+  const [session, t, tCommon, primaryWorkflow] = await Promise.all([
+    auth(),
+    getTranslations("landing"),
+    getTranslations("common"),
+    getPrimaryWorkflow(),
+  ]);
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--bg)]">
-      <Header />
+      <Header
+        userRole={session?.user?.role}
+        userName={session?.user?.name}
+        userImage={session?.user?.image}
+        logoUrl={primaryWorkflow?.imageUrl}
+        isSignedIn={Boolean(session?.user?.id)}
+      />
 
       <main className="flex-1">
         {/* Hero Section */}
@@ -27,7 +45,7 @@ export default function MarketingPage() {
               {t("heroSubtitle")}
             </p>
 
-            {/* Live Paste Input Simulation */}
+            {/* Live Paste Input Simulation / Action */}
             <div className="mx-auto mt-10 max-w-xl">
               <div className="flex flex-col gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-2 shadow-xl sm:flex-row">
                 <input
@@ -37,13 +55,17 @@ export default function MarketingPage() {
                   className="flex-1 rounded-lg bg-[var(--surface-2)] px-4 py-3 text-sm text-[var(--text)] outline-none"
                   value="https://www.linkedin.com/posts/acme-corp_hiring-lead-developer"
                 />
-                <button
-                  type="button"
-                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-white shadow transition-colors hover:bg-[var(--accent-hover)]"
+                <Link
+                  href={
+                    session?.user?.id
+                      ? `/${locale}/dashboard`
+                      : `/${locale}/sign-in`
+                  }
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-white shadow transition-colors hover:bg-[var(--accent)]/90"
                 >
                   <span>{t("ctaButton")}</span>
                   <ArrowRight className="h-4 w-4 rtl:-scale-x-100" />
-                </button>
+                </Link>
               </div>
             </div>
           </div>

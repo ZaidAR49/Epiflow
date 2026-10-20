@@ -9,7 +9,7 @@ interface GoogleSignInButtonProps {
   callbackUrl?: string;
 }
 
-export function GoogleSignInButton({ callbackUrl = "/profile" }: GoogleSignInButtonProps) {
+export function GoogleSignInButton({ callbackUrl = "/dashboard" }: GoogleSignInButtonProps) {
   const t = useTranslations("auth");
   const [isLoading, setIsLoading] = useState(false);
 

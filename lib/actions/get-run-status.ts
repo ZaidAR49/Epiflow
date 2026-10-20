@@ -1,12 +1,13 @@
 "use server";
 
 import { z } from "zod";
+import { auth } from "@/auth";
 import { getJobRunById } from "@/lib/db/queries/job-runs";
 import { ErrorCodes } from "@/lib/errors";
 
 const getStatusInputSchema = z.object({
   runId: z.string().uuid("Invalid run ID"),
-  userId: z.string().uuid("Invalid user ID"),
+  userId: z.string().uuid("Invalid user ID").optional(),
 });
 
 export type JobRunStatusResult = {
@@ -25,6 +26,15 @@ export type JobRunStatusResult = {
 export async function getRunStatusAction(
   rawInput: unknown
 ): Promise<JobRunStatusResult> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return {
+      success: false,
+      errorCode: ErrorCodes.UNAUTHORIZED,
+      message: "You must be signed in to access run status",
+    };
+  }
+
   const parsed = getStatusInputSchema.safeParse(rawInput);
   if (!parsed.success) {
     return {
@@ -33,10 +43,11 @@ export async function getRunStatusAction(
     };
   }
 
-  const { runId, userId } = parsed.data;
+  const { runId } = parsed.data;
 
   try {
-    const run = await getJobRunById(runId, userId);
+    // Strictly enforce session user ownership
+    const run = await getJobRunById(runId, session.user.id);
     if (!run) {
       return {
         success: false,

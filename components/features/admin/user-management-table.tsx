@@ -4,7 +4,11 @@ import React, { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { Users, Search } from "lucide-react";
 import type { AdminUserItem } from "@/lib/db/queries/admin";
-import { updateUserStatusAction, updateUserQuotaAction } from "@/lib/actions/admin";
+import {
+  updateUserStatusAction,
+  updateUserQuotaAction,
+  deleteUserAction,
+} from "@/lib/actions/admin";
 import { UserActionDialog, type UserActionDialogProps } from "./user-action-dialog";
 import { UserQuotaModal } from "./user-quota-modal";
 import { UserTableRow, type ActionType } from "./user-table-row";
@@ -52,11 +56,13 @@ export function UserManagementTable({ users, currentUserId }: UserManagementTabl
         res = await updateUserStatusAction({ userId: user.id, role: "admin" });
       } else if (type === "demote") {
         res = await updateUserStatusAction({ userId: user.id, role: "user" });
+      } else if (type === "delete") {
+        res = await deleteUserAction({ userId: user.id });
       }
 
       setPendingAction(null);
       if (res?.success) {
-        setFeedback({ msg: t("statusSaved") });
+        setFeedback({ msg: type === "delete" ? t("userDeleted") : t("statusSaved") });
       } else {
         setFeedback({ msg: res?.error || "Action failed", err: true });
       }
@@ -132,6 +138,13 @@ export function UserManagementTable({ users, currentUserId }: UserManagementTabl
           description: t("confirmDemoteUser", { name }),
           variant: "warn",
           confirmLabel: t("removeAdmin"),
+        };
+      case "delete":
+        return {
+          title: t("confirmTitle"),
+          description: t("confirmDelete", { name }),
+          variant: "danger",
+          confirmLabel: t("delete"),
         };
     }
   };

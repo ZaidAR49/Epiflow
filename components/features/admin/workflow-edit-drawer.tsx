@@ -1,14 +1,19 @@
 "use client";
 
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Save, X } from "lucide-react";
 import type { AdminWorkflowItem } from "@/lib/db/queries/admin";
+import type { WorkflowChannelItem } from "@/lib/db/queries/workflow-channels";
+import { saveWorkflowChannelAction } from "@/lib/actions/workflow-channels";
 import { WorkflowImageUploader } from "./workflow-image-uploader";
+import { WorkflowChannelsEditor, type ChannelDraft } from "./workflow-channels-editor";
 
 interface WorkflowEditDrawerProps {
   workflow: AdminWorkflowItem;
   editName: string;
   editImageUrl: string;
+  channels?: WorkflowChannelItem[];
   isPending: boolean;
   onNameChange: (val: string) => void;
   onImageUrlChange: (val: string) => void;
@@ -21,6 +26,7 @@ export function WorkflowEditDrawer({
   workflow,
   editName,
   editImageUrl,
+  channels = [],
   isPending,
   onNameChange,
   onImageUrlChange,
@@ -29,6 +35,28 @@ export function WorkflowEditDrawer({
   onSave,
 }: WorkflowEditDrawerProps) {
   const t = useTranslations("admin.workflows");
+  const [channelDraft, setChannelDraft] = useState<ChannelDraft | null>(null);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+
+  const handleSaveAll = async () => {
+    if (channelDraft && channelDraft.handle.trim().length > 0) {
+      setIsSavingDraft(true);
+      try {
+        await saveWorkflowChannelAction({
+          workflowId: workflow.id,
+          channel: channelDraft.channel,
+          handle: channelDraft.handle.trim(),
+          url: channelDraft.url.trim() || null,
+          isActive: channelDraft.isActive,
+        });
+      } finally {
+        setIsSavingDraft(false);
+      }
+    }
+    onSave();
+  };
+
+  const busy = isPending || isSavingDraft;
 
   return (
     <div className="mt-4 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 space-y-4">
@@ -64,6 +92,12 @@ export function WorkflowEditDrawer({
         onUploaded={onImageUploaded}
       />
 
+      <WorkflowChannelsEditor
+        workflowId={workflow.id}
+        initialChannels={channels}
+        onDraftChange={setChannelDraft}
+      />
+
       <div className="flex items-center justify-end gap-2 pt-1 border-t border-[var(--border)]">
         <button
           type="button"
@@ -75,12 +109,12 @@ export function WorkflowEditDrawer({
         </button>
         <button
           type="button"
-          onClick={onSave}
-          disabled={isPending}
+          onClick={handleSaveAll}
+          disabled={busy}
           className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[var(--accent)]/90 disabled:opacity-50"
         >
           <Save className="h-3.5 w-3.5" />
-          <span>{isPending ? t("saving") : t("saveChanges")}</span>
+          <span>{busy ? t("saving") : t("saveChanges")}</span>
         </button>
       </div>
     </div>

@@ -15,6 +15,13 @@ const testBenchDraftSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: "Unauthorized: You must be signed in to create drafts" },
+        { status: 401 }
+      );
+    }
+
     const body: unknown = await req.json();
     const parsed = testBenchDraftSchema.safeParse(body);
 
@@ -27,7 +34,7 @@ export async function POST(req: NextRequest) {
 
     const result = await executeTestBenchDraftBranch({
       ...parsed.data,
-      userId: session?.user?.id ?? parsed.data.userId,
+      userId: session.user.id,
     });
     return NextResponse.json(result);
   } catch (error) {

@@ -88,6 +88,7 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
               src={initialData.image}
               alt={initialData.fullName}
               className="h-14 w-14 rounded-full border-2 border-[var(--accent)] object-cover shadow-sm"
+              referrerPolicy="no-referrer"
             />
           ) : (
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--surface-2)] text-[var(--accent)] border border-[var(--border)]">

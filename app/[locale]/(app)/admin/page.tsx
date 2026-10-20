@@ -10,6 +10,7 @@ import {
   getAdminWorkflows,
   getAdminUsers,
 } from "@/lib/db/queries/admin";
+import { getAllWorkflowChannels } from "@/lib/db/queries/workflow-channels";
 import { AdminOverviewStats } from "@/components/features/admin/admin-overview-stats";
 import { WorkflowManagementCard } from "@/components/features/admin/workflow-management-card";
 import { UserManagementTable } from "@/components/features/admin/user-management-table";
@@ -33,11 +34,13 @@ export default async function AdminPage({ params }: AdminPageProps) {
 
   const t = await getTranslations("admin");
 
-  const [stats, workflows, users] = await Promise.all([
+  const [stats, workflows, users, channels] = await Promise.all([
     getAdminStats(),
     getAdminWorkflows(),
     getAdminUsers(),
+    getAllWorkflowChannels(),
   ]);
+  const primaryLogoUrl = workflows.find((w) => w.slug === "job-xray")?.imageUrl || workflows[0]?.imageUrl;
 
   return (
     <div className="min-h-screen bg-[var(--bg)] text-[var(--text)]">
@@ -45,6 +48,7 @@ export default async function AdminPage({ params }: AdminPageProps) {
         userRole={session.user.role}
         userName={session.user.name}
         userImage={session.user.image}
+        logoUrl={primaryLogoUrl}
         isSignedIn={Boolean(session.user.id)}
       />
 
@@ -80,7 +84,7 @@ export default async function AdminPage({ params }: AdminPageProps) {
 
       {/* Workflows & User Management Sections */}
       <div className="space-y-8">
-        <WorkflowManagementCard workflows={workflows} />
+        <WorkflowManagementCard workflows={workflows} channels={channels} />
         <UserManagementTable users={users} currentUserId={session.user.id} />
       </div>
     </main>

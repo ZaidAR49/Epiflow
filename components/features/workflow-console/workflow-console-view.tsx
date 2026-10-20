@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useTranslations, useLocale } from "next-intl";
 import { ArrowLeft, Sliders, Sparkles } from "lucide-react";
 import { BrowserChat } from "@/components/features/test-bench/browser-chat";
@@ -55,17 +56,32 @@ export function WorkflowConsoleView({
             <ArrowLeft className="h-3.5 w-3.5 rtl:-scale-x-100" />
             <span>{t("backToProfile")}</span>
           </Link>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-extrabold tracking-tight text-[var(--text)]">
-              {workflow.workflowName}
-            </h1>
-            <span className="rounded-md bg-[var(--accent)]/10 px-2.5 py-0.5 text-xs font-semibold text-[var(--accent)] border border-[var(--accent)]/20">
-              Console
-            </span>
+          <div className="flex items-center gap-3">
+            {workflow.imageUrl && (
+              <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface-2)] shadow-sm">
+                <Image
+                  src={workflow.imageUrl}
+                  alt={workflow.workflowName}
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+              </div>
+            )}
+            <div>
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-2xl font-extrabold tracking-tight text-[var(--text)]">
+                  {workflow.workflowName}
+                </h1>
+                <span className="rounded-md bg-[var(--accent)]/10 px-2.5 py-0.5 text-xs font-semibold text-[var(--accent)] border border-[var(--accent)]/20">
+                  Console
+                </span>
+              </div>
+              <p className="text-xs text-[var(--text-muted)] leading-relaxed max-w-2xl mt-0.5">
+                {t("subtitle")}
+              </p>
+            </div>
           </div>
-          <p className="text-xs text-[var(--text-muted)] leading-relaxed max-w-2xl">
-            {t("subtitle")}
-          </p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -106,6 +122,8 @@ export function WorkflowConsoleView({
             onToggleSyncToTelegram={setSyncToTelegram}
             heightClass="h-[620px]"
             allowZoom={true}
+            title={workflow.workflowName}
+            avatarUrl={workflow.imageUrl}
           />
         </div>
 

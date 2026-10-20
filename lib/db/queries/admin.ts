@@ -226,3 +226,22 @@ export async function updateUserWorkflowQuota(
 
   return Boolean(result[0]?.updated);
 }
+
+export async function getActiveAdminCount(): Promise<number> {
+  const result = await db.execute<{ count: string }>(sql`
+    SELECT COUNT(*)::text AS count 
+    FROM public.users 
+    WHERE role = 'admin' AND status = 'approved';
+  `);
+  return Number(result[0]?.count || 0);
+}
+
+export async function deleteUserById(userId: string): Promise<boolean> {
+  const result = await db.execute<{ deleted: boolean }>(sql`
+    DELETE FROM public.users
+    WHERE id = ${userId}::uuid
+    RETURNING true AS deleted;
+  `);
+  return Boolean(result[0]?.deleted);
+}
+

@@ -22,7 +22,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
-    async signIn({ user }) {
+    async signIn({ user, profile }) {
       if (!user.email) return false;
       try {
         const dbUser = await upsertGoogleUser({
@@ -34,18 +34,29 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         user.id = dbUser.id;
         user.role = dbUser.role;
         user.status = dbUser.status;
+        const pic =
+          (user.image as string | undefined) ||
+          ((profile as { picture?: string })?.picture) ||
+          undefined;
+        if (pic) {
+          user.image = pic;
+        }
         return true;
       } catch {
         return false;
       }
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, profile }) {
       if (user?.id) {
         token.userId = user.id;
         token.role = user.role;
         token.status = user.status;
-        if (user.image) {
-          token.picture = user.image;
+        const pic =
+          (user.image as string | undefined) ||
+          ((profile as { picture?: string })?.picture) ||
+          undefined;
+        if (pic) {
+          token.picture = pic;
         }
       } else if (typeof token.userId === "string") {
         try {
@@ -53,6 +64,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           if (dbUser) {
             token.role = dbUser.role;
             token.status = dbUser.status;
+            if (!token.picture && dbUser.image) {
+              token.picture = dbUser.image;
+            }
           }
         } catch {
           // Keep existing token values if DB query fails

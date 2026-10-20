@@ -33,6 +33,7 @@ export default async function WorkflowPage({ params }: WorkflowPageProps) {
         userRole={session?.user?.role}
         userName={session?.user?.name}
         userImage={session?.user?.image}
+        logoUrl={workflow.imageUrl}
         isSignedIn={Boolean(session?.user?.id)}
       />
 

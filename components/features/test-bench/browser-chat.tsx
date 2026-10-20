@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useEffect, useState } from "react";
+import Image from "next/image";
 import type { ChatMessage, ChatButton } from "@/types/test-bench";
 import { Send, Bot, User, Trash2, Loader2, Smartphone, Maximize2, Minimize2 } from "lucide-react";
 import { ChatMarkdown } from "./chat-markdown";
@@ -17,6 +18,8 @@ interface BrowserChatProps {
   onToggleSyncToTelegram: (val: boolean) => void;
   heightClass?: string;
   allowZoom?: boolean;
+  title?: string;
+  avatarUrl?: string | null;
 }
 
 export function BrowserChat({
@@ -31,6 +34,8 @@ export function BrowserChat({
   onToggleSyncToTelegram,
   heightClass = "h-[560px]",
   allowZoom = true,
+  title,
+  avatarUrl,
 }: BrowserChatProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isZoomed, setIsZoomed] = useState(false);
@@ -65,12 +70,22 @@ export function BrowserChat({
         {/* Chat Header */}
         <div className="flex items-center justify-between border-b border-[var(--border)] bg-[var(--surface-2)]/60 px-4 py-3">
           <div className="flex items-center gap-2.5">
-            <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent)] text-white shadow-sm">
-              <Bot className="h-4 w-4" />
-              <span className="absolute -bottom-0.5 -end-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-[var(--surface)]" />
+            <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[var(--accent)] text-white shadow-sm border border-[var(--border)]">
+              {avatarUrl ? (
+                <Image
+                  src={avatarUrl}
+                  alt={title || "Bot"}
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+              ) : (
+                <Bot className="h-4 w-4" />
+              )}
+              <span className="absolute -bottom-0.5 -end-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-[var(--surface)] z-10" />
             </div>
             <div>
-              <h3 className="text-xs font-bold text-[var(--text)]">JobPost X-Ray Bot</h3>
+              <h3 className="text-xs font-bold text-[var(--text)]">{title || "JobPost X-Ray Bot"}</h3>
               <span className="text-[10px] text-emerald-400 font-medium">Online & Ready</span>
             </div>
           </div>
@@ -128,8 +143,18 @@ export function BrowserChat({
                 className={`flex gap-2.5 ${isBot ? "justify-start" : "justify-end"}`}
               >
                 {isBot && (
-                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/20 mt-0.5">
-                    <Bot className="h-3.5 w-3.5" />
+                  <div className="relative flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-md bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/20 mt-0.5">
+                    {avatarUrl ? (
+                      <Image
+                        src={avatarUrl}
+                        alt="Bot"
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                    ) : (
+                      <Bot className="h-3.5 w-3.5" />
+                    )}
                   </div>
                 )}
 

@@ -8,9 +8,18 @@
 --   expiry, preferences (metadata) and credentials (workflow_credentials).
 --
 -- TABLE MAP
---   users                  who the person is (Telegram identity, role, status)
+--   users                  who the person is (name, role, account status, email/image).
+--                          Legacy: telegram_id, username, reason_for_access are no longer
+--                          the source of truth (see user_identities / workflow_access_requests).
+--   user_identities        one row per sign-in method (telegram, google, ...) per user;
+--                          this is how a Telegram ID or Google ID is mapped to a user
+--   workflow_channels      where a workflow lives for users: its Telegram bot username,
+--                          WhatsApp number, etc. (public info only, NEVER bot tokens)
+--   workflow_access_requests  why a user wants a specific workflow + the admin's decision;
+--                          approving one creates the grant in user_workflow_access
 --   workflows              the catalog of workflows (slug, active flag, requirements)
---   user_workflow_access   which user may use which workflow (quota, expiry, preferences)
+--   user_workflow_access   which user may use which workflow (quota, expiry, preferences,
+--                          and granted_via = admin / payment / promo)
 --   workflow_credentials   secrets for one user + one workflow (tokens/API keys),
 --                          stored encrypted in Supabase Vault, never in this table
 --   job_runs               execution history of the job-xray workflow
@@ -35,6 +44,17 @@ CREATE EXTENSION IF NOT EXISTS supabase_vault WITH SCHEMA vault;
 -- ----------------------------------------------------------------------------
 CREATE TYPE public.user_role AS ENUM ('admin', 'user', 'guest');
 CREATE TYPE public.access_status AS ENUM ('pending', 'approved', 'rejected', 'locked');
+
+-- Status of a request for ONE workflow. Add 'awaiting_payment' later with ALTER TYPE ... ADD VALUE.
+CREATE TYPE public.access_request_status AS ENUM ('pending', 'approved', 'rejected');
+
+-- How an access grant was created.
+CREATE TYPE public.access_grant_source AS ENUM ('admin', 'payment', 'promo');
+
+-- Exists in the live database but is currently UNUSED (job_runs.status is plain text).
+CREATE TYPE public.run_status AS ENUM
+    ('pending', 'validating', 'scraping_post', 'scraping_author', 'scraping_company',
+     'generating_report', 'completed', 'failed');
 
 -- How a credential authenticates. The encrypted payload shape depends on this:
 --   api_key              {"api_key": "..."}
@@ -101,11 +121,72 @@ CREATE TABLE public.user_workflow_access (
     granted_at   timestamp with time zone NOT NULL DEFAULT now(),
     expires_at   timestamp with time zone,         -- NULL = never expires
     metadata     jsonb                             DEFAULT '{}'::jsonb,  -- non-secret per-workflow preferences
+    granted_via  public.access_grant_source NOT NULL DEFAULT 'admin'::public.access_grant_source,
     CONSTRAINT user_workflow_access_pkey PRIMARY KEY (user_id, workflow_id),
     CONSTRAINT user_workflow_access_user_id_fkey
         FOREIGN KEY (user_id) REFERENCES public.users (id) ON DELETE CASCADE,
     CONSTRAINT user_workflow_access_workflow_id_fkey
         FOREIGN KEY (workflow_id) REFERENCES public.workflows (id) ON DELETE CASCADE
+);
+
+-- The channels a workflow is reachable through (Telegram bot, WhatsApp number, web, ...).
+-- One row per workflow per channel; a workflow can have several. Values for "channel" match
+-- job_runs.channel. Public information only: bot tokens and WhatsApp API tokens are SECRETS
+-- and belong in n8n credentials / environment variables, not here.
+CREATE TABLE public.workflow_channels (
+    id          uuid                     NOT NULL DEFAULT gen_random_uuid(),
+    workflow_id uuid                     NOT NULL,
+    channel     text                     NOT NULL,  -- 'telegram', 'whatsapp', 'web', ...
+    handle      text                     NOT NULL,  -- bot username without '@', or WhatsApp number (international format)
+    url         text,                               -- e.g. https://t.me/my_bot or https://wa.me/9627...
+    is_active   boolean                  NOT NULL DEFAULT true,
+    created_at  timestamp with time zone NOT NULL DEFAULT now(),
+    CONSTRAINT workflow_channels_pkey PRIMARY KEY (id),
+    CONSTRAINT workflow_channels_handle_check CHECK (length(btrim(handle)) > 0),
+    CONSTRAINT workflow_channels_workflow_id_fkey
+        FOREIGN KEY (workflow_id) REFERENCES public.workflows (id) ON DELETE CASCADE,
+    CONSTRAINT uq_workflow_channel UNIQUE (workflow_id, channel)
+);
+
+-- One row per way a person can sign in. (provider, provider_user_id) is unique, so one
+-- Telegram/Google account maps to exactly one user; a user has at most one identity per provider.
+-- provider_user_id is text because Telegram IDs are numbers but Google IDs are strings.
+-- Existing users' Telegram IDs were copied here as the first rows.
+CREATE TABLE public.user_identities (
+    id               uuid                     NOT NULL DEFAULT gen_random_uuid(),
+    user_id          uuid                     NOT NULL,
+    provider         text                     NOT NULL,  -- 'telegram', 'google', ...
+    provider_user_id text                     NOT NULL,  -- Telegram ID, Google "sub", ...
+    handle           text,                               -- e.g. Telegram username
+    created_at       timestamp with time zone NOT NULL DEFAULT now(),
+    CONSTRAINT user_identities_pkey PRIMARY KEY (id),
+    CONSTRAINT user_identities_user_id_fkey
+        FOREIGN KEY (user_id) REFERENCES public.users (id) ON DELETE CASCADE,
+    CONSTRAINT uq_identity_provider_account UNIQUE (provider, provider_user_id),
+    CONSTRAINT uq_identity_user_provider    UNIQUE (user_id, provider)
+);
+
+-- A user's request for ONE workflow, with the reason and the decision.
+-- Rejected/approved requests are kept as history. Approving a request is what leads to a row
+-- in user_workflow_access (the grant the gatekeeper checks).
+CREATE TABLE public.workflow_access_requests (
+    id          uuid                          NOT NULL DEFAULT gen_random_uuid(),
+    user_id     uuid                          NOT NULL,
+    workflow_id uuid                          NOT NULL,
+    reason      text                          NOT NULL,  -- "why do you need this workflow?"
+    status      public.access_request_status  NOT NULL DEFAULT 'pending'::public.access_request_status,
+    reviewed_by uuid,                                    -- the admin who decided
+    reviewed_at timestamp with time zone,
+    created_at  timestamp with time zone      NOT NULL DEFAULT now(),
+    updated_at  timestamp with time zone      NOT NULL DEFAULT now(),
+    CONSTRAINT workflow_access_requests_pkey PRIMARY KEY (id),
+    CONSTRAINT workflow_access_requests_reason_check CHECK (length(btrim(reason)) > 0),
+    CONSTRAINT workflow_access_requests_user_id_fkey
+        FOREIGN KEY (user_id) REFERENCES public.users (id) ON DELETE CASCADE,
+    CONSTRAINT workflow_access_requests_workflow_id_fkey
+        FOREIGN KEY (workflow_id) REFERENCES public.workflows (id) ON DELETE CASCADE,
+    CONSTRAINT workflow_access_requests_reviewed_by_fkey
+        FOREIGN KEY (reviewed_by) REFERENCES public.users (id) ON DELETE SET NULL
 );
 
 -- Secrets for ONE user in ONE workflow. The secret itself lives encrypted in
@@ -181,6 +262,15 @@ CREATE INDEX idx_job_runs_status         ON public.job_runs USING btree (status)
 CREATE INDEX idx_job_runs_normalized_url ON public.job_runs USING btree (normalized_url);
 CREATE INDEX idx_job_runs_created_at     ON public.job_runs USING btree (created_at);
 
+CREATE INDEX idx_access_requests_status      ON public.workflow_access_requests USING btree (status);
+CREATE INDEX idx_access_requests_user_id     ON public.workflow_access_requests USING btree (user_id);
+CREATE INDEX idx_access_requests_workflow_id ON public.workflow_access_requests USING btree (workflow_id);
+
+-- A user may have only ONE pending request per workflow (history is unlimited).
+CREATE UNIQUE INDEX uq_access_requests_one_pending
+    ON public.workflow_access_requests USING btree (user_id, workflow_id)
+    WHERE (status = 'pending'::public.access_request_status);
+
 -- ----------------------------------------------------------------------------
 -- 4. Functions
 -- ----------------------------------------------------------------------------
@@ -221,18 +311,23 @@ DECLARE
     v_access RECORD;
     v_first_name TEXT;
 BEGIN
-    -- 1. Authenticate User (401 if not found)
-    SELECT u.id, u.full_name, u.status, u.role, u.username INTO v_user
-    FROM public.users u
-    WHERE u.telegram_id = p_telegram_id;
+    -- 1. Authenticate User through the Telegram identity (401 if not found)
+    SELECT u.id, u.full_name, u.status, u.role, i.handle AS username INTO v_user
+    FROM public.user_identities i
+    JOIN public.users u ON u.id = i.user_id
+    WHERE i.provider = 'telegram' AND i.provider_user_id = p_telegram_id::text;
 
     IF NOT FOUND THEN
         RETURN QUERY SELECT false, 401, 'UNREGISTERED'::TEXT, NULL::UUID, NULL::UUID, NULL::TEXT, NULL::public.user_role, NULL::INT4;
         RETURN;
     END IF;
 
-    -- Keep Telegram username in sync if it changed (idempotent)
+    -- Keep Telegram username in sync if it changed (identity is the source of truth;
+    -- legacy users.username is kept in step so older readers don't go stale)
     IF p_username IS NOT NULL AND p_username IS DISTINCT FROM v_user.username THEN
+        UPDATE public.user_identities ui
+           SET handle = p_username
+         WHERE ui.user_id = v_user.id AND ui.provider = 'telegram';
         UPDATE public.users SET username = p_username WHERE id = v_user.id;
     END IF;
 
@@ -336,6 +431,56 @@ BEGIN
 END;
 $function$;
 
+-- Registers a Telegram user: creates the user AND their Telegram identity together.
+-- Idempotent: if the Telegram ID is already registered it returns the existing user
+-- (is_new = false). Safe under concurrent calls. New users start with status 'pending'.
+-- The legacy users.telegram_id / username columns are still filled for older readers.
+CREATE OR REPLACE FUNCTION public.register_telegram_user(
+    p_telegram_id        bigint,
+    p_full_name          text,
+    p_username           text DEFAULT NULL::text,
+    p_preferred_language text DEFAULT 'ar'::text
+)
+ RETURNS TABLE(out_user_id uuid, is_new boolean)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_user uuid;
+BEGIN
+    SELECT i.user_id INTO v_user
+    FROM public.user_identities i
+    WHERE i.provider = 'telegram' AND i.provider_user_id = p_telegram_id::text;
+
+    IF FOUND THEN
+        RETURN QUERY SELECT v_user, false;
+        RETURN;
+    END IF;
+
+    BEGIN
+        INSERT INTO public.users (telegram_id, username, full_name, preferred_language)
+        VALUES (p_telegram_id, p_username, p_full_name, p_preferred_language)
+        RETURNING id INTO v_user;
+
+        INSERT INTO public.user_identities (user_id, provider, provider_user_id, handle)
+        VALUES (v_user, 'telegram', p_telegram_id::text, p_username);
+    EXCEPTION WHEN unique_violation THEN
+        -- Lost a race with a concurrent registration: return the winner.
+        SELECT i.user_id INTO v_user
+        FROM public.user_identities i
+        WHERE i.provider = 'telegram' AND i.provider_user_id = p_telegram_id::text;
+        IF NOT FOUND THEN
+            RAISE;
+        END IF;
+        RETURN QUERY SELECT v_user, false;
+        RETURN;
+    END;
+
+    RETURN QUERY SELECT v_user, true;
+END;
+$function$;
+
 -- Creates or updates (upserts) a credential and its encrypted Vault secret.
 -- Calling it again for the same (user, workflow, provider) REPLACES the secret,
 -- which is how a rotated refresh token should be saved.
@@ -434,6 +579,10 @@ CREATE TRIGGER set_workflows_updated_at
     BEFORE UPDATE ON public.workflows
     FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
+CREATE TRIGGER set_access_requests_updated_at
+    BEFORE UPDATE ON public.workflow_access_requests
+    FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
 CREATE TRIGGER trg_delete_credential_secret
     AFTER DELETE ON public.workflow_credentials
     FOR EACH ROW EXECUTE FUNCTION public.delete_credential_secret();
@@ -448,6 +597,15 @@ COMMIT;
 -- workflow_credentials: no client access at all (RLS on, no policies).
 ALTER TABLE public.workflow_credentials ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.workflow_credentials FROM anon, authenticated;
+
+-- Same lock-down for the identity, request and channel tables.
+ALTER TABLE public.user_identities          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.workflow_access_requests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.workflow_channels        ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.user_identities, public.workflow_access_requests, public.workflow_channels FROM anon, authenticated;
+
+REVOKE ALL ON FUNCTION public.register_telegram_user(bigint, text, text, text) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.register_telegram_user(bigint, text, text, text) TO service_role;
 
 REVOKE ALL ON FUNCTION public.authenticate_gatekeeper(bigint, text, text) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.consume_workflow_usage(uuid, text) FROM PUBLIC, anon, authenticated;

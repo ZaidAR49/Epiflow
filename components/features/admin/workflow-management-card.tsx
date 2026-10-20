@@ -16,14 +16,16 @@ import {
   ImageIcon,
 } from "lucide-react";
 import type { AdminWorkflowItem } from "@/lib/db/queries/admin";
+import type { WorkflowChannelItem } from "@/lib/db/queries/workflow-channels";
 import { updateWorkflowAction } from "@/lib/actions/admin";
 import { WorkflowEditDrawer } from "./workflow-edit-drawer";
 
 interface WorkflowManagementCardProps {
   workflows: AdminWorkflowItem[];
+  channels?: WorkflowChannelItem[];
 }
 
-export function WorkflowManagementCard({ workflows }: WorkflowManagementCardProps) {
+export function WorkflowManagementCard({ workflows, channels = [] }: WorkflowManagementCardProps) {
   const t = useTranslations("admin.workflows");
   const router = useRouter();
   const [overrides, setOverrides] = useState<Record<string, Partial<AdminWorkflowItem>>>({});
@@ -226,6 +228,7 @@ export function WorkflowManagementCard({ workflows }: WorkflowManagementCardProp
                   workflow={w}
                   editName={editName}
                   editImageUrl={editImageUrl}
+                  channels={channels.filter((c) => c.workflowId === w.id)}
                   isPending={isPending}
                   onNameChange={setEditName}
                   onImageUrlChange={setEditImageUrl}
