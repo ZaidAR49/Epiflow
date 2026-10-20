@@ -11,6 +11,7 @@ import {
   Sliders,
   XCircle,
   Trash2,
+  Send,
 } from "lucide-react";
 import type { AdminUserItem } from "@/lib/db/queries/admin";
 
@@ -49,7 +50,19 @@ export function UserTableRow({
             <p className="font-medium text-[var(--text)]">
               {u.fullName} {isSelf && <span className="text-[10px] text-[var(--accent)]">(You)</span>}
             </p>
-            <p className="text-[11px] text-[var(--text-muted)]">{u.email ?? "No email"}</p>
+            <div className="flex items-center gap-2 text-[11px] text-[var(--text-muted)] flex-wrap">
+              <span>{u.email ?? "No email"}</span>
+              {u.telegramId && (
+                <span
+                  className="inline-flex items-center gap-1 rounded bg-sky-500/10 px-1.5 py-0.5 text-[10px] font-medium text-sky-400 border border-sky-500/20"
+                  dir="ltr"
+                  title="Telegram Connected"
+                >
+                  <Send className="h-2.5 w-2.5" />
+                  {u.username ? `@${u.username}` : u.telegramId}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </td>

@@ -1,7 +1,8 @@
 import "server-only";
-import { eq } from "drizzle-orm";
+import { eq, and, ne } from "drizzle-orm";
 import { db } from "../client";
 import { users, type User, type NewUser } from "../schema/users";
+import { userIdentities } from "../schema/user-identities";
 
 export async function getUserById(id: string): Promise<User | null> {
   const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
@@ -9,6 +10,22 @@ export async function getUserById(id: string): Promise<User | null> {
 }
 
 export async function getUserByTelegramId(telegramId: number): Promise<User | null> {
+  const identity = await db
+    .select({ user: users })
+    .from(userIdentities)
+    .innerJoin(users, eq(users.id, userIdentities.userId))
+    .where(
+      and(
+        eq(userIdentities.provider, "telegram"),
+        eq(userIdentities.providerUserId, telegramId.toString())
+      )
+    )
+    .limit(1);
+
+  if (identity[0]?.user) {
+    return identity[0].user;
+  }
+
   const result = await db
     .select()
     .from(users)
@@ -92,6 +109,46 @@ export async function linkTelegramToUser(
   telegramId: number,
   username?: string | null
 ): Promise<User | null> {
+  const telegramIdStr = telegramId.toString();
+
+  // 1. Unlink this telegram ID from any other user to prevent unique constraint collisions
+  await db
+    .update(users)
+    .set({
+      telegramId: null,
+      username: null,
+      updatedAt: new Date(),
+    })
+    .where(and(eq(users.telegramId, telegramId), ne(users.id, userId)));
+
+  await db
+    .delete(userIdentities)
+    .where(
+      and(
+        eq(userIdentities.provider, "telegram"),
+        eq(userIdentities.providerUserId, telegramIdStr),
+        ne(userIdentities.userId, userId)
+      )
+    );
+
+  // 2. Upsert identity row for this user
+  await db
+    .insert(userIdentities)
+    .values({
+      userId,
+      provider: "telegram",
+      providerUserId: telegramIdStr,
+      handle: username ?? null,
+    })
+    .onConflictDoUpdate({
+      target: [userIdentities.userId, userIdentities.provider],
+      set: {
+        providerUserId: telegramIdStr,
+        handle: username ?? null,
+      },
+    });
+
+  // 3. Update user record
   const result = await db
     .update(users)
     .set({
@@ -101,5 +158,29 @@ export async function linkTelegramToUser(
     })
     .where(eq(users.id, userId))
     .returning();
+
+  return result[0] ?? null;
+}
+
+export async function unlinkTelegramFromUser(userId: string): Promise<User | null> {
+  await db
+    .delete(userIdentities)
+    .where(
+      and(
+        eq(userIdentities.userId, userId),
+        eq(userIdentities.provider, "telegram")
+      )
+    );
+
+  const result = await db
+    .update(users)
+    .set({
+      telegramId: null,
+      username: null,
+      updatedAt: new Date(),
+    })
+    .where(eq(users.id, userId))
+    .returning();
+
   return result[0] ?? null;
 }

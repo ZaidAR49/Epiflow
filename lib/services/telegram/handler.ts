@@ -13,6 +13,7 @@ import {
   editTelegramMessage,
 } from "./bot-client";
 import { TelegramMessages } from "./formatters";
+import { handleTelegramCommand } from "./command-handler";
 import type { TelegramMessage } from "@/lib/validation/telegram";
 
 /**
@@ -27,6 +28,10 @@ export async function handleTelegramMessage(message: TelegramMessage): Promise<v
   const chatId = message.chat.id;
 
   if (!telegramId) return;
+
+  // 0. Intercept slash commands (/start, /connect, /help)
+  const wasCommand = await handleTelegramCommand(message);
+  if (wasCommand) return;
 
   // 1. Extract and validate LinkedIn URL
   const match = text.match(LINKEDIN_URL_REGEX);
