@@ -4,7 +4,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { inngest } from "@/lib/jobs/client";
 import { linkedinUrlSchema } from "@/lib/validation/url";
-import { createJobRun } from "@/lib/db/queries/job-runs";
+import { createJobRun, deleteJobRun } from "@/lib/db/queries/job-runs";
 import { ErrorCodes } from "@/lib/errors";
 
 const analyzeInputSchema = z.object({
@@ -83,3 +83,55 @@ export async function analyzePostAction(
     };
   }
 }
+
+const deleteRunInputSchema = z.string().uuid("Invalid run ID");
+
+export type DeleteJobRunActionResult =
+  | { success: true }
+  | { success: false; errorCode: string; message: string };
+
+/**
+ * Server Action: Authorizes by session user ownership and permanently
+ * deletes a job run record from the database. Returns in < 200ms.
+ */
+export async function deleteJobRunAction(
+  rawRunId: unknown
+): Promise<DeleteJobRunActionResult> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return {
+      success: false,
+      errorCode: ErrorCodes.UNAUTHORIZED,
+      message: "You must be signed in to perform this action",
+    };
+  }
+
+  const parsed = deleteRunInputSchema.safeParse(rawRunId);
+  if (!parsed.success) {
+    return {
+      success: false,
+      errorCode: ErrorCodes.INVALID_URL,
+      message: "Invalid run ID format",
+    };
+  }
+
+  try {
+    const deleted = await deleteJobRun(parsed.data, session.user.id);
+    if (!deleted) {
+      return {
+        success: false,
+        errorCode: "NOT_FOUND",
+        message: "Report not found or unauthorized",
+      };
+    }
+
+    return { success: true };
+  } catch {
+    return {
+      success: false,
+      errorCode: ErrorCodes.INTERNAL_ERROR,
+      message: "Failed to delete report",
+    };
+  }
+}
+

@@ -90,3 +90,12 @@ export async function markUsageConsumed(id: string): Promise<JobRun | null> {
     .returning();
   return result[0] ?? null;
 }
+
+export async function deleteJobRun(id: string, userId: string): Promise<boolean> {
+  const result = await db
+    .delete(jobRuns)
+    .where(and(eq(jobRuns.id, id), eq(jobRuns.userId, userId)))
+    .returning({ id: jobRuns.id });
+  return result.length > 0;
+}
+

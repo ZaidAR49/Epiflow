@@ -77,3 +77,26 @@ export function resolveInitialRun(
   return { run: match, runId: match ? match.id : targetId };
 }
 
+/**
+ * Triggers the Gmail compose draft creation API and returns the created draft URL.
+ */
+export async function requestDraftUrl(
+  metadata: OpportunityMetadata,
+  defaultRole?: string,
+  defaultCompany?: string
+): Promise<string | undefined> {
+  const res = await fetch("/api/test-bench/draft", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      role: metadata.role || defaultRole || "Job Opportunity",
+      company: metadata.company || defaultCompany || "Company",
+      hrName: metadata.hrName,
+      hrEmail: metadata.hrEmail,
+    }),
+  });
+  const data = await res.json();
+  return data.draftUrl;
+}
+
+

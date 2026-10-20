@@ -9,7 +9,14 @@ import { AnalysisStepper } from "./analysis-stepper";
 import { StructuredReportCard } from "../report/structured-report-card";
 import { HistoryArchive } from "./history-archive";
 import { EmailPromptModal } from "../test-bench/email-prompt-modal";
-import { createCompletedRunItem, syncActiveRunUrl, resolveInitialRun } from "./dashboard-utils";
+import { DeleteReportModal } from "./delete-report-modal";
+import { deleteJobRunAction } from "@/lib/actions/analyze";
+import {
+  createCompletedRunItem,
+  syncActiveRunUrl,
+  resolveInitialRun,
+  requestDraftUrl,
+} from "./dashboard-utils";
 
 interface DashboardViewProps {
   initialRuns: JobRun[];
@@ -60,6 +67,10 @@ export function DashboardView({
       syncActiveRunUrl(selectedRunId);
     }
   }, [selectedRunId]);
+
+  // Delete Modal State
+  const [deleteTargetRun, setDeleteTargetRun] = useState<JobRun | null>(null);
+  const [isDeletingRun, setIsDeletingRun] = useState(false);
 
   // Draft Modal State
   const [draftModalOpen, setDraftModalOpen] = useState(false);
@@ -172,25 +183,43 @@ export function DashboardView({
     setIsDrafting(true);
 
     try {
-      const res = await fetch("/api/test-bench/draft", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          role: activeMetadata.role || activeReport?.role?.title || "Job Opportunity",
-          company: activeMetadata.company || activeReport?.company?.name || "Company",
-          hrName: activeMetadata.hrName,
-          hrEmail: activeMetadata.hrEmail,
-        }),
-      });
-
-      const data = await res.json();
-      if (data.draftUrl) {
-        setDraftUrl(data.draftUrl);
+      const draft = await requestDraftUrl(
+        activeMetadata,
+        activeReport?.role?.title,
+        activeReport?.company?.name
+      );
+      if (draft) {
+        setDraftUrl(draft);
       }
     } catch {
       // Handled in modal
     } finally {
       setIsDrafting(false);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTargetRun || isDeletingRun) return;
+    setIsDeletingRun(true);
+    try {
+      const res = await deleteJobRunAction(deleteTargetRun.id);
+      if (res.success) {
+        setRunsList((prev) => prev.filter((r) => r.id !== deleteTargetRun.id));
+        if (selectedRunId === deleteTargetRun.id) {
+          setActiveReport(null);
+          setActiveMetadata(null);
+          setActiveSourceUrl(undefined);
+          setSelectedRunId(undefined);
+          syncActiveRunUrl(undefined);
+        }
+        setDeleteTargetRun(null);
+      } else {
+        setScanError(res.message);
+      }
+    } catch {
+      setScanError("Failed to delete report. Please try again.");
+    } finally {
+      setIsDeletingRun(false);
     }
   };
 
@@ -244,6 +273,7 @@ export function DashboardView({
         runs={runsList}
         selectedRunId={selectedRunId}
         onSelectRun={handleSelectPastRun}
+        onDeleteRun={(run) => setDeleteTargetRun(run)}
       />
 
       {/* 5. 1-Click Gmail Compose Modal */}
@@ -262,6 +292,20 @@ export function DashboardView({
           }}
           draftUrl={draftUrl}
           isDrafting={isDrafting}
+        />
+      )}
+
+      {/* 6. Delete Report Confirmation Modal */}
+      {deleteTargetRun && (
+        <DeleteReportModal
+          isOpen={Boolean(deleteTargetRun)}
+          onClose={() => {
+            if (!isDeletingRun) setDeleteTargetRun(null);
+          }}
+          onConfirm={handleConfirmDelete}
+          isDeleting={isDeletingRun}
+          roleTitle={(deleteTargetRun.report as StructuredReport)?.role?.title}
+          companyName={(deleteTargetRun.report as StructuredReport)?.role?.company}
         />
       )}
     </div>

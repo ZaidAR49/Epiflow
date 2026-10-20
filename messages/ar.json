@@ -64,7 +64,13 @@
     "statsEmails": "إيميلات مكتشفة",
     "statsUsage": "الرصيد المستهلك",
     "activeReportBadge": "تقرير الفحص الحالي",
-    "historyBadge": "الأرشيف المحفوظ"
+    "historyBadge": "الأرشيف المحفوظ",
+    "deleteReport": "حذف التقرير",
+    "deleteConfirmTitle": "حذف التقرير المحفوظ؟",
+    "deleteConfirmDesc": "سيتم حذف هذا التقرير نهائياً من سجلك المحفوظ. لن يتم استرداد الرصيد المستهلك.",
+    "confirmDelete": "حذف",
+    "cancel": "إلغاء",
+    "deleting": "جارٍ الحذف..."
   },
   "stepper": {
     "validating": "التحقق من الرابط والاشتراك",

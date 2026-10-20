@@ -12,6 +12,7 @@ import {
   Clock,
   Eye,
   Filter,
+  Trash2,
 } from "lucide-react";
 import type { JobRun } from "@/lib/db/schema/job-runs";
 import type { StructuredReport } from "@/lib/validation/report";
@@ -20,6 +21,7 @@ interface HistoryArchiveProps {
   runs: JobRun[];
   selectedRunId?: string;
   onSelectRun: (run: JobRun) => void;
+  onDeleteRun?: (run: JobRun) => void;
 }
 
 type FilterTab = "all" | "completed" | "email" | "failed";
@@ -28,6 +30,7 @@ export function HistoryArchive({
   runs,
   selectedRunId,
   onSelectRun,
+  onDeleteRun,
 }: HistoryArchiveProps) {
   const t = useTranslations("dashboard");
   const locale = useLocale();
@@ -255,6 +258,17 @@ export function HistoryArchive({
                     >
                       <Eye className="h-3.5 w-3.5" />
                       <span>{t("viewReport")}</span>
+                    </button>
+                  )}
+
+                  {onDeleteRun && (
+                    <button
+                      type="button"
+                      onClick={() => onDeleteRun(run)}
+                      className="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:text-rose-400 hover:border-rose-500/30 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                      title={t("deleteReport")}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   )}
                 </div>

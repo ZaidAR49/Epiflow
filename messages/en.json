@@ -64,7 +64,13 @@
     "statsEmails": "Emails Found",
     "statsUsage": "Quota Used",
     "activeReportBadge": "Active Inspection",
-    "historyBadge": "Saved Archive"
+    "historyBadge": "Saved Archive",
+    "deleteReport": "Delete Report",
+    "deleteConfirmTitle": "Delete Saved Report?",
+    "deleteConfirmDesc": "This will permanently remove this report from your saved history. Consumed quota is not refunded.",
+    "confirmDelete": "Delete",
+    "cancel": "Cancel",
+    "deleting": "Deleting..."
   },
   "stepper": {
     "validating": "Verifying Link & Access",
