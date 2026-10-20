@@ -9,10 +9,13 @@ import { DashboardView } from "@/components/features/dashboard/dashboard-view";
 
 interface DashboardPageProps {
   params: Promise<{ locale: string }>;
+  searchParams?: Promise<{ runId?: string }>;
 }
 
-export default async function DashboardPage({ params }: DashboardPageProps) {
+export default async function DashboardPage({ params, searchParams }: DashboardPageProps) {
   const { locale } = await params;
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const initialSelectedRunId = resolvedSearchParams?.runId;
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -47,6 +50,7 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
           initialRuns={runs}
           initialQuota={remainingQuota}
           preferredLanguage={workflow?.metadata?.preferred_language || "ar"}
+          initialSelectedRunId={initialSelectedRunId}
         />
       </main>
     </div>

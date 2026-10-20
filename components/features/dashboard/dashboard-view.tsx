@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { AlertCircle } from "lucide-react";
 import type { JobRun } from "@/lib/db/schema/job-runs";
 import type { StructuredReport, OpportunityMetadata } from "@/lib/validation/report";
@@ -9,17 +9,20 @@ import { AnalysisStepper } from "./analysis-stepper";
 import { StructuredReportCard } from "../report/structured-report-card";
 import { HistoryArchive } from "./history-archive";
 import { EmailPromptModal } from "../test-bench/email-prompt-modal";
+import { createCompletedRunItem, syncActiveRunUrl } from "./dashboard-utils";
 
 interface DashboardViewProps {
   initialRuns: JobRun[];
   initialQuota: number | null;
   preferredLanguage?: "ar" | "en";
+  initialSelectedRunId?: string;
 }
 
 export function DashboardView({
   initialRuns,
   initialQuota,
   preferredLanguage = "ar",
+  initialSelectedRunId,
 }: DashboardViewProps) {
   const [runsList, setRunsList] = useState<JobRun[]>(initialRuns);
   const [quota, setQuota] = useState<number | null>(initialQuota);
@@ -27,11 +30,47 @@ export function DashboardView({
   const [currentStatus, setCurrentStatus] = useState("pending");
   const [scanError, setScanError] = useState<string | null>(null);
 
+  // Hydrate initial active report from props if present
+  const initialRun = initialSelectedRunId
+    ? initialRuns.find((r) => r.id === initialSelectedRunId)
+    : undefined;
+  const initialReportObj = initialRun?.report
+    ? (initialRun.report as StructuredReport & { metadata?: OpportunityMetadata })
+    : null;
+
   // Active / Selected Report State
-  const [activeReport, setActiveReport] = useState<StructuredReport | null>(null);
-  const [activeMetadata, setActiveMetadata] = useState<OpportunityMetadata | null>(null);
-  const [activeSourceUrl, setActiveSourceUrl] = useState<string | undefined>(undefined);
-  const [selectedRunId, setSelectedRunId] = useState<string | undefined>(undefined);
+  const [activeReport, setActiveReport] = useState<StructuredReport | null>(
+    initialReportObj ? (initialReportObj as StructuredReport) : null
+  );
+  const [activeMetadata, setActiveMetadata] = useState<OpportunityMetadata | null>(
+    initialReportObj?.metadata || null
+  );
+  const [activeSourceUrl, setActiveSourceUrl] = useState<string | undefined>(
+    initialRun?.url
+  );
+  const [selectedRunId, setSelectedRunId] = useState<string | undefined>(
+    initialSelectedRunId
+  );
+
+  // Sync with URL query or sessionStorage fallback so report survives locale switches
+  useEffect(() => {
+    if (activeReport || typeof window === "undefined") return;
+
+    const sp = new URLSearchParams(window.location.search);
+    const targetId = sp.get("runId") || sessionStorage.getItem("active_dashboard_run_id");
+
+    if (targetId) {
+      const found = runsList.find((r) => r.id === targetId);
+      if (found?.report) {
+        const rep = found.report as StructuredReport & { metadata?: OpportunityMetadata };
+        setActiveReport(rep);
+        setActiveMetadata(rep.metadata || null);
+        setActiveSourceUrl(found.url);
+        setSelectedRunId(found.id);
+        syncActiveRunUrl(found.id);
+      }
+    }
+  }, [runsList, activeReport]);
 
   // Draft Modal State
   const [draftModalOpen, setDraftModalOpen] = useState(false);
@@ -90,30 +129,20 @@ export function DashboardView({
               setActiveMetadata(completedMetadata);
               setActiveSourceUrl(url);
               setSelectedRunId(event.runId);
+              syncActiveRunUrl(event.runId);
 
               if (typeof event.remainingQuota === "number") {
                 setQuota(event.remainingQuota);
               }
 
               // Prepend newly completed run into history list
-              const newRunItem: JobRun = {
-                id: event.runId || `run_${Date.now()}`,
-                userId: "current_user",
-                channel: "web",
+              const newRunItem = createCompletedRunItem(
+                event.runId,
                 url,
-                normalizedUrl: url,
-                status: "completed",
-                postData: null,
-                authorData: null,
-                companyData: null,
-                report: { ...completedReport, metadata: completedMetadata },
-                telegramReport: event.report?.telegramReport || null,
-                errorCode: null,
-                errorMessage: null,
-                usageConsumedAt: new Date(),
-                createdAt: new Date(),
-                updatedAt: new Date(),
-              };
+                completedReport,
+                completedMetadata,
+                event.report?.telegramReport
+              );
               setRunsList((prev) => [newRunItem, ...prev]);
 
               // Smoothly scroll down to the generated report
@@ -142,6 +171,7 @@ export function DashboardView({
     setActiveMetadata(rep.metadata || null);
     setActiveSourceUrl(run.url);
     setSelectedRunId(run.id);
+    syncActiveRunUrl(run.id);
 
     setTimeout(() => {
       reportRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -211,7 +241,10 @@ export function DashboardView({
             }}
             onClose={() => {
               setActiveReport(null);
+              setActiveMetadata(null);
+              setActiveSourceUrl(undefined);
               setSelectedRunId(undefined);
+              syncActiveRunUrl(undefined);
             }}
           />
         </div>

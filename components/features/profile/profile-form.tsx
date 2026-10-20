@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
-import { useTranslations } from "next-intl";
-import { User, CheckCircle2, AlertCircle, Save, Loader2, ShieldCheck, Mail } from "lucide-react";
+import { signOut } from "next-auth/react";
+import { useTranslations, useLocale } from "next-intl";
+import { User, CheckCircle2, AlertCircle, Save, Loader2, ShieldCheck, Mail, LogOut } from "lucide-react";
 import { updateProfileAction } from "@/lib/actions/profile";
 
 interface ProfileFormProps {
@@ -19,7 +20,10 @@ interface ProfileFormProps {
 
 export function ProfileForm({ initialData }: ProfileFormProps) {
   const t = useTranslations("profile");
+  const tAuth = useTranslations("auth");
+  const locale = useLocale();
   const [isPending, startTransition] = useTransition();
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const [fullName, setFullName] = useState(initialData.fullName);
   const [preferredLanguage, setPreferredLanguage] = useState<"ar" | "en">(
@@ -78,6 +82,15 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
     }
   };
 
+  const handleSignOut = async () => {
+    setIsSigningOut(true);
+    try {
+      await signOut({ callbackUrl: `/${locale}/sign-in` });
+    } catch {
+      setIsSigningOut(false);
+    }
+  };
+
   return (
     <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[var(--border)] pb-5">
@@ -104,11 +117,25 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {getStatusBadge()}
           <span className="rounded-md bg-[var(--surface-2)] px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] border border-[var(--border)]">
             {initialData.role}
           </span>
+          <button
+            type="button"
+            onClick={handleSignOut}
+            disabled={isSigningOut}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-1 text-xs font-semibold text-rose-300 hover:bg-rose-500/20 transition-colors disabled:opacity-50 cursor-pointer"
+            title={tAuth("signOut")}
+          >
+            {isSigningOut ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <LogOut className="h-3.5 w-3.5" />
+            )}
+            <span>{tAuth("signOut")}</span>
+          </button>
         </div>
       </div>
 

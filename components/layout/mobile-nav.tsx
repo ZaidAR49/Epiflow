@@ -1,0 +1,202 @@
+"use client";
+
+import React, { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
+import {
+  Menu,
+  LayoutDashboard,
+  Sliders,
+  ShieldCheck,
+  User,
+  LogIn,
+  LogOut,
+  Globe,
+} from "lucide-react";
+import {
+  Sheet,
+  SheetTrigger,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
+
+interface MobileNavProps {
+  userRole?: string;
+  userName?: string | null;
+  userImage?: string | null;
+  isSignedIn?: boolean;
+}
+
+export function MobileNav({
+  userRole,
+  userName,
+  userImage,
+  isSignedIn = false,
+}: MobileNavProps) {
+  const [open, setOpen] = useState(false);
+  const locale = useLocale();
+  const pathname = usePathname();
+  const t = useTranslations("common");
+  const tAuth = useTranslations("auth");
+
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname);
+    setOpen(false);
+  }
+
+  const toggleLanguage = () => {
+    const nextLocale = locale === "en" ? "ar" : "en";
+    const segments = pathname.split("/");
+    if (segments[1] === "en" || segments[1] === "ar") {
+      segments[1] = nextLocale;
+    } else {
+      segments.unshift("", nextLocale);
+    }
+    const search = typeof window !== "undefined" ? window.location.search : "";
+    const newPath = (segments.join("/") || `/${nextLocale}`) + search;
+    window.location.href = newPath;
+  };
+
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <button
+          type="button"
+          aria-label={t("menu")}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface-2)]/80 text-[var(--text)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors focus:outline-hidden focus:ring-2 focus:ring-[var(--accent)]"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+      </SheetTrigger>
+
+      <SheetContent side="end" className="flex flex-col justify-between overflow-y-auto">
+        <div className="space-y-6">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-3">
+              {isSignedIn ? (
+                <div className="flex items-center gap-3">
+                  <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-[var(--accent)]/30 bg-[var(--surface-2)] border border-[var(--border)]">
+                    {userImage ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={userImage}
+                        alt={userName || "User"}
+                        className="h-full w-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <User className="h-5 w-5 text-[var(--accent)]" />
+                    )}
+                  </div>
+                  <div className="flex flex-col text-start">
+                    <span className="text-sm font-bold text-[var(--text)]">
+                      {userName || "User"}
+                    </span>
+                    {userRole === "admin" && (
+                      <span className="text-[10px] font-semibold text-emerald-400">
+                        {t("admin")}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <span>{t("appName")}</span>
+              )}
+            </SheetTitle>
+            <SheetDescription className="sr-only">
+              {t("navigation")}
+            </SheetDescription>
+          </SheetHeader>
+
+          {/* Navigation Links */}
+          <div className="space-y-1.5">
+            {isSignedIn && (
+              <Link
+                href={`/${locale}/dashboard`}
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-2)] hover:text-[var(--accent)] transition-colors"
+              >
+                <LayoutDashboard className="h-4 w-4 text-[var(--accent)]" />
+                <span>{t("dashboard")}</span>
+              </Link>
+            )}
+
+            {userRole === "admin" && (
+              <>
+                <Link
+                  href={`/${locale}/test-workflow`}
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-2)] hover:text-[var(--accent)] transition-colors"
+                >
+                  <Sliders className="h-4 w-4 text-sky-400" />
+                  <span>{t("testBench")}</span>
+                </Link>
+
+                <Link
+                  href={`/${locale}/admin`}
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium text-[var(--accent)] bg-[var(--accent)]/10 hover:bg-[var(--accent)]/20 transition-colors"
+                >
+                  <ShieldCheck className="h-4 w-4" />
+                  <span>{t("admin")}</span>
+                </Link>
+              </>
+            )}
+
+            {isSignedIn && (
+              <Link
+                href={`/${locale}/profile`}
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-2)] hover:text-[var(--accent)] transition-colors"
+              >
+                <User className="h-4 w-4 text-emerald-400" />
+                <span>{t("profile")}</span>
+              </Link>
+            )}
+          </div>
+        </div>
+
+        {/* Footer Actions */}
+        <div className="border-t border-[var(--border)] pt-4 space-y-3">
+          <button
+            type="button"
+            onClick={toggleLanguage}
+            className="w-full flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--surface-2)]/60 px-4 py-2.5 text-xs font-semibold text-[var(--text)] hover:border-[var(--accent)] transition-colors"
+          >
+            <span className="flex items-center gap-2">
+              <Globe className="h-4 w-4 text-[var(--accent)]" />
+              <span>{t("language")}</span>
+            </span>
+            <span className="font-bold text-[var(--accent)]">
+              {locale === "en" ? "العربية" : "English"}
+            </span>
+          </button>
+
+          {isSignedIn ? (
+            <Link
+              href={`/${locale}/sign-in`}
+              onClick={() => setOpen(false)}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-2.5 text-xs font-semibold text-rose-300 hover:bg-rose-500/20 transition-colors"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>{tAuth("signOut")}</span>
+            </Link>
+          ) : (
+            <Link
+              href={`/${locale}/sign-in`}
+              onClick={() => setOpen(false)}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-[var(--accent)]/90 transition-colors"
+            >
+              <LogIn className="h-4 w-4" />
+              <span>{tAuth("signInWithGoogle")}</span>
+            </Link>
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}

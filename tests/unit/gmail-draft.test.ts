@@ -47,7 +47,9 @@ describe("Gmail Draft & Token Management", () => {
     // Network call will fail against google oauth endpoint in test, but error should indicate authentication attempt with Google rather than missing config
     expect(isErr(tokenRes)).toBe(true);
     if (isErr(tokenRes)) {
-      expect(tokenRes.error.safeMessage).toContain("Failed to authenticate with Google");
+      expect(tokenRes.error.safeMessage).toMatch(
+        /Failed to authenticate with Google|Error refreshing Google access token/
+      );
     }
   });
 

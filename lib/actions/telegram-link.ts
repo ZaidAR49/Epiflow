@@ -8,7 +8,11 @@ import {
   manualTelegramLinkSchema,
   type ManualTelegramLinkInput,
 } from "@/lib/validation/telegram-link";
-import { linkTelegramToUser, unlinkTelegramFromUser } from "@/lib/db/queries/users";
+import {
+  linkTelegramToUser,
+  unlinkTelegramFromUser,
+  getUserById,
+} from "@/lib/db/queries/users";
 import { saveTelegramLinkToken } from "@/lib/db/queries/telegram-link";
 import { getWorkflowChannelBySlug } from "@/lib/db/queries/workflow-channels";
 
@@ -189,6 +193,55 @@ export async function disconnectTelegramAction(): Promise<TelegramLinkActionResu
       success: false,
       errorCode: ErrorCodes.INTERNAL_ERROR,
       message: "An unexpected error occurred while disconnecting Telegram",
+    };
+  }
+}
+
+export interface TelegramStatusResult {
+  isConnected: boolean;
+  telegramId: number | null;
+  username: string | null;
+}
+
+/**
+ * Checks the current user's Telegram connection status.
+ */
+export async function checkTelegramStatusAction(): Promise<
+  TelegramLinkActionResult<TelegramStatusResult>
+> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return {
+      success: false,
+      errorCode: ErrorCodes.UNAUTHORIZED,
+      message: "You must be signed in to check status",
+    };
+  }
+
+  try {
+    const user = await getUserById(session.user.id);
+    if (!user) {
+      return {
+        success: false,
+        errorCode: "USER_NOT_FOUND",
+        message: "User account could not be found",
+      };
+    }
+
+    return {
+      success: true,
+      data: {
+        isConnected: user.telegramId !== null,
+        telegramId: user.telegramId,
+        username: user.username,
+      },
+    };
+  } catch (error) {
+    logger.error({ err: error, userId: session.user.id }, "Failed to check Telegram status");
+    return {
+      success: false,
+      errorCode: ErrorCodes.INTERNAL_ERROR,
+      message: "Failed to check status",
     };
   }
 }

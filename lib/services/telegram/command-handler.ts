@@ -35,6 +35,18 @@ export async function handleTelegramCommand(message: TelegramMessage): Promise<b
 
     const userId = await verifyAndConsumeTelegramLinkToken(tokenHash);
     if (!userId) {
+      // Check if this Telegram account is already linked to a user
+      const existingUser = await getUserByTelegramId(telegramId);
+      if (existingUser) {
+        const isEnglish = existingUser.preferredLanguage === "en";
+        const reply = isEnglish
+          ? `👋 <b>Your Telegram account is already connected to JobPost X-Ray!</b>\n\nWelcome back, <b>${existingUser.fullName}</b>. Your account is already linked and ready — no need to reconnect.\n\n📌 Send any LinkedIn job post link here and I will analyze it for you right away! 🚀`
+          : `👋 <b>حسابك مرتبط بالفعل في JobPost X-Ray!</b>\n\nأهلاً بك مجدداً يا <b>${existingUser.fullName}</b>. حسابك متصل ومفعّل وجاهز للاستخدام، لا داعي لإعادة الربط.\n\n📌 أرسل أي رابط لمنشور وظيفة من LinkedIn وسأقوم بتحليله لك فوراً! 🚀`;
+
+        await sendTelegramMessage(chatId, reply, { isRtl: !isEnglish, parseMode: "HTML" });
+        return true;
+      }
+
       await sendTelegramMessage(
         chatId,
         "⚠️ رمز الربط غير صالح أو انتهت صلاحيته (الصلاحية 10 دقائق).\n\nيرجى فتح صفحة الملف الشخصي على الموقع وتوليد رابط جديد.",
@@ -47,11 +59,16 @@ export async function handleTelegramCommand(message: TelegramMessage): Promise<b
       await linkTelegramToUser(userId, telegramId, username);
       const user = await getUserById(userId);
       const name = user?.fullName || "مستخدم JobPost X-Ray";
+      const isEnglish = user?.preferredLanguage === "en";
+
+      const welcomeMsg = isEnglish
+        ? `🎉 <b>Your account has been connected to JobPost X-Ray!</b>\n\nWelcome, <b>${name}</b>!\nYou can now send any LinkedIn job post link here and I will analyze it and extract all details for you immediately! 🚀`
+        : `🎉 <b>تم ربط حسابك في JobPost X-Ray بنجاح!</b>\n\nمرحباً بك يا <b>${name}</b>.\nأصبح بإمكانك الآن إرسال أي رابط لمنشور وظيفة من LinkedIn، وسأقوم بتحليله واستخراج كافة التفاصيل لك فوراً! 🚀`;
 
       await sendTelegramMessage(
         chatId,
-        `🎉 <b>تم ربط حسابك في JobPost X-Ray بنجاح!</b>\n\nمرحباً بك يا <b>${name}</b>.\nأصبح بإمكانك الآن إرسال أي رابط لمنشور وظيفة من LinkedIn، وسأقوم بتحليله واستخراج كافة التفاصيل لك فوراً! 🚀`,
-        { isRtl: true, parseMode: "HTML" }
+        welcomeMsg,
+        { isRtl: !isEnglish, parseMode: "HTML" }
       );
       logger.info({ userId, telegramId, username }, "Successfully linked Telegram account via deep link");
     } catch (err) {
@@ -70,10 +87,15 @@ export async function handleTelegramCommand(message: TelegramMessage): Promise<b
   if (text === "/start" || text === "/connect") {
     const existingUser = await getUserByTelegramId(telegramId);
     if (existingUser) {
+      const isEnglish = existingUser.preferredLanguage === "en";
+      const welcomeBackMsg = isEnglish
+        ? `👋 <b>Welcome back, ${existingUser.fullName}!</b>\n\nYour account is connected and ready to use. Send any LinkedIn job post link here and I will analyze it for you immediately.`
+        : `👋 <b>أهلاً بك مجدداً يا ${existingUser.fullName}!</b>\n\nحسابك مربوط وجاهز للاستخدام. كل ما عليك فعله هو إرسال أي رابط لمنشور وظيفة من LinkedIn هنا، وسأقوم بتحليله واستخراج كافة البيانات لك فوراً.`;
+
       await sendTelegramMessage(
         chatId,
-        `👋 <b>أهلاً بك مجدداً يا ${existingUser.fullName}!</b>\n\nحسابك مربوط وجاهز للاستخدام. كل ما عليك فعله هو إرسال أي رابط لمنشور وظيفة من LinkedIn هنا، وسأقوم بتحليله واستخراج كافة البيانات لك فوراً.`,
-        { isRtl: true, parseMode: "HTML" }
+        welcomeBackMsg,
+        { isRtl: !isEnglish, parseMode: "HTML" }
       );
     } else {
       const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://jobpostxray.com";

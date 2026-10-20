@@ -164,4 +164,29 @@ describe("Telegram Link Server Actions Authorization", () => {
       expect(result.data.command).toContain("/connect ");
     }
   });
+
+  it("checks status and returns connection state for authenticated user", async () => {
+    const { checkTelegramStatusAction } = await import("@/lib/actions/telegram-link");
+    const { getUserById } = await import("@/lib/db/queries/users");
+    const mockGetUser = getUserById as unknown as ReturnType<typeof vi.fn>;
+
+    mockAuth.mockResolvedValueOnce({
+      user: { id: "user-123" },
+      expires: "2099-01-01",
+    });
+
+    mockGetUser.mockResolvedValueOnce({
+      id: "user-123",
+      telegramId: 2076665816,
+      username: "zaidr49",
+    });
+
+    const result = await checkTelegramStatusAction();
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.isConnected).toBe(true);
+      expect(result.data.telegramId).toBe(2076665816);
+      expect(result.data.username).toBe("zaidr49");
+    }
+  });
 });

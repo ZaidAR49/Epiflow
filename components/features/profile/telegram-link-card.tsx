@@ -29,7 +29,14 @@ export function TelegramLinkCard({ telegramId, username }: TelegramLinkCardProps
   const t = useTranslations("profile");
   const router = useRouter();
 
-  const isConnected = telegramId !== null;
+  const [localConnection, setLocalConnection] = useState<{
+    id: number | null;
+    username: string | null;
+  } | null>(null);
+
+  const connectedId = localConnection !== null ? localConnection.id : telegramId;
+  const connectedUsername = localConnection !== null ? localConnection.username : username;
+  const isConnected = connectedId !== null;
   const [deepLinkData, setDeepLinkData] = useState<TelegramDeepLinkData | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
@@ -60,6 +67,7 @@ export function TelegramLinkCard({ telegramId, username }: TelegramLinkCardProps
     try {
       const res = await disconnectTelegramAction();
       if (res.success) {
+        setLocalConnection({ id: null, username: null });
         setDeepLinkData(null);
         router.refresh();
       }
@@ -71,7 +79,7 @@ export function TelegramLinkCard({ telegramId, username }: TelegramLinkCardProps
   };
 
   return (
-    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm space-y-4">
+    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm space-y-4 overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-[var(--border)] pb-4">
         <div className="flex items-center gap-2.5">
@@ -102,13 +110,13 @@ export function TelegramLinkCard({ telegramId, username }: TelegramLinkCardProps
             <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-2)] p-3">
               <span className="block text-xs text-[var(--text-muted)] mb-1">{t("telegramId")}</span>
               <span className="font-mono text-sm font-semibold text-[var(--text)]" dir="ltr">
-                {telegramId}
+                {connectedId}
               </span>
             </div>
             <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-2)] p-3">
               <span className="block text-xs text-[var(--text-muted)] mb-1">{t("telegramUsername")}</span>
               <span className="font-mono text-sm font-semibold text-[var(--text)]" dir="ltr">
-                {username ? `@${username}` : "—"}
+                {connectedUsername ? `@${connectedUsername}` : "—"}
               </span>
             </div>
           </div>
@@ -148,6 +156,11 @@ export function TelegramLinkCard({ telegramId, username }: TelegramLinkCardProps
               data={deepLinkData}
               onRefresh={handleGenerateLink}
               isLoading={isGenerating}
+              onConnected={(newId, newUser) => {
+                setLocalConnection({ id: newId, username: newUser });
+                setDeepLinkData(null);
+                router.refresh();
+              }}
             />
           ) : (
             <div className="flex justify-start">

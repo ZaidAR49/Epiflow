@@ -101,18 +101,18 @@ export function QuickScanBar({
               }}
               placeholder={t("inputPlaceholder")}
               disabled={isScanning}
-              className="w-full bg-transparent px-3 py-2.5 text-sm font-medium text-[var(--text)] placeholder-[var(--text-muted)]/60 focus:outline-none"
+              className="w-full bg-transparent ps-3 pe-2 py-2.5 text-sm font-medium text-[var(--text)] placeholder-[var(--text-muted)]/60 focus:outline-none"
             />
-            {/* Quick Paste Button */}
+            {/* Quick Paste Button with generous padding and clear spacing */}
             <button
               type="button"
               onClick={handlePaste}
               disabled={isScanning}
-              title={t("pasteClipboard")}
-              className="me-2 inline-flex items-center gap-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1 text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text)] hover:border-[var(--accent)] transition-colors shadow-xs"
+              title={t("paste")}
+              className="ms-2 me-2 shrink-0 inline-flex items-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3.5 py-1.5 text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text)] hover:border-[var(--accent)] hover:bg-[var(--surface-2)] transition-colors shadow-xs cursor-pointer disabled:opacity-50"
             >
-              <Clipboard className="h-3.5 w-3.5" />
-              <span className="hidden md:inline">{t("pasteClipboard")}</span>
+              <Clipboard className="h-3.5 w-3.5 text-[var(--accent)]" />
+              <span>{t("paste")}</span>
             </button>
           </div>
 

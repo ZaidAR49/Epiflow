@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { LocaleSwitcher } from "./locale-switcher";
 import { UserNav } from "@/components/features/auth/user-nav";
+import { MobileNav } from "./mobile-nav";
 
 interface HeaderProps {
   userRole?: string;
@@ -53,16 +54,27 @@ export function Header({
           </div>
         </Link>
 
-        {/* Right Nav: User & Localization */}
-        <div className="flex items-center gap-3">
+        {/* Desktop Navigation: User & Localization */}
+        <div className="hidden md:flex items-center gap-3">
           <UserNav
             isSignedIn={isSignedIn}
             userName={userName}
             userRole={userRole}
             userImage={userImage}
           />
-          <div className="hidden sm:block h-4 w-px bg-[var(--border)]" />
+          <div className="h-4 w-px bg-[var(--border)]" />
           <LocaleSwitcher />
+        </div>
+
+        {/* Mobile & Small Screens: Compact Locale + Burger Menu */}
+        <div className="flex md:hidden items-center gap-2">
+          <LocaleSwitcher />
+          <MobileNav
+            userRole={userRole}
+            userName={userName}
+            userImage={userImage}
+            isSignedIn={isSignedIn}
+          />
         </div>
       </div>
     </header>

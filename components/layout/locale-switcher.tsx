@@ -67,10 +67,11 @@ export function LocaleSwitcher() {
     setIsOpen(false);
     if (nextLocale === currentLocale) return;
 
-    // Replace current locale segment in URL with nextLocale
+    // Replace current locale segment in URL with nextLocale while preserving query parameters
     const segments = pathname.split("/");
     segments[1] = nextLocale;
-    const newPath = segments.join("/") || `/${nextLocale}`;
+    const search = typeof window !== "undefined" ? window.location.search : "";
+    const newPath = (segments.join("/") || `/${nextLocale}`) + search;
     router.push(newPath);
   }
 

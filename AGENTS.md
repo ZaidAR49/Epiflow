@@ -18,6 +18,9 @@ Reference docs: `vision.md` (product + roadmap), `schema.sql` (DB source of trut
 9. **Quota is consumed only after a report is successfully delivered**, atomically, once.
 10. **Never invent data.** Emails, names, company facts must come from source data (see Section 6.3).
 11. **Temporary scripts & files in `temp_scripts/` only:** All temporary test, diagnostic, or scratch scripts MUST be placed in `temp_scripts/` and auto-deleted once the feature or task is complete. Never leave scratch files in the root or commit them.
+12. **Nested Widget Containment:** Inner widgets, child components, buttons, and badges must NEVER exceed, overflow, or bleed outside the bounding edge of their parent container. Always use defensive wrapping (`flex-wrap`, `min-w-0`, stacked defaults) and overflow containment so elements never poke out into surrounding whitespace.
+13. **Screen Real Estate & Arabic Layout:** Leverage the full responsive desktop viewport (`max-w-7xl` or dynamic grids) instead of artificially narrow containers. Arabic text (Cairo font) requires generous horizontal clearance—cards must never be squished into tight columns that cause excessive, tall, and awkward line wrapping.
+14. **Cross-Device Responsiveness & Mobile Burger:** All pages must be fully responsive across desktop, tablet, and mobile. On mobile/small screens (`< md`), navigation must collapse into an accessible slide-out/modal hamburger menu (`menu burger`) rather than crowding the header bar.
 
 ---
 ## 1. Tech Stack
@@ -172,6 +175,9 @@ The result must not look like a stock AI landing page. Concretely:
 ### 4.6 Accessibility & responsiveness
 - WCAG 2.2 AA. Semantic HTML, one `<h1>` per page, landmarks, visible focus ring (`--accent`, 2px, offset 2px), full keyboard support, `aria-live="polite"` for status updates, labeled form controls, 44px minimum touch targets.
 - Mobile-first. Breakpoints `sm 640 / md 768 / lg 1024 / xl 1280`. Test every screen at 360px and 1440px, in LTR and RTL.
+- **Desktop & Screen Real Estate:** Expand main layouts (`max-w-7xl` or dynamic grids) so Arabic typography (Cairo) and dense dashboards have ample horizontal space without tall, cramped line wraps.
+- **Mobile Hamburger Navigation:** On mobile and small screens (`< md`), navigation controls and secondary actions collapse into an accessible slide-out/modal hamburger menu (`menu burger`) to keep the top bar clean and spacious.
+- **Nested Widget Containment:** Ensure inner cards, button bars, and interactive widgets never exceed parent boundaries. Use `min-w-0`, `flex-wrap`, defensive stacking, and overflow containment.
 - Use `next/image`, lazy-load below the fold, no layout shift (reserve space), target LCP < 2.5s, INP < 200ms.
 
 ---

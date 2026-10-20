@@ -41,21 +41,21 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         isSignedIn={Boolean(user.id)}
       />
 
-      <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
         <AdminBanner role={user.role} />
 
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-[var(--text)]">
+          <h1 className="text-2xl font-extrabold tracking-tight text-[var(--text)] sm:text-3xl">
             {t("title")}
           </h1>
-          <p className="text-sm text-[var(--text-muted)] mt-1">
+          <p className="text-sm text-[var(--text-muted)] mt-1 max-w-2xl">
             {t("subtitle")}
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Main Column: User Profile & Registered Workflows */}
-          <div className="lg:col-span-8 space-y-8">
+          <div className="lg:col-span-7 xl:col-span-8 space-y-8">
             <ProfileForm
               initialData={{
                 id: user.id,
@@ -72,7 +72,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
           </div>
 
           {/* Side Column: Telegram & Integrations */}
-          <div className="lg:col-span-4 space-y-8">
+          <div className="lg:col-span-5 xl:col-span-4 space-y-8">
             <TelegramLinkCard
               telegramId={user.telegramId}
               username={user.username}
