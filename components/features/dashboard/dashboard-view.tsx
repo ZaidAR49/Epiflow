@@ -9,7 +9,7 @@ import { AnalysisStepper } from "./analysis-stepper";
 import { StructuredReportCard } from "../report/structured-report-card";
 import { HistoryArchive } from "./history-archive";
 import { EmailPromptModal } from "../test-bench/email-prompt-modal";
-import { createCompletedRunItem, syncActiveRunUrl } from "./dashboard-utils";
+import { createCompletedRunItem, syncActiveRunUrl, resolveInitialRun } from "./dashboard-utils";
 
 interface DashboardViewProps {
   initialRuns: JobRun[];
@@ -30,47 +30,36 @@ export function DashboardView({
   const [currentStatus, setCurrentStatus] = useState("pending");
   const [scanError, setScanError] = useState<string | null>(null);
 
-  // Hydrate initial active report from props if present
-  const initialRun = initialSelectedRunId
-    ? initialRuns.find((r) => r.id === initialSelectedRunId)
-    : undefined;
-  const initialReportObj = initialRun?.report
-    ? (initialRun.report as StructuredReport & { metadata?: OpportunityMetadata })
-    : null;
+  // Active / Selected Report State initialized from props, URL, or sessionStorage
+  const [selectedRunId, setSelectedRunId] = useState<string | undefined>(() => {
+    return resolveInitialRun(initialSelectedRunId, initialRuns).runId;
+  });
 
-  // Active / Selected Report State
-  const [activeReport, setActiveReport] = useState<StructuredReport | null>(
-    initialReportObj ? (initialReportObj as StructuredReport) : null
-  );
-  const [activeMetadata, setActiveMetadata] = useState<OpportunityMetadata | null>(
-    initialReportObj?.metadata || null
-  );
-  const [activeSourceUrl, setActiveSourceUrl] = useState<string | undefined>(
-    initialRun?.url
-  );
-  const [selectedRunId, setSelectedRunId] = useState<string | undefined>(
-    initialSelectedRunId
-  );
+  const [activeReport, setActiveReport] = useState<StructuredReport | null>(() => {
+    const { run } = resolveInitialRun(initialSelectedRunId, initialRuns);
+    return run?.report ? (run.report as StructuredReport) : null;
+  });
 
-  // Sync with URL query or sessionStorage fallback so report survives locale switches
-  useEffect(() => {
-    if (activeReport || typeof window === "undefined") return;
-
-    const sp = new URLSearchParams(window.location.search);
-    const targetId = sp.get("runId") || sessionStorage.getItem("active_dashboard_run_id");
-
-    if (targetId) {
-      const found = runsList.find((r) => r.id === targetId);
-      if (found?.report) {
-        const rep = found.report as StructuredReport & { metadata?: OpportunityMetadata };
-        setActiveReport(rep);
-        setActiveMetadata(rep.metadata || null);
-        setActiveSourceUrl(found.url);
-        setSelectedRunId(found.id);
-        syncActiveRunUrl(found.id);
-      }
+  const [activeMetadata, setActiveMetadata] = useState<OpportunityMetadata | null>(() => {
+    const { run } = resolveInitialRun(initialSelectedRunId, initialRuns);
+    if (run?.report) {
+      const rep = run.report as StructuredReport & { metadata?: OpportunityMetadata };
+      return rep.metadata || null;
     }
-  }, [runsList, activeReport]);
+    return null;
+  });
+
+  const [activeSourceUrl, setActiveSourceUrl] = useState<string | undefined>(() => {
+    const { run } = resolveInitialRun(initialSelectedRunId, initialRuns);
+    return run?.url;
+  });
+
+  // Sync active runId to URL query and storage without internal cascading renders
+  useEffect(() => {
+    if (selectedRunId) {
+      syncActiveRunUrl(selectedRunId);
+    }
+  }, [selectedRunId]);
 
   // Draft Modal State
   const [draftModalOpen, setDraftModalOpen] = useState(false);

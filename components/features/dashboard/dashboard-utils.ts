@@ -52,3 +52,28 @@ export function syncActiveRunUrl(runId: string | undefined): void {
     // Non-blocking in restricted browser contexts
   }
 }
+
+/**
+ * Resolves the initial active run and its ID from SSR props, URL search parameters,
+ * or sessionStorage without causing client-side cascading renders.
+ */
+export function resolveInitialRun(
+  initialSelectedRunId: string | undefined,
+  runs: JobRun[]
+): {
+  run: JobRun | undefined;
+  runId: string | undefined;
+} {
+  let targetId = initialSelectedRunId;
+  if (!targetId && typeof window !== "undefined") {
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      targetId = sp.get("runId") || sessionStorage.getItem("active_dashboard_run_id") || undefined;
+    } catch {
+      // Non-blocking
+    }
+  }
+  const match = targetId ? runs.find((r) => r.id === targetId) : undefined;
+  return { run: match, runId: match ? match.id : targetId };
+}
+
