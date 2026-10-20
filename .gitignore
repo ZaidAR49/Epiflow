@@ -147,3 +147,7 @@ vite.config.ts.timestamp-*
 
 # Turbo Repo
 .turbo
+
+# Temporary execution and testing scripts
+temp_scripts/*
+!temp_scripts/.gitkeep

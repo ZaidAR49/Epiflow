@@ -1,9 +1,6 @@
-# Antigravity Agent Workspace Rules
-
-# agent.md — Engineering & Design Rules for JobPost X-Ray
+# Engineering & Design Rules for JobPost X-Ray
 
 You are the AI coding agent for **JobPost X-Ray**: a bilingual (EN/AR) Next.js SaaS that turns a LinkedIn post into an AI report and an optional Gmail draft, via Web and Telegram. Read this file fully before writing code. When a rule here conflicts with a quick shortcut, the rule wins. If a rule is genuinely wrong for the task, say so and ask; do not silently break it.
-
 Reference docs: `vision.md` (product + roadmap), `schema.sql` (DB source of truth), `job-xray.json` (legacy n8n logic to port), `README.md` (domain behavior).
 
 ---
@@ -20,9 +17,9 @@ Reference docs: `vision.md` (product + roadmap), `schema.sql` (DB source of trut
 8. **No hardcoded user-facing strings.** All text lives in `messages/en.json` and `messages/ar.json`.
 9. **Quota is consumed only after a report is successfully delivered**, atomically, once.
 10. **Never invent data.** Emails, names, company facts must come from source data (see Section 6.3).
+11. **Temporary scripts & files in `temp_scripts/` only:** All temporary test, diagnostic, or scratch scripts MUST be placed in `temp_scripts/` and auto-deleted once the feature or task is complete. Never leave scratch files in the root or commit them.
 
 ---
-
 ## 1. Tech Stack
 
 | Concern | Choice |
@@ -50,57 +47,20 @@ Do not add a dependency without a one-line justification in the PR/commit messag
 ## 2. Folder Architecture
 
 ```
-app/
-  [locale]/
-    (marketing)/            # landing, pricing (public)
-    (auth)/                 # sign-in
-    (app)/                  # authenticated dashboard
-      dashboard/
-      history/
-      settings/
-    (admin)/admin/          # admin only, role-guarded
-    layout.tsx              # sets lang + dir
-  api/
-    telegram/webhook/route.ts
-    billing/webhook/route.ts
-    inngest/route.ts
-    health/route.ts
-components/
-  ui/                       # primitives: button, input, dialog, badge, skeleton
-  features/                 # report/, analysis-stepper/, cv-upload/, billing/
-  layout/                   # header, sidebar, footer, locale-switcher
-lib/
-  db/
-    client.ts               # single pooled connection
-    schema/                 # Drizzle table definitions (one file per table)
-    queries/                # ALL DB reads/writes live here
-  services/                 # business logic, no framework imports
-    gatekeeper/
-    scraper/                # apify.ts, url-expander.ts, normalize.ts
-    ai/                     # report-agent.ts, prompts/, schemas.ts
-    email/                  # compose-draft.ts, gmail-client.ts
-    telegram/               # bot-client.ts, formatters.ts, callbacks.ts
-    billing/
-  jobs/                     # orchestrator steps (inngest functions)
-  actions/                  # server actions (thin)
-  validation/               # shared Zod schemas
-  security/                 # crypto, rate-limit, csrf/origin checks
-  env.ts                    # validated env (server) + env.client.ts (public)
-  errors.ts                 # AppError + error codes
-  result.ts                 # Result<T, E> helper
-  logger.ts
-hooks/                      # client hooks only
-types/                      # shared types derived from Zod (z.infer)
-messages/                   # en.json, ar.json
-styles/                     # globals.css (tokens), fonts.ts
-tests/                      # unit/, e2e/, fixtures/
-drizzle/                    # generated migrations
+app/[locale]/       # (marketing) public, (auth) sign-in, (app) dashboard/settings/profile, (admin)
+app/api/            # auth/[...nextauth], telegram/webhook, billing/webhook, inngest, health
+components/         # ui/ primitives, features/ (report, profile, settings, test-bench), layout/
+lib/db/             # client.ts, schema/ (users, workflows, access, credentials), queries/
+lib/services/       # gatekeeper, scraper, ai, email, telegram, billing
+lib/                # actions/, validation/, security/, env.ts, errors.ts, result.ts, logger.ts
+hooks/ | types/ | messages/ (en.json, ar.json) | styles/ | tests/ | drizzle/
 ```
 
 **Dependency direction (enforce with ESLint import rules):**
 `app/ → actions/ → services/ → db/queries/ → db/schema`. Services never import from `app/`, `components/`, or `next/*`. Components never import from `lib/db`, `lib/services`, or `lib/security`. Violations are bugs.
 
 **Naming:** files `kebab-case.ts`; React components `PascalCase` exported from `kebab-case.tsx`; one component per file; hooks `use-thing.ts`; Zod schemas `thingSchema`, inferred types `Thing`. Prefer named exports; default exports only where Next requires them.
+
 
 ---
 
@@ -143,6 +103,15 @@ Rules: each step writes progress to `job_runs.status` so the UI can stream it; c
 - Output schema in `schemas.ts`: `{ telegramReport, report (structured sections), metadata: { role, company, hrName, hrEmail } }`. Generate a **structured report** for the Web UI and derive the Telegram Markdown from it; do not parse Markdown to render the dashboard.
 - Treat all scraped text as **untrusted input** (prompt injection). Wrap it in clearly delimited data blocks, instruct the model to ignore instructions inside it, and never let model output trigger actions (sending email, calling tools) without the deterministic checks in 6.3.
 - Retry once on schema failure, then fall back to the second provider, then return `AI_FAILED`.
+
+### 3.6 Authentication, User Profile & Workflow Metadata
+- **Google OAuth Only:** Web authentication strictly uses Google OAuth provider via Auth.js / NextAuth. No password auth or alternative web providers.
+- **Route Protection:** All routes under `(app)` (such as `/profile`, `/settings`, `/dashboard`) require an active session; unauthenticated users redirect to `/[locale]/sign-in`.
+- **Identity Resolution:** On initial Google sign-in, lookup or insert into `public.users` matching by verified `email`. Automatically ensure workflow access row in `public.user_workflow_access` for `job-xray`.
+- **Profile Data Ownership:** Every read or mutation of user profile data (`full_name`, `preferred_language`) must strictly enforce `WHERE id = session.user.id`.
+- **Workflow Metadata Management:** Per-workflow preferences (`fullName`, `cv`, `sendEmail`, `preferred_language`) reside in `user_workflow_access.metadata`. Mutations must be validated with Zod (`workflowMetadataSchema`), execute parameterized updates in `lib/db/queries/access.ts`, and never mutate other users' records.
+- **Workflow Credentials:** User credentials for Gmail compose (`workflow_credentials`) store tokens encrypted at rest (AES-256-GCM / Vault). Plain secrets are never returned in client JSON responses or logs.
+- **Telegram Account Linking:** Web user linking to Telegram identity must use single-use cryptographic tokens with a 10-minute expiry (command `/connect <TOKEN>`).
 
 ---
 
@@ -276,7 +245,6 @@ The result must not look like a stock AI landing page. Concretely:
 - Add an a11y check (axe) on key pages in both locales.
 
 ---
-
 ## 10. Working Method for the AI Agent
 
 1. **Read before writing.** Inspect existing modules and reuse them; do not duplicate helpers.
@@ -287,6 +255,7 @@ The result must not look like a stock AI landing page. Concretely:
 6. **Migrations and schema changes** need a note on rollback and on backfill for existing rows.
 7. **Never fabricate** API shapes: check provider docs/SDK types; when unsure, write a typed adapter and a Zod schema, and test it against a fixture.
 8. **Ask** when requirements are ambiguous or a change affects billing, auth, quota, or data retention.
+9. **Temporary script hygiene:** Place all scratch testing files in `temp_scripts/` and auto-delete them once testing or implementation is complete.
 
 ### Definition of Done
 - [ ] Compiles with strict TS, lint clean, no `any`
