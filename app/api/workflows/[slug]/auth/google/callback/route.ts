@@ -95,13 +95,13 @@ export async function GET(
     }
 
     const successResponse = NextResponse.redirect(
-      new URL(`/en/workflows/${slug}?credential_status=connected`, origin)
+      new URL(`/en/workflows/${slug}/console?credential_status=connected`, origin)
     );
     successResponse.cookies.delete("wf_oauth_state");
     return successResponse;
   } catch {
     return NextResponse.redirect(
-      new URL(`/en/workflows/${slug}?error=credential_save_failed`, origin)
+      new URL(`/en/workflows/${slug}/console?error=credential_save_failed`, origin)
     );
   }
 }

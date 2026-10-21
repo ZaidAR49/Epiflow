@@ -21,6 +21,7 @@ Reference docs: `vision.md` (product + roadmap), `schema.sql` (DB source of trut
 12. **Nested Widget Containment:** Inner widgets, child components, buttons, and badges must NEVER exceed, overflow, or bleed outside the bounding edge of their parent container. Always use defensive wrapping (`flex-wrap`, `min-w-0`, stacked defaults) and overflow containment so elements never poke out into surrounding whitespace.
 13. **Screen Real Estate & Arabic Layout:** Leverage the full responsive desktop viewport (`max-w-7xl` or dynamic grids) instead of artificially narrow containers. Arabic text (Cairo font) requires generous horizontal clearance—cards must never be squished into tight columns that cause excessive, tall, and awkward line wrapping.
 14. **Cross-Device Responsiveness & Mobile Burger:** All pages must be fully responsive across desktop, tablet, and mobile. On mobile/small screens (`< md`), navigation must collapse into an accessible slide-out/modal hamburger menu (`menu burger`) rather than crowding the header bar.
+15. **Idiomatic Arabic Copywriting (Transcreation over Literal Translation):** Never use literal, robotic machine translations (e.g. translating "decode" to "فك التشفير"). All Arabic user-facing text must be transcreated into modern, fluent, and professional Arabic SaaS copywriting (عربية فصحى معاصرة وأصيلة للتطبيقات السحابية) that preserves the conceptual intent, value proposition, and cultural clarity for Arab users.
 
 ---
 ## 1. Tech Stack
@@ -190,7 +191,7 @@ The result must not look like a stock AI landing page. Concretely:
 - Mixed-direction text (English company names inside Arabic): wrap with `<bdi>` or `dir="auto"`; emails, URLs, and code are always `dir="ltr"` inline.
 - Telegram: send `is_rtl: true` for Arabic; keep report structure identical across languages.
 - Use `Intl.DateTimeFormat` / `Intl.NumberFormat` with the active locale. Pluralization via ICU messages.
-- Every new string is added to **both** `en.json` and `ar.json` in the same change. Arabic copy must be natural, not literal translation; flag uncertain translations for human review.
+- Every new string is added to **both** `en.json` and `ar.json` in the same change. Arabic copy must use idiomatic transcreation (never literal word-by-word machine translation); terms must naturally resonate with Arab SaaS/job market users (e.g., "اكشف خفايا الإعلان" instead of literal "فك تشفير"). Flag uncertain translations for review.
 - A CI check fails if message keys differ between locales or if directional utility classes are found.
 
 ---

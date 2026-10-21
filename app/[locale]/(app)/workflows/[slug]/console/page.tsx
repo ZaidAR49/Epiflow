@@ -6,11 +6,11 @@ import { getWorkflowCredentialStatus } from "@/lib/db/queries/credentials";
 import { Header } from "@/components/layout/header";
 import { WorkflowConsoleView } from "@/components/features/workflow-console/workflow-console-view";
 
-interface WorkflowPageProps {
+interface WorkflowConsolePageProps {
   params: Promise<{ locale: string; slug: string }>;
 }
 
-export default async function WorkflowPage({ params }: WorkflowPageProps) {
+export default async function WorkflowConsolePage({ params }: WorkflowConsolePageProps) {
   const { locale, slug } = await params;
   const session = await auth();
 

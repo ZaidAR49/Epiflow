@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   AlertCircle,
   ImageIcon,
+  ExternalLink,
 } from "lucide-react";
 import type { RegisteredWorkflowItem } from "@/lib/db/queries/workflows";
 
@@ -90,9 +91,16 @@ export function RegisteredWorkflowsCard({ workflows }: RegisteredWorkflowsCardPr
                   </div>
                 </div>
 
-                <div className="flex items-center">
+                <div className="flex flex-wrap items-center gap-2">
                   <Link
                     href={`/${locale}/workflows/${wf.slug}`}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface-2)]/60 px-3 py-2 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text)] hover:border-[var(--accent)]/50 transition-colors"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    <span>{t("viewLandingPage")}</span>
+                  </Link>
+                  <Link
+                    href={`/${locale}/workflows/${wf.slug}/console`}
                     className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-[var(--accent)]/90 transition-colors"
                   >
                     <span>{t("openWorkflow")}</span>

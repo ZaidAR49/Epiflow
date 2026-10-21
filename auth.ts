@@ -30,7 +30,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           fullName: user.name || "User",
         });
 
-        await ensureUserWorkflowAccess(dbUser.id, "job-xray");
+        await ensureUserWorkflowAccess(dbUser.id, "job-xray", 5);
         user.id = dbUser.id;
         user.role = dbUser.role;
         user.status = dbUser.status;

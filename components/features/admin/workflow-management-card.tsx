@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -11,6 +11,7 @@ import {
   Play,
   Edit2,
   ExternalLink,
+  ArrowRight,
   CheckCircle2,
   XCircle,
   ImageIcon,
@@ -27,6 +28,7 @@ interface WorkflowManagementCardProps {
 
 export function WorkflowManagementCard({ workflows, channels = [] }: WorkflowManagementCardProps) {
   const t = useTranslations("admin.workflows");
+  const locale = useLocale();
   const router = useRouter();
   const [overrides, setOverrides] = useState<Record<string, Partial<AdminWorkflowItem>>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -213,11 +215,21 @@ export function WorkflowManagementCard({ workflows, channels = [] }: WorkflowMan
                   </button>
 
                   <Link
-                    href={`/workflows/${w.slug}`}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[var(--accent)]/90 transition-colors"
+                    href={`/${locale}/workflows/${w.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text)] hover:border-[var(--accent)]/50 transition-colors"
                   >
                     <ExternalLink className="h-3.5 w-3.5" />
+                    <span>{t("viewLandingPage")}</span>
+                  </Link>
+
+                  <Link
+                    href={`/${locale}/workflows/${w.slug}/console`}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[var(--accent)]/90 transition-colors"
+                  >
                     <span>{t("openConsole")}</span>
+                    <ArrowRight className="h-3.5 w-3.5 rtl:-scale-x-100" />
                   </Link>
                 </div>
               </div>

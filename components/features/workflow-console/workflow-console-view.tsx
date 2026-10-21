@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useTranslations, useLocale } from "next-intl";
-import { ArrowLeft, Sliders, Sparkles } from "lucide-react";
+import { ArrowLeft, Sparkles, ExternalLink } from "lucide-react";
 import { BrowserChat } from "@/components/features/test-bench/browser-chat";
 import { EmailPromptModal } from "@/components/features/test-bench/email-prompt-modal";
 import { WorkflowQuotaCard } from "@/components/features/profile/workflow-quota-card";
@@ -84,14 +84,17 @@ export function WorkflowConsoleView({
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
           <Link
-            href={`/${locale}/test-workflow`}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface-2)]/60 px-3.5 py-2 text-xs font-semibold text-[var(--text)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+            href={`/${locale}/workflows/${slug}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface-2)]/60 px-3.5 py-2 text-xs font-semibold text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--text)] transition-colors"
           >
-            <Sliders className="h-3.5 w-3.5" />
-            <span>{t("testWorkflowShortcut")}</span>
+            <ExternalLink className="h-3.5 w-3.5" />
+            <span>{t("viewLandingPage")}</span>
           </Link>
+
         </div>
       </div>
 
@@ -102,7 +105,7 @@ export function WorkflowConsoleView({
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] flex items-center gap-1.5">
               <Sparkles className="h-3.5 w-3.5 text-[var(--accent)]" />
-              <span>In-Browser Runner</span>
+              <span>{t("inBrowserRunner")}</span>
             </span>
           </div>
 

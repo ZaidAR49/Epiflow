@@ -196,7 +196,7 @@ export async function getUserWorkflowDetails(
 export async function ensureUserWorkflowAccess(
   userId: string,
   workflowSlug: string,
-  defaultLimit: number = 10
+  defaultLimit: number = 5
 ): Promise<void> {
   await db.execute(sql`
     INSERT INTO public.user_workflow_access (user_id, workflow_id, usage_limit, metadata)

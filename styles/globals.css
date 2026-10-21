@@ -46,3 +46,60 @@ body {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+
+/* Surface cards with crisp 1px borders and specular top highlight */
+.surface-card {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+}
+
+.surface-raised {
+  background-color: var(--surface-2);
+  border: 1px solid var(--border);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+}
+
+.hairline-border {
+  border-color: var(--border);
+}
+
+/* Subtle Hero Radial Ambient Glow */
+.hero-ambient {
+  background: radial-gradient(80% 50% at 50% 0%, rgba(99, 102, 241, 0.14) 0%, rgba(15, 23, 42, 0.04) 60%, transparent 100%);
+}
+
+/* Calm Laser Scanline inside Stage 01 */
+@keyframes scanSweep {
+  0% { top: 0%; opacity: 0.25; }
+  50% { top: 96%; opacity: 0.85; }
+  100% { top: 0%; opacity: 0.25; }
+}
+
+.xray-scanline {
+  position: absolute;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--accent) 50%, transparent 100%);
+  box-shadow: 0 0 16px 1px rgba(99, 102, 241, 0.6);
+  animation: scanSweep 5.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Animated Pipeline Connection Line */
+@keyframes flowLine {
+  to {
+    stroke-dashoffset: -32;
+  }
+}
+
+.pipeline-dash {
+  stroke-dasharray: 8 8;
+  animation: flowLine 1.8s linear infinite;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
