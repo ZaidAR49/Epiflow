@@ -7,9 +7,13 @@ import { inter, plusJakartaSans, cairo } from "@/styles/fonts";
 import "@/styles/globals.css";
 
 export const metadata: Metadata = {
-  title: "JobPost X-Ray | LinkedIn Recruitment Intelligence & Auto-Drafting",
+  title: "EpiFlow | JobPost X-Ray — Autonomous Recruitment Intelligence",
   description:
-    "Turn any LinkedIn job post into actionable recruitment intelligence and a ready-to-send email draft in seconds.",
+    "EpiFlow autonomous workflow platform: Turn any LinkedIn job post into actionable recruitment intelligence and a ready-to-send email draft in seconds.",
+  icons: {
+    icon: "/epiflow-favicon.svg",
+    apple: "/epiflow-favicon.svg",
+  },
 };
 
 interface RootLocaleLayoutProps {

@@ -6,6 +6,7 @@ import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { LocaleSwitcher } from "@/components/layout/locale-switcher";
+import { EpiFlowLogo } from "@/components/ui/epiflow-logo";
 
 interface WorkflowNavBarProps {
   slug: string;
@@ -34,8 +35,8 @@ export function WorkflowNavBar({
           href={`/${locale}`}
           className="flex items-center gap-3 group focus:outline-none"
         >
-          <div className="relative w-9 h-9 rounded-lg bg-[var(--accent)]/15 border border-[var(--accent)]/40 flex items-center justify-center shadow-[0_0_20px_rgba(99,102,241,0.3)] group-hover:border-[var(--accent)] transition-all overflow-hidden shrink-0">
-            {imageUrl ? (
+          {imageUrl ? (
+            <div className="relative w-9 h-9 rounded-lg bg-[var(--accent)]/15 border border-[var(--accent)]/40 flex items-center justify-center shadow-[0_0_20px_rgba(99,102,241,0.3)] group-hover:border-[var(--accent)] transition-all overflow-hidden shrink-0">
               <Image
                 src={imageUrl}
                 alt={workflowName}
@@ -43,15 +44,18 @@ export function WorkflowNavBar({
                 className="object-cover"
                 unoptimized
               />
-            ) : (
-              <span className="font-mono font-semibold text-xs tracking-wider text-[var(--accent)] group-hover:text-white">
-                XR
-              </span>
-            )}
+            </div>
+          ) : (
+            <EpiFlowLogo variant="icon" height={36} glow />
+          )}
+          <div className="flex flex-col leading-tight">
+            <span className="font-heading font-bold text-base text-[var(--text)] tracking-tight">
+              {workflowName}
+            </span>
+            <span className="text-[10px] font-medium text-[var(--accent)]">
+              by EpiFlow
+            </span>
           </div>
-          <span className="font-heading font-bold text-lg text-[var(--text)] tracking-tight">
-            {workflowName}
-          </span>
         </Link>
 
         {/* Clean Anchor Links */}

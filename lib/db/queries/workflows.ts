@@ -48,6 +48,32 @@ export async function getPrimaryWorkflow(): Promise<WorkflowSummary | null> {
   return getWorkflowBySlug("job-xray");
 }
 
+/**
+ * Retrieves all active workflows ordered by creation date.
+ */
+export async function getActiveWorkflows(): Promise<WorkflowSummary[]> {
+  const result = await db.execute<{
+    id: string;
+    slug: string;
+    name: string;
+    image_url: string | null;
+    is_active: boolean;
+  }>(sql`
+    SELECT id, slug, name, image_url, is_active
+    FROM public.workflows
+    WHERE is_active = true
+    ORDER BY created_at ASC;
+  `);
+
+  return result.map((row) => ({
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    imageUrl: row.image_url,
+    isActive: Boolean(row.is_active),
+  }));
+}
+
 export interface RegisteredWorkflowItem {
   id: string;
   slug: string;

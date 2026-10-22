@@ -4,6 +4,7 @@ import Image from "next/image";
 import { LocaleSwitcher } from "./locale-switcher";
 import { UserNav } from "@/components/features/auth/user-nav";
 import { MobileNav } from "./mobile-nav";
+import { EpiFlowLogo } from "@/components/ui/epiflow-logo";
 
 interface HeaderProps {
   userRole?: string;
@@ -31,25 +32,30 @@ export function Header({
           href={isSignedIn ? `/${locale}/dashboard` : `/${locale}`}
           className="group flex items-center gap-3 transition-opacity hover:opacity-95"
         >
-          <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-[var(--accent)] to-[var(--accent)]/80 font-bold text-white shadow-md shadow-[var(--accent)]/15 border border-[var(--border)] group-hover:scale-105 transition-transform duration-200">
-            {logoUrl ? (
+          {logoUrl ? (
+            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[var(--border)] group-hover:scale-105 transition-transform duration-200">
               <Image
                 src={logoUrl}
-                alt={t("appName")}
+                alt={t("platformName")}
                 fill
                 className="object-cover"
                 unoptimized
               />
-            ) : (
-              <span className="tracking-wider text-sm font-extrabold">XR</span>
-            )}
-          </div>
+            </div>
+          ) : (
+            <EpiFlowLogo variant="icon" height={38} glow />
+          )}
           <div className="flex flex-col leading-tight">
-            <span className="text-base font-extrabold tracking-tight text-[var(--text)]">
-              {t("appName")}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-base font-extrabold tracking-tight text-[var(--text)]">
+                {t("platformName")}
+              </span>
+              <span className="rounded-md bg-[var(--accent)]/10 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--accent)] border border-[var(--accent)]/20">
+                {t("workflowName")}
+              </span>
+            </div>
             <span className="hidden sm:inline-block text-[10px] font-medium text-[var(--text-muted)]">
-              LinkedIn Job Intelligence
+              {t("tagline")}
             </span>
           </div>
         </Link>

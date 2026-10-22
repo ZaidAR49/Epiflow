@@ -22,6 +22,7 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
+import { EpiFlowLogo } from "@/components/ui/epiflow-logo";
 
 interface MobileNavProps {
   userRole?: string;
@@ -104,7 +105,12 @@ export function MobileNav({
                   </div>
                 </div>
               ) : (
-                <span>{t("appName")}</span>
+                <div className="flex items-center gap-2.5">
+                  <EpiFlowLogo variant="icon" height={28} />
+                  <span className="text-base font-extrabold tracking-tight text-[var(--text)]">
+                    {t("appName")}
+                  </span>
+                </div>
               )}
             </SheetTitle>
             <SheetDescription className="sr-only">

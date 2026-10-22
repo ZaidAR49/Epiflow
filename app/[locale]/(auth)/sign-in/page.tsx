@@ -49,7 +49,7 @@ export default async function SignInPage() {
       </main>
 
       <footer className="border-t border-[var(--border)] py-6 text-center text-xs text-[var(--text-muted)]">
-        JobPost X-Ray &copy; {new Date().getFullYear()} — Secure Intelligence Platform
+        EpiFlow &copy; {new Date().getFullYear()} — Secure Intelligence Platform
       </footer>
     </div>
   );
