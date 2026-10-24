@@ -26,7 +26,18 @@
     "privacyPolicy": "سياسة الخصوصية",
     "termsOfService": "شروط الخدمة",
     "privacy": "الخصوصية",
-    "terms": "الشروط"
+    "terms": "الشروط",
+    "signIn": "تسجيل الدخول",
+    "getStarted": "ابدأ مجاناً",
+    "architecture": "بنية المنصة",
+    "allRightsReserved": "جميع الحقوق محفوظة.",
+    "systemsOperational": "جميع الأنظمة تعمل بكفاءة",
+    "platformDisclaimer": "إيبي فلو (EpiFlow) منصة سحابية مستقلة لمسارات الذكاء الاصطناعي والأتمتة الدقيقة. جميع العلامات التجارية وأسماء المنتجات والشركات المشار إليها ملك لأصحابها المعنيين.",
+    "legalNoticeTitle": "إشعار قانوني والعلامات التجارية",
+    "linkedInDisclaimerNote": "لينكد إن (LinkedIn) هي علامة تجارية مسجلة لشركة LinkedIn Corporation. إن EpiFlow و JobPost X-Ray أدوات تحليلية مستقلة وليست تابعة لشركة LinkedIn أو معتمدة منها بأي شكل.",
+    "security": "الأمان والحماية",
+    "roadmap": "قيد التطوير",
+    "flagship": "المسار الأساسي"
   },
   "errors": {
     "UNREGISTERED": "حسابك غير مسجل في النظام. يرجى التواصل مع المسؤول للحصول على إذن الوصول.",
@@ -219,7 +230,10 @@
     "signOut": "تسجيل الخروج",
     "signedInAs": "مسجل الدخول باسم",
     "agreeNotice": "بالمتابعة، فإنك توافق على",
-    "agreeAnd": "و"
+    "agreeAnd": "و",
+    "googleOAuthOnly": "دخول آمن عبر Google",
+    "instantAccess": "وصول فوري ومباشر",
+    "securePlatform": "منصة استخبارات وظيفية آمنة"
   },
   "profile": {
     "title": "الملف الشخصي والحساب",

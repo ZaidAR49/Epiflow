@@ -23,6 +23,7 @@ interface UserNavProps {
   userImage?: string | null;
   isSignedIn?: boolean;
   isSubscribed?: boolean;
+  hideAuthActions?: boolean;
 }
 
 export function UserNav({
@@ -31,6 +32,7 @@ export function UserNav({
   userImage,
   isSignedIn = false,
   isSubscribed = false,
+  hideAuthActions = false,
 }: UserNavProps) {
   const locale = useLocale();
   const tAuth = useTranslations("auth");
@@ -222,14 +224,22 @@ export function UserNav({
             </div>
           )}
         </div>
-      ) : (
-        <Link
-          href={`/${locale}/sign-in`}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[var(--accent)]/90 transition-colors"
-        >
-          <LogIn className="h-3.5 w-3.5" />
-          <span>{tAuth("signInWithGoogle")}</span>
-        </Link>
+      ) : hideAuthActions ? null : (
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <Link
+            href={`/${locale}/sign-in`}
+            className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors"
+          >
+            {tCommon("signIn")}
+          </Link>
+          <Link
+            href={`/${locale}/sign-in`}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-[var(--accent)]/90 transition-all"
+          >
+            <LogIn className="h-3.5 w-3.5" />
+            <span>{tCommon("getStarted")}</span>
+          </Link>
+        </div>
       )}
     </div>
   );

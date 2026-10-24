@@ -18,27 +18,26 @@ export function UsageMeterModal({ isOpen, onClose }: UsageMeterModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!isOpen) {
-      setKey("");
-      setName("");
-      setUnit("");
-      setError(null);
-      setIsSubmitting(false);
-    }
-  }, [isOpen]);
+  const resetAndClose = () => {
+    setKey("");
+    setName("");
+    setUnit("");
+    setError(null);
+    setIsSubmitting(false);
+    onClose();
+  };
 
   // Keyboard navigation: Escape key dismisses modal
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        onClose();
+        resetAndClose();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -54,7 +53,7 @@ export function UsageMeterModal({ isOpen, onClose }: UsageMeterModalProps) {
     });
 
     if (result.success) {
-      onClose();
+      resetAndClose();
     } else {
       setError(result.error || "Failed to create meter");
       setIsSubmitting(false);
@@ -84,7 +83,7 @@ export function UsageMeterModal({ isOpen, onClose }: UsageMeterModalProps) {
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={resetAndClose}
             aria-label={t("cancel")}
             className="rounded-lg p-1 text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
           >
@@ -168,7 +167,7 @@ export function UsageMeterModal({ isOpen, onClose }: UsageMeterModalProps) {
           <div className="flex items-center justify-end gap-2 pt-3 border-t border-[var(--border)]">
             <button
               type="button"
-              onClick={onClose}
+              onClick={resetAndClose}
               disabled={isSubmitting}
               className="rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-4 py-2 text-xs font-medium text-[var(--text)] hover:bg-[var(--surface-2)]/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50"
             >

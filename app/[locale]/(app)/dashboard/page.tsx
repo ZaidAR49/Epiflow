@@ -4,8 +4,10 @@ import { auth } from "@/auth";
 import { getUserWorkflowDetails } from "@/lib/db/queries/access";
 import { getRecentRunsForUser } from "@/lib/db/queries/job-runs";
 import { getPrimaryWorkflow } from "@/lib/db/queries/workflows";
+import { getTranslations } from "next-intl/server";
 import { Header } from "@/components/layout/header";
 import { DashboardView } from "@/components/features/dashboard/dashboard-view";
+import { Shield } from "lucide-react";
 
 interface DashboardPageProps {
   params: Promise<{ locale: string }>;
@@ -24,10 +26,11 @@ export default async function DashboardPage({ params, searchParams }: DashboardP
 
   const userId = session.user.id;
 
-  const [workflow, runs, primaryWorkflow] = await Promise.all([
+  const [workflow, runs, primaryWorkflow, t] = await Promise.all([
     getUserWorkflowDetails(userId, "job-xray"),
     getRecentRunsForUser(userId, 50),
     getPrimaryWorkflow(),
+    getTranslations("common"),
   ]);
 
   const remainingQuota =
@@ -50,7 +53,7 @@ export default async function DashboardPage({ params, searchParams }: DashboardP
         isSubscribed={isSubscribed}
       />
 
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
         <DashboardView
           initialRuns={runs}
           initialQuota={remainingQuota}
@@ -58,6 +61,15 @@ export default async function DashboardPage({ params, searchParams }: DashboardP
           initialSelectedRunId={initialSelectedRunId}
           isSubscribed={isSubscribed}
         />
+
+        {/* Workflow-Specific Legal & Trademark Notice */}
+        <div className="flex items-center justify-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]/40 px-4 py-3 text-center text-xs text-[var(--text-muted)]">
+          <Shield className="h-3.5 w-3.5 text-[var(--accent)] shrink-0" />
+          <p>
+            <strong className="text-[var(--text)]">{t("legalNoticeTitle")}: </strong>
+            {t("linkedInDisclaimerNote")}
+          </p>
+        </div>
       </main>
     </div>
   );

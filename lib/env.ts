@@ -21,9 +21,9 @@ const serverEnvSchema = z.object({
   SUPABASE_URL: z.string().url().optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
   NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
-  RESEND_API_KEY: z.string().optional().or(z.literal("")),
-  CONTACT_TO_EMAIL: z.string().email().optional().or(z.literal("")),
-  CONTACT_FROM_EMAIL: z.string().optional().or(z.literal("")),
+  RESEND_API_KEY: z.string().trim().optional().or(z.literal("")),
+  CONTACT_TO_EMAIL: z.string().trim().email().optional().or(z.literal("")),
+  CONTACT_FROM_EMAIL: z.string().trim().optional().or(z.literal("")),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
@@ -45,6 +45,9 @@ function parseEnv(): ServerEnv {
 let parsedEnv: ServerEnv | null = null;
 
 export function getServerEnv(): ServerEnv {
+  if (process.env.NODE_ENV !== "production") {
+    return parseEnv();
+  }
   if (!parsedEnv) {
     parsedEnv = parseEnv();
   }

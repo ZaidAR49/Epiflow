@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { auth } from "@/auth";
 import { Header } from "@/components/layout/header";
+import { Footer } from "@/components/layout/footer";
 import { PrivacyView } from "@/components/features/legal";
 
 interface PrivacyPageProps {
@@ -18,14 +18,8 @@ export async function generateMetadata({ params }: PrivacyPageProps) {
   };
 }
 
-export default async function PrivacyPage({ params }: PrivacyPageProps) {
-  const { locale } = await params;
-  const [session, tCommon, tFooter] = await Promise.all([
-    auth(),
-    getTranslations("common"),
-    getTranslations("workflowLanding"),
-  ]);
-
+export default async function PrivacyPage() {
+  const session = await auth();
   const isSignedIn = Boolean(session?.user?.id);
 
   return (
@@ -44,43 +38,7 @@ export default async function PrivacyPage({ params }: PrivacyPageProps) {
       </main>
 
       {/* Platform Footer */}
-      <footer className="border-t border-[var(--border)] bg-[var(--surface)] py-10 text-xs text-[var(--text-muted)]">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3 flex-wrap">
-            <span className="font-extrabold tracking-tight text-sm text-[var(--text)]">
-              EpiFlow
-            </span>
-            <span className="text-[var(--text-muted)]">
-              {tFooter("footerCopyright")}
-            </span>
-            <span className="text-[var(--border)]">•</span>
-            <Link
-              href={`/${locale}/contact`}
-              className="text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors underline-offset-4 hover:underline"
-            >
-              {tCommon("contactUs")}
-            </Link>
-            <span className="text-[var(--border)]">•</span>
-            <Link
-              href={`/${locale}/privacy`}
-              className="text-[var(--accent)] font-medium transition-colors underline-offset-4 underline"
-            >
-              {tCommon("privacyPolicy")}
-            </Link>
-            <span className="text-[var(--border)]">•</span>
-            <Link
-              href={`/${locale}/terms`}
-              className="text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors underline-offset-4 hover:underline"
-            >
-              {tCommon("termsOfService")}
-            </Link>
-          </div>
-
-          <p className="text-center md:text-end text-[11px] text-[var(--text-muted)]/80 max-w-xl">
-            {tFooter("footerDisclaimer")}
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

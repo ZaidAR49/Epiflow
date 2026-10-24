@@ -16,6 +16,7 @@ import {
   LogOut,
   Globe,
   Mail,
+  Cpu,
 } from "lucide-react";
 import Image from "next/image";
 import {
@@ -37,6 +38,7 @@ interface MobileNavProps {
   isSubscribed?: boolean;
   logoUrl?: string | null;
   workflowName?: string | null;
+  hideAuthActions?: boolean;
 }
 
 export function MobileNav({
@@ -47,6 +49,7 @@ export function MobileNav({
   isSubscribed = false,
   logoUrl,
   workflowName,
+  hideAuthActions = false,
 }: MobileNavProps) {
   const [open, setOpen] = useState(false);
   const locale = useLocale();
@@ -171,6 +174,16 @@ export function MobileNav({
               <span>{t("workflows")}</span>
             </Link>
 
+            {/* Architecture / Platform Pillars */}
+            <Link
+              href={`/${locale}#pillars`}
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-2)] hover:text-[var(--accent)] transition-colors"
+            >
+              <Cpu className="h-4 w-4 text-sky-400" />
+              <span>{t("architecture")}</span>
+            </Link>
+
             {isSignedIn && (
               <Link
                 href={`/${locale}/dashboard`}
@@ -251,14 +264,14 @@ export function MobileNav({
               <LogOut className="h-4 w-4" />
               <span>{tAuth("signOut")}</span>
             </Link>
-          ) : (
+          ) : hideAuthActions ? null : (
             <Link
               href={`/${locale}/sign-in`}
               onClick={() => setOpen(false)}
               className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-[var(--accent)]/90 transition-colors"
             >
               <LogIn className="h-4 w-4" />
-              <span>{tAuth("signInWithGoogle")}</span>
+              <span>{t("signIn")}</span>
             </Link>
           )}
         </div>

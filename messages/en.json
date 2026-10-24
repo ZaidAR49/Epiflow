@@ -26,7 +26,18 @@
     "privacyPolicy": "Privacy Policy",
     "termsOfService": "Terms of Service",
     "privacy": "Privacy",
-    "terms": "Terms"
+    "terms": "Terms",
+    "signIn": "Sign In",
+    "getStarted": "Get Started",
+    "architecture": "Architecture",
+    "allRightsReserved": "All rights reserved.",
+    "systemsOperational": "All Systems Operational",
+    "platformDisclaimer": "EpiFlow is an independent intelligence platform for deterministic AI workflows and enterprise data automation. All third-party trademarks, product names, and company logos referenced on this site belong to their respective owners.",
+    "legalNoticeTitle": "Trademark & Compliance Notice",
+    "linkedInDisclaimerNote": "LinkedIn is a registered trademark of LinkedIn Corporation. EpiFlow and JobPost X-Ray are independent intelligence tools not affiliated with or endorsed by LinkedIn Corporation.",
+    "security": "Security",
+    "roadmap": "Roadmap",
+    "flagship": "Flagship"
   },
   "errors": {
     "UNREGISTERED": "Your account is not registered. Please contact an administrator for access.",
@@ -219,7 +230,10 @@
     "signOut": "Sign Out",
     "signedInAs": "Signed in as",
     "agreeNotice": "By continuing, you agree to our",
-    "agreeAnd": "and"
+    "agreeAnd": "and",
+    "googleOAuthOnly": "Google OAuth Only",
+    "instantAccess": "Instant Access",
+    "securePlatform": "Secure Intelligence Platform"
   },
   "profile": {
     "title": "User Profile & Account",

@@ -1,19 +1,26 @@
 import React from "react";
+import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Header } from "@/components/layout/header";
-import { getPrimaryWorkflow } from "@/lib/db/queries/workflows";
+import { Footer } from "@/components/layout/footer";
 import { GoogleSignInButton } from "@/components/features/auth/google-sign-in-button";
 import { Sparkles, Shield, Zap } from "lucide-react";
 
-export default async function SignInPage() {
-  const [t, primaryWorkflow] = await Promise.all([
+interface SignInPageProps {
+  params: Promise<{ locale: string }>;
+}
+
+export default async function SignInPage({ params }: SignInPageProps) {
+  const { locale } = await params;
+  const [t, tCommon] = await Promise.all([
     getTranslations("auth"),
-    getPrimaryWorkflow(),
+    getTranslations("common"),
   ]);
 
   return (
     <div className="min-h-screen bg-[var(--bg)] text-[var(--text)] flex flex-col justify-between">
-      <Header logoUrl={primaryWorkflow?.imageUrl} />
+      {/* Clean Platform Header without redundant sign-in button or workflow breadcrumb */}
+      <Header hideAuthActions={true} />
 
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 py-12 sm:px-6">
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-8 shadow-xl backdrop-blur-md">
@@ -29,28 +36,44 @@ export default async function SignInPage() {
             </p>
           </div>
 
-          <div className="mt-8">
+          <div className="mt-8 space-y-4">
             <GoogleSignInButton />
+
+            <p className="text-center text-[11px] text-[var(--text-muted)] leading-relaxed">
+              {t("agreeNotice")}{" "}
+              <Link
+                href={`/${locale}/terms`}
+                className="underline hover:text-[var(--accent)] transition-colors"
+              >
+                {tCommon("termsOfService")}
+              </Link>{" "}
+              {t("agreeAnd")}{" "}
+              <Link
+                href={`/${locale}/privacy`}
+                className="underline hover:text-[var(--accent)] transition-colors"
+              >
+                {tCommon("privacyPolicy")}
+              </Link>
+              .
+            </p>
           </div>
 
           <div className="mt-8 border-t border-[var(--border)] pt-6">
             <div className="grid grid-cols-2 gap-3 text-center">
               <div className="flex items-center justify-center gap-1.5 text-xs text-[var(--text-muted)]">
                 <Shield className="h-3.5 w-3.5 text-emerald-400" />
-                <span>Google OAuth Only</span>
+                <span>{t("googleOAuthOnly")}</span>
               </div>
               <div className="flex items-center justify-center gap-1.5 text-xs text-[var(--text-muted)]">
                 <Zap className="h-3.5 w-3.5 text-amber-400" />
-                <span>Instant Access</span>
+                <span>{t("instantAccess")}</span>
               </div>
             </div>
           </div>
         </div>
       </main>
 
-      <footer className="border-t border-[var(--border)] py-6 text-center text-xs text-[var(--text-muted)]">
-        EpiFlow &copy; {new Date().getFullYear()} — Secure Intelligence Platform
-      </footer>
+      <Footer />
     </div>
   );
 }
