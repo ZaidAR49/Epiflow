@@ -35,6 +35,8 @@ export default async function DashboardPage({ params, searchParams }: DashboardP
       ? Math.max(0, workflow.usageLimit - workflow.usageCount)
       : null;
 
+  const isSubscribed = Boolean(workflow?.isSubscribed ?? session?.user?.isSubscribed);
+
   return (
     <div className="min-h-screen bg-[var(--bg)] text-[var(--text)]">
       <Header
@@ -42,7 +44,10 @@ export default async function DashboardPage({ params, searchParams }: DashboardP
         userName={session?.user?.name}
         userImage={session?.user?.image}
         logoUrl={primaryWorkflow?.imageUrl || workflow?.imageUrl}
+        workflowName={workflow?.workflowName || primaryWorkflow?.name || "JobPost X-Ray"}
+        workflowHref={`/${locale}/dashboard`}
         isSignedIn={Boolean(session?.user?.id)}
+        isSubscribed={isSubscribed}
       />
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -51,6 +56,7 @@ export default async function DashboardPage({ params, searchParams }: DashboardP
           initialQuota={remainingQuota}
           preferredLanguage={workflow?.metadata?.preferred_language || "ar"}
           initialSelectedRunId={initialSelectedRunId}
+          isSubscribed={isSubscribed}
         />
       </main>
     </div>

@@ -59,29 +59,39 @@ export function WorkflowEditDrawer({
   const busy = isPending || isSavingDraft;
 
   return (
-    <div className="mt-4 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 space-y-4">
+    <div
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          e.stopPropagation();
+          onCancel();
+        }
+      }}
+      className="mt-4 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 space-y-4"
+    >
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
-          <label className="block text-xs font-medium text-[var(--text-muted)]">
+          <label htmlFor="wf-edit-name" className="block text-xs font-medium text-[var(--text-muted)]">
             {t("nameLabel")}
           </label>
           <input
+            id="wf-edit-name"
             type="text"
             value={editName}
             onChange={(e) => onNameChange(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text)] focus:border-[var(--accent)] focus:outline-none"
+            className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden"
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-[var(--text-muted)]">
+          <label htmlFor="wf-edit-image" className="block text-xs font-medium text-[var(--text-muted)]">
             {t("imageUrlLabel")}
           </label>
           <input
+            id="wf-edit-image"
             type="url"
             value={editImageUrl}
             onChange={(e) => onImageUrlChange(e.target.value)}
             placeholder={t("imageUrlPlaceholder")}
-            className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text)] focus:border-[var(--accent)] focus:outline-none"
+            className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden"
           />
         </div>
       </div>
@@ -102,7 +112,7 @@ export function WorkflowEditDrawer({
         <button
           type="button"
           onClick={onCancel}
-          className="inline-flex items-center gap-1 rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text)]"
+          className="inline-flex items-center gap-1 rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden cursor-pointer"
         >
           <X className="h-3.5 w-3.5" />
           <span>Cancel</span>
@@ -111,7 +121,7 @@ export function WorkflowEditDrawer({
           type="button"
           onClick={handleSaveAll}
           disabled={busy}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[var(--accent)]/90 disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[var(--accent)]/90 focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden disabled:opacity-50 cursor-pointer"
         >
           <Save className="h-3.5 w-3.5" />
           <span>{busy ? t("saving") : t("saveChanges")}</span>

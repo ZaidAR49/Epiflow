@@ -4,6 +4,7 @@ import { isErr, isOk } from "@/lib/result";
 import { LINKEDIN_URL_REGEX } from "@/lib/validation/url";
 import { authenticateGatekeeper, consumeWorkflowUsage } from "@/lib/db/queries/access";
 import { createJobRun, markJobRunFailed, markJobRunCompleted, markUsageConsumed } from "@/lib/db/queries/job-runs";
+import { getWorkflowBySlug } from "@/lib/db/queries/workflows";
 import { expandLinkedInUrl } from "../scraper/url-expander";
 import { scrapePost, scrapeAuthor, scrapeCompany } from "../scraper/apify";
 import { normalizeScrapedData, isCompanyAuthor } from "../scraper/normalize";
@@ -82,11 +83,17 @@ export async function handleTelegramMessage(message: TelegramMessage): Promise<v
   }
 
   // 4. Create initial Job Run
+  const workflowId = auth.workflowId || (await getWorkflowBySlug("job-xray"))?.id;
+  if (!workflowId) {
+    logger.error("No workflowId found for job-xray");
+    return;
+  }
+
   const run = await createJobRun({
     userId,
+    workflowId,
     channel: "telegram",
-    url: rawUrl,
-    normalizedUrl: rawUrl,
+    input: { url: rawUrl, normalizedUrl: rawUrl, language: lang },
     status: "pending",
   });
 

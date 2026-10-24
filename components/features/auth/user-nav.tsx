@@ -13,13 +13,16 @@ import {
   LogOut,
   ChevronDown,
   Loader2,
+  Sparkles,
 } from "lucide-react";
+import { UserAvatar } from "@/components/ui/user-avatar";
 
 interface UserNavProps {
   userRole?: string;
   userName?: string | null;
   userImage?: string | null;
   isSignedIn?: boolean;
+  isSubscribed?: boolean;
 }
 
 export function UserNav({
@@ -27,6 +30,7 @@ export function UserNav({
   userName,
   userImage,
   isSignedIn = false,
+  isSubscribed = false,
 }: UserNavProps) {
   const locale = useLocale();
   const tAuth = useTranslations("auth");
@@ -112,28 +116,25 @@ export function UserNav({
             className="group flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface-2)]/60 ps-1.5 pe-2.5 py-1 text-xs font-semibold text-[var(--text)] hover:border-[var(--accent)]/50 hover:bg-[var(--surface-2)] transition-all shadow-xs cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-[var(--accent)]"
             title="Account Menu"
           >
-            <div className="relative flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-[var(--accent)]/30 bg-[var(--surface)] border border-[var(--border)]">
-              {userImage ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={userImage}
-                  alt={userName || "User"}
-                  className="h-full w-full object-cover"
-                  referrerPolicy="no-referrer"
-                />
-              ) : (
-                <User className="h-3.5 w-3.5 text-[var(--accent)]" />
-              )}
-            </div>
+            <UserAvatar
+              src={userImage}
+              name={userName}
+              size="sm"
+              isSubscribed={isSubscribed}
+            />
             <div className="flex flex-col items-start leading-tight">
               <span className="text-xs font-semibold text-[var(--text)] group-hover:text-[var(--accent)] transition-colors">
                 {userName ? userName.split(" ")[0] : "Profile"}
               </span>
-              {userRole === "admin" && (
+              {isSubscribed ? (
+                <span className="text-[9px] font-bold text-sky-400">
+                  Pro Member
+                </span>
+              ) : userRole === "admin" ? (
                 <span className="text-[9px] font-semibold text-emerald-400">
                   Admin
                 </span>
-              )}
+              ) : null}
             </div>
             <ChevronDown className={`h-3 w-3 text-[var(--text-muted)] transition-transform duration-200 ${isOpen ? "rotate-180 text-[var(--accent)]" : ""}`} />
           </button>
@@ -141,18 +142,33 @@ export function UserNav({
           {/* Desktop User Dropdown Menu */}
           {isOpen && (
             <div
-              className="absolute end-0 mt-2 w-56 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-2 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150 space-y-1"
+              className="absolute end-0 mt-2 w-60 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-2 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150 space-y-1"
               role="menu"
             >
-              {/* User summary */}
-              <div className="px-3 py-2 border-b border-[var(--border)] mb-1">
-                <p className="text-xs font-bold text-[var(--text)] truncate">
-                  {userName || "User"}
-                </p>
-                <p className="text-[10px] text-[var(--text-muted)] flex items-center gap-1 mt-0.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                  <span className="capitalize">{userRole || "User"}</span>
-                </p>
+              {/* User summary with avatar */}
+              <div className="flex items-center gap-3 px-3 py-2.5 border-b border-[var(--border)] mb-1">
+                <UserAvatar
+                  src={userImage}
+                  name={userName}
+                  size="md"
+                  isSubscribed={isSubscribed}
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-[var(--text)] truncate">
+                    {userName || "User"}
+                  </p>
+                  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                    <span className="text-[10px] text-[var(--text-muted)] capitalize">
+                      {userRole || "User"}
+                    </span>
+                    {isSubscribed && (
+                      <span className="inline-flex items-center gap-0.5 rounded-full bg-sky-500/15 px-1.5 py-0.2 text-[9px] font-bold text-sky-400 border border-sky-500/30">
+                        <Sparkles className="h-2.5 w-2.5" />
+                        <span>Pro</span>
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
 
               <Link

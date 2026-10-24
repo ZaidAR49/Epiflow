@@ -59,31 +59,33 @@ export function TelegramManualForm({ onSuccess }: TelegramManualFormProps) {
       )}
 
       <div>
-        <label className="block text-xs font-medium text-[var(--text-muted)] mb-1">
+        <label htmlFor="telegram-manual-id" className="block text-xs font-medium text-[var(--text-muted)] mb-1">
           {t("manualIdLabel")} <span className="text-rose-400">*</span>
         </label>
         <input
+          id="telegram-manual-id"
           type="text"
           value={telegramIdInput}
           onChange={(e) => setTelegramIdInput(e.target.value)}
           placeholder="e.g. 2076665816"
           dir="ltr"
-          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text)] placeholder-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none"
+          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text)] placeholder-[var(--text-muted)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden"
           required
         />
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-[var(--text-muted)] mb-1">
+        <label htmlFor="telegram-manual-username" className="block text-xs font-medium text-[var(--text-muted)] mb-1">
           {t("manualUsernameLabel")}
         </label>
         <input
+          id="telegram-manual-username"
           type="text"
           value={usernameInput}
           onChange={(e) => setUsernameInput(e.target.value)}
           placeholder="@username"
           dir="ltr"
-          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text)] placeholder-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none"
+          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text)] placeholder-[var(--text-muted)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden"
         />
       </div>
 
@@ -96,7 +98,7 @@ export function TelegramManualForm({ onSuccess }: TelegramManualFormProps) {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3.5 py-1.5 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50 transition-all shrink-0"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3.5 py-1.5 text-xs font-semibold text-white hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden disabled:opacity-50 transition-all shrink-0 cursor-pointer"
         >
           {isSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
           <span>{t("saveTelegramId")}</span>

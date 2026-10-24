@@ -22,16 +22,7 @@ export async function getUserByTelegramId(telegramId: number): Promise<User | nu
     )
     .limit(1);
 
-  if (identity[0]?.user) {
-    return identity[0].user;
-  }
-
-  const result = await db
-    .select()
-    .from(users)
-    .where(eq(users.telegramId, telegramId))
-    .limit(1);
-  return result[0] ?? null;
+  return identity[0]?.user ?? null;
 }
 
 export async function createUser(data: NewUser): Promise<User> {
@@ -113,15 +104,6 @@ export async function linkTelegramToUser(
 
   // 1. Unlink this telegram ID from any other user to prevent unique constraint collisions
   await db
-    .update(users)
-    .set({
-      telegramId: null,
-      username: null,
-      updatedAt: new Date(),
-    })
-    .where(and(eq(users.telegramId, telegramId), ne(users.id, userId)));
-
-  await db
     .delete(userIdentities)
     .where(
       and(
@@ -148,18 +130,7 @@ export async function linkTelegramToUser(
       },
     });
 
-  // 3. Update user record
-  const result = await db
-    .update(users)
-    .set({
-      telegramId,
-      username: username ?? null,
-      updatedAt: new Date(),
-    })
-    .where(eq(users.id, userId))
-    .returning();
-
-  return result[0] ?? null;
+  return getUserById(userId);
 }
 
 export async function unlinkTelegramFromUser(userId: string): Promise<User | null> {
@@ -172,15 +143,28 @@ export async function unlinkTelegramFromUser(userId: string): Promise<User | nul
       )
     );
 
-  const result = await db
-    .update(users)
-    .set({
-      telegramId: null,
-      username: null,
-      updatedAt: new Date(),
-    })
-    .where(eq(users.id, userId))
-    .returning();
+  return getUserById(userId);
+}
 
-  return result[0] ?? null;
+export async function getUserTelegramIdentity(
+  userId: string
+): Promise<{ telegramId: number; username: string | null } | null> {
+  const identity = await db
+    .select()
+    .from(userIdentities)
+    .where(
+      and(
+        eq(userIdentities.userId, userId),
+        eq(userIdentities.provider, "telegram")
+      )
+    )
+    .limit(1);
+
+  const row = identity[0];
+  if (!row) return null;
+
+  return {
+    telegramId: Number(row.providerUserId),
+    username: row.handle,
+  };
 }

@@ -12,6 +12,7 @@ import {
   AlertCircle,
   ImageIcon,
   ExternalLink,
+  Sparkles,
 } from "lucide-react";
 import type { RegisteredWorkflowItem } from "@/lib/db/queries/workflows";
 
@@ -67,8 +68,18 @@ export function RegisteredWorkflowsCard({ workflows }: RegisteredWorkflowsCardPr
                   </div>
 
                   <div className="space-y-1">
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-bold text-sm text-[var(--text)]">{wf.name}</span>
+                      {wf.isSubscribed ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/15 px-2 py-0.5 text-[10px] font-bold text-sky-400 border border-sky-500/30 shadow-[0_0_8px_rgba(56,189,248,0.25)]">
+                          <Sparkles className="h-3 w-3 text-sky-300" />
+                          <span>{wf.planName || t("workflowSubscribed")}</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-[var(--surface)] px-2 py-0.5 text-[10px] font-semibold text-[var(--text-muted)] border border-[var(--border)]">
+                          <span>{t("workflowFreeTier")}</span>
+                        </span>
+                      )}
                       {wf.isActive ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-400 border border-emerald-500/20">
                           <CheckCircle2 className="h-3 w-3" />

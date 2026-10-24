@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { auth } from "@/auth";
 import { Header } from "@/components/layout/header";
-import { getActiveWorkflows } from "@/lib/db/queries/workflows";
+import { getActiveWorkflows, getUserWorkflowsList } from "@/lib/db/queries/workflows";
 import {
   HeroSection,
   WorkflowCatalog,
@@ -24,6 +24,12 @@ export default async function MarketingPage({ params }: MarketingPageProps) {
   ]);
 
   const isSignedIn = Boolean(session?.user?.id);
+  const userWorkflows = session?.user?.id
+    ? await getUserWorkflowsList(session.user.id)
+    : [];
+  const subscribedSlugs = userWorkflows
+    .filter((w) => w.isSubscribed)
+    .map((w) => w.slug);
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--bg)] text-[var(--text)]">
@@ -33,6 +39,7 @@ export default async function MarketingPage({ params }: MarketingPageProps) {
         userName={session?.user?.name}
         userImage={session?.user?.image}
         isSignedIn={isSignedIn}
+        isSubscribed={session?.user?.isSubscribed}
       />
 
       <main className="flex-1">
@@ -40,7 +47,10 @@ export default async function MarketingPage({ params }: MarketingPageProps) {
         <HeroSection isSignedIn={isSignedIn} />
 
         {/* Dynamic Workflow Catalog & Roadmap */}
-        <WorkflowCatalog workflows={workflows} />
+        <WorkflowCatalog
+          workflows={workflows}
+          subscribedSlugs={subscribedSlugs}
+        />
 
         {/* Core Architecture Pillars */}
         <PlatformPillars />
@@ -65,6 +75,20 @@ export default async function MarketingPage({ params }: MarketingPageProps) {
               className="text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors underline-offset-4 hover:underline"
             >
               {tCommon("contactUs")}
+            </Link>
+            <span className="text-[var(--border)]">•</span>
+            <Link
+              href={`/${locale}/privacy`}
+              className="text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors underline-offset-4 hover:underline"
+            >
+              {tCommon("privacyPolicy")}
+            </Link>
+            <span className="text-[var(--border)]">•</span>
+            <Link
+              href={`/${locale}/terms`}
+              className="text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors underline-offset-4 hover:underline"
+            >
+              {tCommon("termsOfService")}
             </Link>
           </div>
 

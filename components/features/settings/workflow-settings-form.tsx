@@ -96,16 +96,17 @@ export function WorkflowSettingsForm({ initialMetadata }: WorkflowSettingsFormPr
         </div>
 
         <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-2)]/60 p-4">
-          <label className="flex items-start gap-3 cursor-pointer">
+          <div className="flex items-start gap-3">
             <div className="flex h-5 items-center">
               <input
                 type="checkbox"
+                id="sendEmailCheckbox"
                 checked={sendEmail}
                 onChange={(e) => setSendEmail(e.target.checked)}
-                className="h-4 w-4 rounded border-[var(--border)] bg-[var(--surface)] text-[var(--accent)] focus:ring-[var(--accent)]"
+                className="h-4 w-4 rounded border-[var(--border)] bg-[var(--surface)] text-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] cursor-pointer"
               />
             </div>
-            <div className="space-y-0.5">
+            <label htmlFor="sendEmailCheckbox" className="space-y-0.5 cursor-pointer">
               <div className="flex items-center gap-1.5 text-sm font-medium text-[var(--text)]">
                 <Mail className="h-4 w-4 text-[var(--accent)]" />
                 <span>{t("sendEmailToggle")}</span>
@@ -113,8 +114,8 @@ export function WorkflowSettingsForm({ initialMetadata }: WorkflowSettingsFormPr
               <p className="text-xs text-[var(--text-muted)] leading-relaxed">
                 {t("sendEmailHelp")}
               </p>
-            </div>
-          </label>
+            </label>
+          </div>
         </div>
 
         {statusMessage && (
@@ -138,7 +139,7 @@ export function WorkflowSettingsForm({ initialMetadata }: WorkflowSettingsFormPr
           <button
             type="submit"
             disabled={isPending}
-            className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[var(--accent)]/90 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 disabled:opacity-50 transition-all cursor-pointer"
+            className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[var(--accent)]/90 focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden disabled:opacity-50 transition-all cursor-pointer"
           >
             {isPending ? (
               <>

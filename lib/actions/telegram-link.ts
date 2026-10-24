@@ -12,6 +12,7 @@ import {
   linkTelegramToUser,
   unlinkTelegramFromUser,
   getUserById,
+  getUserTelegramIdentity,
 } from "@/lib/db/queries/users";
 import { saveTelegramLinkToken } from "@/lib/db/queries/telegram-link";
 import { getWorkflowChannelBySlug } from "@/lib/db/queries/workflow-channels";
@@ -228,12 +229,14 @@ export async function checkTelegramStatusAction(): Promise<
       };
     }
 
+    const telegramIdentity = await getUserTelegramIdentity(session.user.id);
+
     return {
       success: true,
       data: {
-        isConnected: user.telegramId !== null,
-        telegramId: user.telegramId,
-        username: user.username,
+        isConnected: telegramIdentity !== null,
+        telegramId: telegramIdentity ? telegramIdentity.telegramId : null,
+        username: telegramIdentity ? telegramIdentity.username : null,
       },
     };
   } catch (error) {

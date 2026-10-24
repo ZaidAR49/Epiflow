@@ -276,25 +276,29 @@ gantt
   - `lib/services/url-expander.ts`: Follow HTTP redirects for `lnkd.in` short URLs.
 - Implement background orchestrator (using Inngest or Trigger.dev) to manage the multi-step scrape and report generation safely outside the HTTP timeout boundary.
 
-### Stage 2: Database Evolution & Authentication
-- Apply updated PostgreSQL migrations to Supabase/PostgreSQL.
-- Set up NextAuth (Auth.js) with Google Provider:
+### Stage 2: Database Evolution & Usage Engine
+- Multi-tier Schema Migration in PostgreSQL / Supabase:
+  - `plans`: Configurable subscription tiers, pricing (`price_minor`), billing intervals (`monthly`, `yearly`, `lifetime`), and JSONB entitlements per workflow.
+  - `subscriptions`: User subscription lifecycles (`active`, `trialing`, `canceled`), period tracking, and provider mappings.
+  - `payments`: Immutable payment ledger tracking charges, amounts, currencies, and provider transaction IDs.
+  - `usage_meters` & `access_usage`: Replaced monolithic counters with flexible per-meter usage limits (`runs`, `ai_tokens`, etc.) across time periods.
+  - Database RPCs: `apply_plan_entitlements` (dynamically provision access & meter limits upon subscription) and `revoke_subscription_access`.
+- NextAuth (Auth.js) with Google Provider:
   - Configure scopes for user profile and Gmail draft creation.
   - Encrypt and persist Google refresh tokens securely.
-- Build Telegram Account Linking workflow: User generates a 6-digit code or deep link (`t.me/JobXrayBot?start=LINK_TOKEN`) to pair their Telegram account with their Web profile.
+- Telegram Account Linking workflow: User pairs account with `/connect <TOKEN>` deep link, resolving identities in `user_identities`.
 
-### Stage 3: Landing Page & Subscription Engine
-- Build an aesthetic, high-converting landing page:
+### Stage 3: Subscription Engine & Mock Billing
+- Dynamic Plan & Subscription Management:
+  - Support for Mock Checkout provider during development and staging, simulating end-to-end payment creation and automated entitlement provisioning via `apply_plan_entitlements`.
+  - Seamless migration path to Stripe / LemonSqueezy webhook listeners (`/api/billing/webhook`) handling checkout events.
+- Landing Page & Pricing Matrix:
   - Hero section with live demo / sample report carousel.
-  - Value calculator: Time saved vs. cost of LinkedIn Premium.
-  - Transparent pricing table (Free Trial, Starter, Pro).
-- Integrate Stripe / LemonSqueezy:
-  - Checkout session creation via Server Action.
-  - Webhook listener (`/api/billing/webhook`) handling `checkout.session.completed`, `customer.subscription.updated`, and `customer.subscription.deleted`.
-  - Automatically update `user_workflow_access` quota upon successful payment or cycle renewal.
+  - Dynamic pricing table reading available active plans from the database.
+  - Transparent pricing tiers with workflow-specific entitlement lists.
 
 ### Stage 4: Web Application & Interactive Dashboard
-- Build modern, responsive dashboard UI:
+- Modern, responsive dashboard UI:
   - Quick Search bar with URL validation regex.
   - Real-time analysis status stepper (listening to job progress).
   - Rich Markdown report renderer with bilingual layout support (LTR for English, RTL for Arabic).
@@ -304,18 +308,19 @@ gantt
 
 ### Stage 5: Telegram Webhook Migration
 - Decommission the n8n Telegram trigger node.
-- Build Next.js Route Handler `/api/telegram/webhook`:
+- Next.js Route Handler `/api/telegram/webhook`:
   - Receives Telegram updates (messages and callback queries).
   - Shares the exact same gatekeeper verification and background orchestrator used by the Web frontend.
   - Sends streaming status messages via Telegram Bot API (`editMessageText`).
   - Delivers the finalized Markdown report and inline buttons.
 
-### Stage 6: Admin Dashboard & Observability
-- Admin dashboard (`/admin`):
-  - View real-time user registrations, active MRR, and plan distribution.
-  - Monitor Apify actor execution times, failure rates, and token expenditures.
-  - User management table: adjust quotas, inspect failed runs, and view user audit logs.
-- Add Sentry error tracking and structured logging.
+### Stage 6: Admin Dashboard & Telemetry
+- Admin management portal (`/admin`):
+  - **Plan Management (CRUD):** Create, edit, toggle active status, and customize workflow meter limits/entitlements directly through the UI.
+  - **Subscription Monitoring:** Inspect subscriber health, renewal periods, active MRR, and manually assign plans or cancel subscriptions.
+  - **User & Quota Administration:** Adjust per-workflow usage meters, grant access, and view user audit logs.
+  - **Pipeline Telemetry:** Monitor execution times, failure rates, and token expenditures.
+- Sentry error tracking and structured logging.
 
 ---
 
@@ -400,3 +405,35 @@ The project has:
 - **High market utility** addressing clear job-hunting friction.
 
 When you are ready to begin development, we will start with **Stage 1: Core Engine Migration** by establishing the Next.js project structure, typed scrapers, and background orchestrator.
+
+---
+
+## 10. Long-Term Architectural Backlog (Low Priority / Future Explorations)
+
+> [!NOTE]
+> The concepts below are explicitly documented for future architectural alignment. They have **Very Low Priority** during current rollout phases and must NOT distract from immediate platform stabilization, onboarding, and core user acquisition.
+
+### 10.1 Headless Developer API Keys (`Workflow-as-an-API`)
+* **Priority:** Low (Backlog)
+* **Status:** Architecturally Ready (~80% foundational parity)
+* **Concept:** Issue cryptographically secure API keys (`epi_live_...`) allowing power users, B2B clients, and automation builders (Make.com, n8n, Zapier) to execute Epiflow workflows headlessly without visiting the web UI or Telegram bot.
+* **Architecture Highlights:**
+  - **REST Endpoints:** `POST /api/v1/workflows/:slug/run` (returns `202 Accepted` with `runId`) and `GET /api/v1/runs/:id` (polling status and final report payload).
+  - **Key Storage:** Keys stored as SHA-256 hashes in a dedicated `api_keys` table with one-click revocation and optional per-workflow scopes.
+  - **Direct Parity:** Piggybacks directly on the existing `authenticate_gatekeeper(p_user_id)` SQL function and Inngest background queue without altering underlying scraper or AI logic.
+
+---
+
+### 10.2 Apify-Style Credit Wallet & Tool-Specific Subscriptions
+* **Label:** `[Future Feature — Far Future]`
+* **Priority:** **Very Low (Far Future Exploration)**
+* **Concept:** Transitioning from fixed monthly SaaS plans toward an Apify-inspired consumption marketplace where:
+  1. Users maintain a prepaid wallet balance (pay-as-you-go credit pool) consumed dynamically based on compute units/scrapes.
+  2. Users can subscribe to individual workflows/tools for flat rental rates or volume discounts.
+* **Strategic Rationale for Far-Future Deferral:**
+  - **Conversion Friction:** Simple plans (e.g., $15/mo for 60 analyses) convert significantly higher for early adopters than complex credit math and compute units.
+  - **Payment Processing Overhead:** Small micro-deposits ($5–$10) suffer high fixed transaction fees from Stripe ($0.30 + 2.9%).
+  - **Operational & Ledger Overhead:** Requires complex double-entry balance ledgers, refund mechanics, and unconsumed credit tax compliance.
+  - **Current Schema Adequacy:** The existing `plans.entitlements` and `access_usage` in PostgreSQL already handle multi-workflow limits and metering cleanly without the burden of a financial wallet.
+  - **Implementation Trigger:** Revisit only if Epiflow scales into a broad, multi-author workflow catalog with dozens of diverse automations and third-party developer revenue sharing.
+

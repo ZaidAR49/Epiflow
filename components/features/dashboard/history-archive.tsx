@@ -24,6 +24,15 @@ interface HistoryArchiveProps {
   onDeleteRun?: (run: JobRun) => void;
 }
 
+function getRunUrl(run: JobRun): string {
+  return ((run.input as Record<string, unknown>)?.url as string) || (run as unknown as { url?: string }).url || "";
+}
+
+function getRunReport(run: JobRun): (StructuredReport & { metadata?: { hrEmail?: string } }) | null {
+  const output = run.output as Record<string, unknown> | null;
+  return (output?.report ?? (run as unknown as { report?: unknown }).report) as (StructuredReport & { metadata?: { hrEmail?: string } }) | null;
+}
+
 type FilterTab = "all" | "completed" | "email" | "failed";
 
 export function HistoryArchive({
@@ -42,10 +51,10 @@ export function HistoryArchive({
     const q = query.trim().toLowerCase();
 
     return runs.filter((run) => {
-      const report = run.report as StructuredReport | null;
+      const report = getRunReport(run);
       const roleTitle = report?.role?.title?.toLowerCase() || "";
       const companyName = report?.role?.company?.toLowerCase() || "";
-      const rawUrl = run.url.toLowerCase();
+      const rawUrl = getRunUrl(run).toLowerCase();
 
       // Query filter
       if (
@@ -63,8 +72,7 @@ export function HistoryArchive({
       if (activeFilter === "email") {
         return (
           run.status === "completed" &&
-          // Check if metadata has hrEmail or text mentions email
-          Boolean((run.report as { metadata?: { hrEmail?: string } })?.metadata?.hrEmail)
+          Boolean(report?.metadata?.hrEmail)
         );
       }
 
@@ -108,11 +116,19 @@ export function HistoryArchive({
         <div className="relative w-full sm:w-72">
           <Search className="absolute start-3 top-2.5 h-3.5 w-3.5 text-[var(--text-muted)]" />
           <input
+            id="history-search-input"
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape" && query) {
+                e.stopPropagation();
+                setQuery("");
+              }
+            }}
             placeholder={t("searchHistoryPlaceholder")}
-            className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-2)]/60 ps-8 pe-3 py-1.5 text-xs text-[var(--text)] placeholder-[var(--text-muted)]/60 focus:border-[var(--accent)] focus:outline-none transition-colors"
+            aria-label={t("searchHistoryPlaceholder")}
+            className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-2)]/60 ps-8 pe-3 py-1.5 text-xs text-[var(--text)] placeholder-[var(--text-muted)]/60 focus:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus:outline-hidden transition-colors"
           />
         </div>
       </div>
@@ -123,7 +139,7 @@ export function HistoryArchive({
         <button
           type="button"
           onClick={() => setActiveFilter("all")}
-          className={`rounded-lg px-2.5 py-1 font-semibold transition-colors ${
+          className={`rounded-lg px-2.5 py-1 font-semibold focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden transition-colors ${
             activeFilter === "all"
               ? "bg-[var(--accent)] text-white shadow-xs"
               : "bg-[var(--surface-2)]/60 text-[var(--text-muted)] hover:text-[var(--text)]"
@@ -134,7 +150,7 @@ export function HistoryArchive({
         <button
           type="button"
           onClick={() => setActiveFilter("completed")}
-          className={`rounded-lg px-2.5 py-1 font-semibold transition-colors ${
+          className={`rounded-lg px-2.5 py-1 font-semibold focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden transition-colors ${
             activeFilter === "completed"
               ? "bg-[var(--accent)] text-white shadow-xs"
               : "bg-[var(--surface-2)]/60 text-[var(--text-muted)] hover:text-[var(--text)]"
@@ -145,7 +161,7 @@ export function HistoryArchive({
         <button
           type="button"
           onClick={() => setActiveFilter("email")}
-          className={`rounded-lg px-2.5 py-1 font-semibold transition-colors ${
+          className={`rounded-lg px-2.5 py-1 font-semibold focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-hidden transition-colors ${
             activeFilter === "email"
               ? "bg-emerald-600 text-white shadow-xs"
               : "bg-[var(--surface-2)]/60 text-[var(--text-muted)] hover:text-[var(--text)]"
@@ -156,7 +172,7 @@ export function HistoryArchive({
         <button
           type="button"
           onClick={() => setActiveFilter("failed")}
-          className={`rounded-lg px-2.5 py-1 font-semibold transition-colors ${
+          className={`rounded-lg px-2.5 py-1 font-semibold focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:outline-hidden transition-colors ${
             activeFilter === "failed"
               ? "bg-rose-600 text-white shadow-xs"
               : "bg-[var(--surface-2)]/60 text-[var(--text-muted)] hover:text-[var(--text)]"
@@ -178,12 +194,11 @@ export function HistoryArchive({
       ) : (
         <div className="space-y-2.5">
           {filteredRuns.map((run) => {
-            const report = run.report as StructuredReport | null;
+            const report = getRunReport(run);
             const role = report?.role;
             const isSelected = selectedRunId === run.id;
-            const hasEmail = Boolean(
-              (run.report as { metadata?: { hrEmail?: string } })?.metadata?.hrEmail
-            );
+            const hasEmail = Boolean(report?.metadata?.hrEmail);
+            const runUrl = getRunUrl(run);
 
             return (
               <div
@@ -222,9 +237,7 @@ export function HistoryArchive({
                   <p className="text-xs text-[var(--text-muted)] truncate">
                     {role?.company ? `${role.company} • ` : ""}
                     <span className="font-mono text-[11px] opacity-75">
-                      {run.url.length > 55
-                        ? `${run.url.slice(0, 55)}...`
-                        : run.url}
+                      {runUrl.length > 55 ? `${runUrl.slice(0, 55)}...` : runUrl}
                     </span>
                   </p>
                 </div>
@@ -237,20 +250,20 @@ export function HistoryArchive({
                   </div>
 
                   <a
-                    href={run.url}
+                    href={runUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text)] hover:border-[var(--accent)] transition-colors"
+                    className="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text)] hover:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden transition-colors"
                     title={t("originalPost")}
                   >
                     <ExternalLink className="h-3.5 w-3.5" />
                   </a>
 
-                  {run.status === "completed" && Boolean(run.report) && (
+                  {run.status === "completed" && Boolean(report) && (
                     <button
                       type="button"
                       onClick={() => onSelectRun(run)}
-                      className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all shadow-xs ${
+                      className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden transition-all shadow-xs ${
                         isSelected
                           ? "bg-[var(--accent)] text-white"
                           : "bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
@@ -265,7 +278,7 @@ export function HistoryArchive({
                     <button
                       type="button"
                       onClick={() => onDeleteRun(run)}
-                      className="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:text-rose-400 hover:border-rose-500/30 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                      className="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:text-rose-400 hover:border-rose-500/30 hover:bg-rose-500/10 focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:outline-hidden transition-colors cursor-pointer"
                       title={t("deleteReport")}
                     >
                       <Trash2 className="h-3.5 w-3.5" />

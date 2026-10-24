@@ -6,6 +6,7 @@ import { normalizeScrapedData, isCompanyAuthor } from "@/lib/services/scraper/no
 import { generateReport } from "@/lib/services/ai/report-agent";
 import {
   updateJobRunStatus,
+  updateJobRunProgress,
   markJobRunFailed,
   markJobRunCompleted,
   markUsageConsumed,
@@ -27,7 +28,7 @@ export const analyzeJobPost = inngest.createFunction(
 
     // Step 1: Validate and expand URL (SSRF-protected)
     const normalizedUrl = await step.run("expand-url", async () => {
-      await updateJobRunStatus(runId, "validating");
+      await updateJobRunProgress(runId, "validating");
       const result = await expandLinkedInUrl(url);
       if (isErr(result)) {
         await markJobRunFailed(runId, result.error.code, result.error.safeMessage);
@@ -38,7 +39,7 @@ export const analyzeJobPost = inngest.createFunction(
 
     // Step 2: Scrape post data (fail fast if empty)
     const rawPost = await step.run("scrape-post", async () => {
-      await updateJobRunStatus(runId, "scraping_post");
+      await updateJobRunProgress(runId, "scraping_post");
       const result = await scrapePost(normalizedUrl);
       if (isErr(result)) {
         await markJobRunFailed(runId, result.error.code, result.error.safeMessage);
@@ -53,14 +54,14 @@ export const analyzeJobPost = inngest.createFunction(
       const authorUrl = rawPost.author?.profile_url;
 
       if (authorUrl && !isCompanyAuthor(rawPost.author)) {
-        await updateJobRunStatus(runId, "scraping_author");
+        await updateJobRunProgress(runId, "scraping_author");
         const authorResult = await scrapeAuthor(authorUrl);
         if (isOk(authorResult)) {
           rawAuthor = authorResult.data;
         }
       }
 
-      await updateJobRunStatus(runId, "scraping_company");
+      await updateJobRunProgress(runId, "scraping_company");
       const authorCompanyUrl =
         rawAuthor?.currentPosition?.[0]?.companyLinkedinUrl ||
         (rawAuthor?.currentPosition && rawAuthor.currentPosition.length > 0
@@ -97,7 +98,7 @@ export const analyzeJobPost = inngest.createFunction(
 
     // Step 5: Generate AI intelligence report
     const reportOutput = await step.run("generate-ai-report", async () => {
-      await updateJobRunStatus(runId, "generating_report");
+      await updateJobRunProgress(runId, "generating_report");
       const result = await generateReport({
         payload: normalizedPayload,
         language,

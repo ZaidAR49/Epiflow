@@ -8,9 +8,14 @@ import type { WorkflowSummary } from "@/lib/db/queries/workflows";
 interface WorkflowCardProps {
   workflow: WorkflowSummary;
   isFlagship?: boolean;
+  isSubscribed?: boolean;
 }
 
-export function WorkflowCard({ workflow, isFlagship = false }: WorkflowCardProps) {
+export function WorkflowCard({
+  workflow,
+  isFlagship = false,
+  isSubscribed = false,
+}: WorkflowCardProps) {
   const t = useTranslations("landing");
   const locale = useLocale();
 
@@ -62,12 +67,14 @@ export function WorkflowCard({ workflow, isFlagship = false }: WorkflowCardProps
   return (
     <div
       className={`group relative flex flex-col justify-between rounded-2xl border bg-[var(--surface)] p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${
-        isFlagship
+        isSubscribed
+          ? "border-sky-500/50 shadow-lg shadow-sky-500/15 hover:border-sky-400"
+          : isFlagship
           ? "border-sky-500/40 shadow-lg shadow-sky-500/10 hover:border-sky-400"
           : "border-[var(--border)] hover:border-[var(--accent)]/50"
       }`}
     >
-      {/* Top Banner: Status & Flagship Badges */}
+      {/* Top Banner: Status & Flagship/Subscription Badges */}
       <div>
         <div className="flex items-center justify-between gap-2 flex-wrap mb-4">
           <div className="flex items-center gap-1.5">
@@ -84,12 +91,17 @@ export function WorkflowCard({ workflow, isFlagship = false }: WorkflowCardProps
             )}
           </div>
 
-          {isFlagship && (
+          {isSubscribed ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/15 px-2.5 py-0.5 text-[11px] font-bold text-sky-400 border border-sky-500/30 shadow-[0_0_8px_rgba(56,189,248,0.25)]">
+              <Sparkles className="h-3 w-3 text-sky-300" />
+              <span>{t("badgeSubscribed")}</span>
+            </span>
+          ) : isFlagship ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-teal-500/15 to-sky-500/15 px-2.5 py-0.5 text-[11px] font-bold text-sky-400 border border-sky-500/30">
               <Sparkles className="h-3 w-3 text-teal-400" />
               <span>{t("badgeFlagship")}</span>
             </span>
-          )}
+          ) : null}
         </div>
 
         {/* Workflow Title & Category */}

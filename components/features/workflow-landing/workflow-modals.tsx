@@ -27,6 +27,18 @@ export function WorkflowModals({
 }: WorkflowModalsProps) {
   const t = useTranslations("workflowLanding");
 
+  React.useEffect(() => {
+    if (!isGmailModalOpen && !isCuratorModalOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (isGmailModalOpen) onCloseGmailModal();
+        if (isCuratorModalOpen) onCloseCuratorModal();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isGmailModalOpen, isCuratorModalOpen, onCloseGmailModal, onCloseCuratorModal]);
+
   return (
     <>
       {/* Toast Notification */}
@@ -39,7 +51,12 @@ export function WorkflowModals({
 
       {/* Gmail Draft Preview Modal */}
       {isGmailModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[var(--bg)]/80 backdrop-blur-sm animate-fade-in">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={t("modalGmailHeader")}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[var(--bg)]/80 backdrop-blur-sm animate-fade-in"
+        >
           <div className="w-full max-w-xl surface-card rounded-xl overflow-hidden shadow-2xl text-start">
             <div className="px-6 py-4 bg-[var(--bg)] border-b hairline-border flex items-center justify-between">
               <span className="font-mono text-xs text-[var(--accent)] font-semibold">
@@ -48,7 +65,7 @@ export function WorkflowModals({
               <button
                 type="button"
                 onClick={onCloseGmailModal}
-                className="font-mono text-xs text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
+                className="font-mono text-xs text-[var(--text-muted)] hover:text-[var(--text)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden transition-colors"
               >
                 {t("modalCloseEsc")}
               </button>
@@ -100,7 +117,12 @@ export function WorkflowModals({
 
       {/* Community Curator Channel Post Preview Modal */}
       {isCuratorModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[var(--bg)]/80 backdrop-blur-sm animate-fade-in">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={t("modalCuratorHeader")}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[var(--bg)]/80 backdrop-blur-sm animate-fade-in"
+        >
           <div className="w-full max-w-xl surface-card rounded-xl overflow-hidden shadow-2xl text-start">
             <div className="px-6 py-4 bg-[var(--bg)] border-b hairline-border flex items-center justify-between">
               <span className="font-mono text-xs text-emerald-400 font-semibold">
@@ -109,7 +131,7 @@ export function WorkflowModals({
               <button
                 type="button"
                 onClick={onCloseCuratorModal}
-                className="font-mono text-xs text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
+                className="font-mono text-xs text-[var(--text-muted)] hover:text-[var(--text)] focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:outline-hidden transition-colors"
               >
                 {t("modalCloseEsc")}
               </button>

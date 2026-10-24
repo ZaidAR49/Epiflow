@@ -1,5 +1,6 @@
 import { pgTable, uuid, text, timestamp, jsonb, index } from "drizzle-orm/pg-core";
 import { users } from "./users";
+import { workflows } from "./workflows";
 import { runStatusEnum } from "./enums";
 
 export const jobRuns = pgTable(
@@ -9,15 +10,14 @@ export const jobRuns = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    channel: text("channel").notNull().default("web"), // 'web' | 'telegram'
-    url: text("url").notNull(),
-    normalizedUrl: text("normalized_url").notNull(),
+    workflowId: uuid("workflow_id")
+      .notNull()
+      .references(() => workflows.id, { onDelete: "restrict" }),
+    channel: text("channel").notNull().default("web"),
     status: runStatusEnum("status").default("pending").notNull(),
-    postData: jsonb("post_data"),
-    authorData: jsonb("author_data"),
-    companyData: jsonb("company_data"),
-    report: jsonb("report"),
-    telegramReport: text("telegram_report"),
+    input: jsonb("input").default({}).notNull(),
+    output: jsonb("output"),
+    usage: jsonb("usage"),
     errorCode: text("error_code"),
     errorMessage: text("error_message"),
     usageConsumedAt: timestamp("usage_consumed_at", { withTimezone: true }),
@@ -25,10 +25,10 @@ export const jobRuns = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
-    index("idx_job_runs_user_id").on(table.userId),
-    index("idx_job_runs_status").on(table.status),
-    index("idx_job_runs_normalized_url").on(table.normalizedUrl),
+    index("idx_job_runs_user_created").on(table.userId, table.createdAt),
+    index("idx_job_runs_workflow_created").on(table.workflowId, table.createdAt),
     index("idx_job_runs_created_at").on(table.createdAt),
+    index("idx_job_runs_active").on(table.createdAt),
   ]
 );
 

@@ -6,9 +6,13 @@ import type { WorkflowSummary } from "@/lib/db/queries/workflows";
 
 interface WorkflowCatalogProps {
   workflows: WorkflowSummary[];
+  subscribedSlugs?: string[];
 }
 
-export function WorkflowCatalog({ workflows }: WorkflowCatalogProps) {
+export function WorkflowCatalog({
+  workflows,
+  subscribedSlugs = [],
+}: WorkflowCatalogProps) {
   const t = useTranslations("landing");
 
   // Planned workflows that illustrate the extensible platform vision
@@ -54,6 +58,7 @@ export function WorkflowCatalog({ workflows }: WorkflowCatalogProps) {
               key={wf.id}
               workflow={wf}
               isFlagship={wf.slug === "job-xray"}
+              isSubscribed={subscribedSlugs.includes(wf.slug)}
             />
           ))}
 

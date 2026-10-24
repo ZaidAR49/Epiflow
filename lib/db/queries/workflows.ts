@@ -83,6 +83,9 @@ export interface RegisteredWorkflowItem {
   usageCount: number;
   usageLimit: number | null;
   expiresAt: Date | null;
+  isSubscribed?: boolean;
+  planName?: string | null;
+  grantedVia?: string | null;
 }
 
 /**
@@ -100,6 +103,9 @@ export async function getUserWorkflowsList(
     usage_count: number;
     usage_limit: number | null;
     expires_at: string | null;
+    is_subscribed: boolean;
+    plan_name: string | null;
+    granted_via: string | null;
   }>(sql`
     SELECT 
       w.id,
@@ -107,11 +113,19 @@ export async function getUserWorkflowsList(
       w.name,
       w.is_active,
       w.image_url,
-      uwa.usage_count,
-      uwa.usage_limit,
-      uwa.expires_at
+      COALESCE(au.used, 0)::text AS usage_count,
+      au.limit_value::text AS usage_limit,
+      uwa.expires_at,
+      uwa.granted_via,
+      (s.id IS NOT NULL AND s.status IN ('active', 'trialing')) AS is_subscribed,
+      p.name AS plan_name
     FROM public.workflows w
     JOIN public.user_workflow_access uwa ON uwa.workflow_id = w.id
+    LEFT JOIN public.subscriptions s ON s.id = uwa.subscription_id
+    LEFT JOIN public.plans p ON p.id = s.plan_id
+    LEFT JOIN public.usage_meters m ON m.key = 'runs'
+    LEFT JOIN public.access_usage au 
+      ON au.user_id = uwa.user_id AND au.workflow_id = w.id AND au.meter_id = m.id
     WHERE uwa.user_id = ${userId}::uuid
     ORDER BY w.name ASC;
   `);
@@ -125,5 +139,8 @@ export async function getUserWorkflowsList(
     usageCount: Number(row.usage_count || 0),
     usageLimit: row.usage_limit !== null ? Number(row.usage_limit) : null,
     expiresAt: row.expires_at ? new Date(row.expires_at) : null,
+    isSubscribed: Boolean(row.is_subscribed),
+    planName: row.plan_name || null,
+    grantedVia: row.granted_via || null,
   }));
 }

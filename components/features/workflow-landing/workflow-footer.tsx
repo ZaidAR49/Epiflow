@@ -1,8 +1,9 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import Image from "next/image";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { EpiFlowLogo } from "@/components/ui/epiflow-logo";
 
 interface WorkflowFooterProps {
@@ -15,6 +16,8 @@ export function WorkflowFooter({
   imageUrl,
 }: WorkflowFooterProps = {}) {
   const t = useTranslations("workflowLanding");
+  const tCommon = useTranslations("common");
+  const locale = useLocale();
 
   return (
     <footer className="border-t hairline-border py-12 bg-[var(--bg)] text-[var(--text-muted)] text-xs">
@@ -40,7 +43,7 @@ export function WorkflowFooter({
           <span className="text-[var(--text-muted)]">{t("footerCopyright")}</span>
         </div>
 
-        <div className="flex flex-wrap gap-6">
+        <div className="flex flex-wrap items-center gap-6">
           <a href="#audiences" className="hover:text-[var(--text)] transition-colors">
             {t("navUseCases")}
           </a>
@@ -59,6 +62,25 @@ export function WorkflowFooter({
           <a href="#faq" className="hover:text-[var(--text)] transition-colors">
             {t("navFaq")}
           </a>
+          <span className="text-[var(--border)] hidden md:inline">•</span>
+          <Link
+            href={`/${locale}/contact`}
+            className="hover:text-[var(--text)] transition-colors"
+          >
+            {tCommon("contactUs")}
+          </Link>
+          <Link
+            href={`/${locale}/privacy`}
+            className="hover:text-[var(--text)] transition-colors"
+          >
+            {tCommon("privacyPolicy")}
+          </Link>
+          <Link
+            href={`/${locale}/terms`}
+            className="hover:text-[var(--text)] transition-colors"
+          >
+            {tCommon("termsOfService")}
+          </Link>
         </div>
       </div>
 

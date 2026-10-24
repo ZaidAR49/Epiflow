@@ -34,7 +34,10 @@ export default async function WorkflowConsolePage({ params }: WorkflowConsolePag
         userName={session?.user?.name}
         userImage={session?.user?.image}
         logoUrl={workflow.imageUrl}
+        workflowName={workflow.workflowName}
+        workflowHref={`/${locale}/workflows/${slug}/console`}
         isSignedIn={Boolean(session?.user?.id)}
+        isSubscribed={Boolean(workflow.isSubscribed ?? session?.user?.isSubscribed)}
       />
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">

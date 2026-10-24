@@ -55,8 +55,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (!workflow) {
+      return new Response(
+        JSON.stringify({
+          error: "Workflow access not granted",
+          code: ErrorCodes.WORKFLOW_FORBIDDEN,
+        }),
+        { status: 403, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     if (
-      workflow &&
       workflow.usageLimit !== null &&
       workflow.usageCount >= workflow.usageLimit
     ) {
@@ -72,9 +81,9 @@ export async function POST(req: NextRequest) {
     // Create initial pending job run record
     const run = await createJobRun({
       userId,
+      workflowId: workflow.workflowId,
       channel: "web",
-      url,
-      normalizedUrl: url,
+      input: { url, normalizedUrl: url, language },
       status: "pending",
     });
 

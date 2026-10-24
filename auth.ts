@@ -3,6 +3,7 @@ import Google from "next-auth/providers/google";
 import { getServerEnv } from "@/lib/env";
 import { upsertGoogleUser, getUserById } from "@/lib/db/queries/users";
 import { ensureUserWorkflowAccess } from "@/lib/db/queries/access";
+import { getUserSubscription } from "@/lib/db/queries/subscriptions";
 
 const env = getServerEnv();
 
@@ -58,16 +59,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (pic) {
           token.picture = pic;
         }
-      } else if (typeof token.userId === "string") {
+      }
+      if (typeof token.userId === "string") {
         try {
-          const dbUser = await getUserById(token.userId);
+          const [dbUser, sub] = await Promise.all([
+            getUserById(token.userId),
+            getUserSubscription(token.userId),
+          ]);
           if (dbUser) {
             token.role = dbUser.role;
             token.status = dbUser.status;
-            if (!token.picture && dbUser.image) {
-              token.picture = dbUser.image;
-            }
           }
+          token.isSubscribed = Boolean(
+            sub && (sub.status === "active" || sub.status === "trialing")
+          );
         } catch {
           // Keep existing token values if DB query fails
         }
@@ -81,9 +86,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (typeof token.picture === "string" && session.user) {
         session.user.image = token.picture;
       }
+      if (session.user) {
+        session.user.isSubscribed = Boolean(token.isSubscribed);
+      }
       if (
         session.user &&
-        (token.role === "admin" || token.role === "user" || token.role === "guest")
+        (token.role === "admin" ||
+          token.role === "editor" ||
+          token.role === "viewer" ||
+          token.role === "user" ||
+          token.role === "guest")
       ) {
         session.user.role = token.role;
       }

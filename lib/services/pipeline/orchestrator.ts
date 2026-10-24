@@ -9,7 +9,7 @@ import { normalizeScrapedData, isCompanyProfileUrl } from "../scraper/normalize"
 import { generateReport } from "../ai/report-agent";
 import type { AnalysisReportOutput } from "@/lib/validation/report";
 import {
-  updateJobRunStatus,
+  updateJobRunProgress,
   markJobRunFailed,
   markJobRunCompleted,
   markUsageConsumed,
@@ -163,12 +163,12 @@ export async function executePipeline(
 
 async function reportProgress(
   runId: string,
-  status: Parameters<typeof updateJobRunStatus>[1],
+  step: string,
   onProgress?: (s: string) => Promise<void> | void
 ) {
-  await updateJobRunStatus(runId, status);
+  await updateJobRunProgress(runId, step);
   if (onProgress) {
-    await onProgress(status);
+    await onProgress(step);
   }
 }
 

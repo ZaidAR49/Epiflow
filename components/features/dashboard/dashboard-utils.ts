@@ -14,17 +14,14 @@ export function createCompletedRunItem(
   return {
     id: runId || `run_${Date.now()}`,
     userId: "current_user",
+    workflowId: "job-xray",
     channel: "web",
-    url,
-    normalizedUrl: url,
     status: "completed",
-    postData: null,
-    authorData: null,
-    companyData: null,
-    report: { ...report, metadata },
-    telegramReport: telegramReport || null,
     errorCode: null,
     errorMessage: null,
+    input: { url, normalizedUrl: url },
+    output: { report: { ...report, metadata }, telegramReport: telegramReport || null },
+    usage: null,
     usageConsumedAt: new Date(),
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -32,8 +29,7 @@ export function createCompletedRunItem(
 }
 
 /**
- * Synchronizes the active report runId across the URL query (?runId=...) and sessionStorage
- * so the active report survives language switches and page transitions.
+ * Synchronizes the active report runId across the URL query (?runId=...) and sessionStorage.
  */
 export function syncActiveRunUrl(runId: string | undefined): void {
   if (typeof window === "undefined") return;
@@ -46,10 +42,9 @@ export function syncActiveRunUrl(runId: string | undefined): void {
       url.searchParams.delete("runId");
       sessionStorage.removeItem("active_dashboard_run_id");
     }
-    const cleanSearch = url.search ? url.search : "";
-    window.history.replaceState(null, "", url.pathname + cleanSearch);
+    window.history.replaceState({}, "", url.toString());
   } catch {
-    // Non-blocking in restricted browser contexts
+    // Non-blocking navigation sync failure
   }
 }
 
@@ -77,6 +72,22 @@ export function resolveInitialRun(
   return { run: match, runId: match ? match.id : targetId };
 }
 
+export function extractReportFromRun(run: JobRun | undefined): StructuredReport | null {
+  if (!run) return null;
+  const output = run.output as Record<string, unknown> | null;
+  return (output?.report ?? (run as unknown as { report?: unknown })?.report) as StructuredReport | null;
+}
+
+export function extractMetadataFromRun(run: JobRun | undefined): OpportunityMetadata | null {
+  const report = extractReportFromRun(run);
+  return (report as { metadata?: OpportunityMetadata })?.metadata || null;
+}
+
+export function extractUrlFromRun(run: JobRun | undefined): string | undefined {
+  if (!run) return undefined;
+  return ((run.input as Record<string, unknown>)?.url as string) || (run as unknown as { url?: string })?.url;
+}
+
 /**
  * Triggers the Gmail compose draft creation API and returns the created draft URL.
  */
@@ -98,5 +109,3 @@ export async function requestDraftUrl(
   const data = await res.json();
   return data.draftUrl;
 }
-
-

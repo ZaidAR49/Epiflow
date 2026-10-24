@@ -134,6 +134,8 @@ export interface UserWorkflowProfile {
     sendEmail?: boolean;
     preferred_language?: "ar" | "en";
   };
+  isSubscribed?: boolean;
+  planName?: string | null;
 }
 
 /**
@@ -157,19 +159,28 @@ export async function getUserWorkflowDetails(
       sendEmail?: boolean;
       preferred_language?: "ar" | "en";
     } | null;
+    is_subscribed: boolean;
+    plan_name: string | null;
   }>(sql`
     SELECT 
       w.id AS workflow_id,
       w.name AS workflow_name,
       w.image_url,
-      uwa.usage_count,
-      uwa.usage_limit,
+      COALESCE(au.used, 0)::text AS usage_count,
+      au.limit_value::text AS usage_limit,
       uwa.last_used_at,
       uwa.expires_at,
-      uwa.metadata
+      uwa.metadata,
+      (s.id IS NOT NULL AND s.status IN ('active', 'trialing')) AS is_subscribed,
+      p.name AS plan_name
     FROM public.workflows w
     JOIN public.user_workflow_access uwa 
       ON uwa.workflow_id = w.id
+    LEFT JOIN public.subscriptions s ON s.id = uwa.subscription_id
+    LEFT JOIN public.plans p ON p.id = s.plan_id
+    LEFT JOIN public.usage_meters m ON m.key = 'runs'
+    LEFT JOIN public.access_usage au 
+      ON au.user_id = uwa.user_id AND au.workflow_id = w.id AND au.meter_id = m.id
     WHERE uwa.user_id = ${userId}::uuid
       AND w.slug = ${workflowSlug}::text
     LIMIT 1;
@@ -187,6 +198,8 @@ export async function getUserWorkflowDetails(
     lastUsedAt: row.last_used_at ? new Date(row.last_used_at) : null,
     expiresAt: row.expires_at ? new Date(row.expires_at) : null,
     metadata: row.metadata || {},
+    isSubscribed: Boolean(row.is_subscribed),
+    planName: row.plan_name || null,
   };
 }
 
@@ -199,15 +212,30 @@ export async function ensureUserWorkflowAccess(
   defaultLimit: number = 5
 ): Promise<void> {
   await db.execute(sql`
-    INSERT INTO public.user_workflow_access (user_id, workflow_id, usage_limit, metadata)
+    INSERT INTO public.user_workflow_access (user_id, workflow_id, metadata)
     SELECT 
       ${userId}::uuid,
       w.id,
-      ${defaultLimit},
       jsonb_build_object('sendEmail', true, 'preferred_language', 'ar')
     FROM public.workflows w
     WHERE w.slug = ${workflowSlug}::text
     ON CONFLICT (user_id, workflow_id) DO NOTHING;
+  `);
+
+  await db.execute(sql`
+    INSERT INTO public.access_usage (user_id, workflow_id, meter_id, used, limit_value, period)
+    SELECT
+      ${userId}::uuid,
+      w.id,
+      m.id,
+      0,
+      ${defaultLimit},
+      'lifetime'
+    FROM public.workflows w
+    CROSS JOIN public.usage_meters m
+    WHERE w.slug = ${workflowSlug}::text
+      AND m.key = 'runs'
+    ON CONFLICT (user_id, workflow_id, meter_id) DO NOTHING;
   `);
 }
 

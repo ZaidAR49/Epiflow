@@ -6,19 +6,22 @@ import { useTranslations, useLocale } from "next-intl";
 import { User, CheckCircle2, AlertCircle, Save, Loader2, ShieldCheck, Mail, LogOut } from "lucide-react";
 import { updateProfileAction } from "@/lib/actions/profile";
 
+import { UserAvatar } from "@/components/ui/user-avatar";
+
 interface ProfileFormProps {
   initialData: {
     id: string;
     fullName: string;
     email: string | null;
     image: string | null;
-    role: "admin" | "user" | "guest";
+    role: "admin" | "editor" | "viewer" | "user" | "guest";
     status: "pending" | "approved" | "rejected" | "locked";
     preferredLanguage: "ar" | "en";
   };
+  isSubscribed?: boolean;
 }
 
-export function ProfileForm({ initialData }: ProfileFormProps) {
+export function ProfileForm({ initialData, isSubscribed = false }: ProfileFormProps) {
   const t = useTranslations("profile");
   const tAuth = useTranslations("auth");
   const locale = useLocale();
@@ -95,19 +98,12 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
     <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[var(--border)] pb-5">
         <div className="flex items-center gap-4">
-          {initialData.image ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={initialData.image}
-              alt={initialData.fullName}
-              className="h-14 w-14 rounded-full border-2 border-[var(--accent)] object-cover shadow-sm"
-              referrerPolicy="no-referrer"
-            />
-          ) : (
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--surface-2)] text-[var(--accent)] border border-[var(--border)]">
-              <User className="h-7 w-7" />
-            </div>
-          )}
+          <UserAvatar
+            src={initialData.image}
+            name={initialData.fullName}
+            size="lg"
+            isSubscribed={isSubscribed}
+          />
           <div>
             <h2 className="text-lg font-bold text-[var(--text)]">{initialData.fullName}</h2>
             <div className="flex items-center gap-2 text-xs text-[var(--text-muted)] mt-0.5">
@@ -150,7 +146,7 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             required
-            className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3.5 py-2.5 text-sm text-[var(--text)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)] transition-colors"
+            className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3.5 py-2.5 text-sm text-[var(--text)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden transition-colors"
           />
         </div>
 
@@ -162,7 +158,7 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
             id="preferredLanguage"
             value={preferredLanguage}
             onChange={(e) => setPreferredLanguage(e.target.value as "ar" | "en")}
-            className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3.5 py-2.5 text-sm text-[var(--text)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)] transition-colors"
+            className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3.5 py-2.5 text-sm text-[var(--text)] focus:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden transition-colors"
           >
             <option value="ar">العربية (Arabic)</option>
             <option value="en">English (الإنجليزية)</option>
@@ -190,7 +186,7 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
           <button
             type="submit"
             disabled={isPending}
-            className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[var(--accent)]/90 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 disabled:opacity-50 transition-all cursor-pointer"
+            className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[var(--accent)]/90 focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden disabled:opacity-50 transition-all cursor-pointer"
           >
             {isPending ? (
               <>

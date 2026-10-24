@@ -153,7 +153,7 @@ export function ContactForm() {
               onChange={(e) => setName(e.target.value)}
               placeholder={t("namePlaceholder")}
               disabled={isPending}
-              className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-4 py-2.5 text-sm text-[var(--text)] placeholder:text-[var(--text-muted)]/60 focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)] transition-colors disabled:opacity-50"
+              className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-4 py-2.5 text-sm text-[var(--text)] placeholder:text-[var(--text-muted)]/60 focus:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden transition-colors disabled:opacity-50"
             />
           </div>
 
@@ -174,7 +174,7 @@ export function ContactForm() {
               placeholder={t("emailPlaceholder")}
               dir="ltr"
               disabled={isPending}
-              className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-4 py-2.5 text-sm text-[var(--text)] placeholder:text-[var(--text-muted)]/60 focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)] transition-colors disabled:opacity-50"
+              className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-4 py-2.5 text-sm text-[var(--text)] placeholder:text-[var(--text-muted)]/60 focus:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden transition-colors disabled:opacity-50"
             />
           </div>
         </div>
@@ -194,7 +194,7 @@ export function ContactForm() {
               value={category}
               onChange={(e) => setCategory(e.target.value as ContactCategory)}
               disabled={isPending}
-              className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-3.5 py-2.5 text-sm text-[var(--text)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)] transition-colors disabled:opacity-50 cursor-pointer"
+              className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-3.5 py-2.5 text-sm text-[var(--text)] focus:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden transition-colors disabled:opacity-50 cursor-pointer"
             >
               <option value="general" className="bg-[#0F172A] text-white">{t("catGeneral")}</option>
               <option value="support" className="bg-[#0F172A] text-white">{t("catSupport")}</option>
@@ -220,7 +220,7 @@ export function ContactForm() {
               onChange={(e) => setSubject(e.target.value)}
               placeholder={t("subjectPlaceholder")}
               disabled={isPending}
-              className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-4 py-2.5 text-sm text-[var(--text)] placeholder:text-[var(--text-muted)]/60 focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)] transition-colors disabled:opacity-50"
+              className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-4 py-2.5 text-sm text-[var(--text)] placeholder:text-[var(--text-muted)]/60 focus:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden transition-colors disabled:opacity-50"
             />
           </div>
         </div>
@@ -242,7 +242,7 @@ export function ContactForm() {
             onChange={(e) => setMessage(e.target.value)}
             placeholder={t("messagePlaceholder")}
             disabled={isPending}
-            className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-4 text-sm text-[var(--text)] placeholder:text-[var(--text-muted)]/60 focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)] transition-colors disabled:opacity-50 resize-y"
+            className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-4 text-sm text-[var(--text)] placeholder:text-[var(--text-muted)]/60 focus:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden transition-colors disabled:opacity-50 resize-y"
           />
         </div>
 
@@ -250,7 +250,7 @@ export function ContactForm() {
         <button
           type="submit"
           disabled={isPending}
-          className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-6 py-3.5 text-sm font-bold text-white shadow-md hover:bg-[var(--accent)]/90 transition-all duration-200 disabled:opacity-50 cursor-pointer hover:shadow-indigo-500/20"
+          className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-6 py-3.5 text-sm font-bold text-white shadow-md hover:bg-[var(--accent)]/90 focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden transition-all duration-200 disabled:opacity-50 cursor-pointer hover:shadow-indigo-500/20"
         >
           {isPending ? (
             <>

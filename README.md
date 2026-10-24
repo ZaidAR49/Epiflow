@@ -1,167 +1,193 @@
-# 💼 JobPost X-Ray for LinkedIn
+# ⚡ EpiFlow | JobPost X-Ray
 
-An workflow that turns a LinkedIn job post into a clear, scannable report inside Telegram. Send the bot a LinkedIn link and it scrapes the post, the person who posted it, and the company behind it, then uses AI to write a localized (Arabic or English) summary. If the post names an application email, the bot can also prepare a Gmail draft with your CV attached.
+> **Autonomous Multi-Stage Recruitment Intelligence & Outreach SaaS**  
+> Dissect any LinkedIn post, verify hiring managers, cross-check company footprints, and stage 1-click personalized Gmail outreach drafts with attached CVs — via Web and Telegram.
 
-Access is controlled by a PostgreSQL gatekeeper: only approved users can run it, and each user has an optional per-workflow usage quota that is only consumed when a report is delivered successfully.
+---
 
-## Features
+## 🌟 Overview & Dual-Channel System
 
-- **Telegram interface:** paste a LinkedIn post, job, or `lnkd.in` short link and get a report back.
-- **Three-stage enrichment:** post content, then the poster's profile, then the company profile (via Apify).
-- **AI report in Arabic or English:** role summary, responsibilities, requirements, how to apply, poster background, company details, and a short list of factual flags. Arabic replies are sent right-to-left.
-- **Automatic model fallback:** Google Gemini first, Claude Sonnet as the fallback.
-- **Optional Gmail draft:** if (and only if) the post explicitly names an application email, the bot offers to create a draft with your CV attached. Nothing is sent automatically.
-- **Access control and quotas:** user approval states, per-workflow grants, expiry dates, and usage limits, all enforced in PostgreSQL.
-- **Credit-saving design:** stops early on empty scrapes and skips the author scraper when the post was published by a company page.
-
-## How it works
+**EpiFlow** is a modern Next.js 16 SaaS platform orchestrating specialized, deterministic AI intelligence workflows. Its flagship workflow, **JobPost X-Ray**, replaces brittle automation tools and expensive subscriptions by transforming unstructured LinkedIn posts and `lnkd.in` shortlinks into verified candidate dossiers and automated outreach.
 
 ```mermaid
-flowchart TD
-    A[Telegram message or button press] --> B[Parse User Input]
-    B --> C[("Authentication Gate<br/>authenticate_gatekeeper")]
-    C --> D{Authorized?}
-    D -->|No| E[Send localized access error]
-    D -->|Yes| F{Route}
+flowchart LR
+    subgraph Channels["Client Channels"]
+        Web["Web Dashboard<br/>(Next.js 16 / React 19)"]
+        TG["Telegram Bot<br/>(Webhook & Poller)"]
+    end
 
-    F -->|LinkedIn URL| G{lnkd.in short link?}
-    G -->|Yes| H[Expand short URL]
-    G -->|No| I[Send processing status]
-    H --> I
-    I --> J[Apify: post scraper]
-    J --> K{Post found?}
-    K -->|No| L[Send fetch-post error]
-    K -->|Yes| M{Author is a company?}
-    M -->|Yes| P[Build company URL]
-    M -->|No| N[Apify: author profile scraper]
-    N --> P
-    P --> Q[Apify: company scraper]
-    Q --> R[Extract key data]
-    R --> S[AI report: Gemini, Claude fallback]
-    S --> T[Send report to Telegram]
-    T --> U[("consume_workflow_usage<br/>counts 1 use")]
-    U --> V{Email drafts enabled for user?}
-    V -->|No| Z([Done])
-    V -->|Yes| W{Application email in post?}
-    W -->|Yes| X[Ask: draft an email? Yes / No]
-    W -->|No| Y[Notice: no contact email]
+    subgraph Gatekeeper["Security & Gatekeeper"]
+        Auth["Google OAuth / Auth.js"]
+        Gate[("PostgreSQL Gatekeeper<br/>authenticate_gatekeeper")]
+    end
 
-    F -->|Button: yes| AA[Download CV from Google Drive]
-    AA --> AB[Create Gmail draft]
-    AB --> AC[Send draft link]
-    F -->|Button: no| AD[Delete the prompt message]
-    F -->|Anything else| AE[Send invalid URL help]
+    subgraph Background["Async Pipeline (Inngest)"]
+        Scrape["Apify 3-Stage Scraper<br/>(Post → Recruiter → Company)"]
+        AI["Vercel AI SDK<br/>(Gemini Flash + Claude Fallback)"]
+        Guard["Code-Level Email Guard<br/>(Regex Source Verification)"]
+    end
+
+    subgraph Actions["Outreach & Delivery"]
+        Draft["1-Click Gmail Draft<br/>(Attached CV from Drive)"]
+        Curator["Community Formatter<br/>(Clean EN/AR Channel Post)"]
+        DB[("Supabase / Drizzle<br/>consume_workflow_usage")]
+    end
+
+    Web & TG --> Auth & Gate
+    Gate --> Background
+    Background --> Scrape --> AI --> Guard
+    Guard --> Draft & Curator --> DB
 ```
 
-1. **Trigger and parse:** the Telegram trigger listens for messages and inline-button callbacks. A code node extracts the LinkedIn URL (`/posts/`, `/feed/update/`, `/jobs/view/`, or `lnkd.in`), the sender's Telegram ID and username, and any hidden metadata from a previous prompt.
-2. **Authenticate:** `authenticate_gatekeeper` checks the account status, the workflow, expiry, and quota. It is read-only for usage. The same query loads the user's preferences from the grant's `metadata`.
-3. **Scrape:** short links are expanded, then Apify runs the post scraper. If the post was published by a company page, the author scraper is skipped. The company scraper runs last.
-4. **Analyze:** the collected data is normalized and passed to an LLM chain with a structured output parser. It returns a Telegram-ready Markdown report plus metadata (`role`, `company`, `hr_name`, `hr_email`).
-5. **Deliver and count:** the report is sent to Telegram, and only then is one unit of quota consumed.
-6. **Optional email draft:** if the user has email drafts enabled and the AI found a valid application email, an inline Yes/No prompt appears. "Yes" downloads the CV from Google Drive and creates a Gmail draft, and the bot replies with a link to it.
+---
 
-## Requirements
+## 🚀 Complete Platform Functionalities
 
-| Service | Used for |
+### 1. 3-Layer Recruitment Intelligence Pipeline
+- **Layer 1: Role Overview & Requirements** — Extracts job title, seniority, core responsibilities, and separates mandatory requirements from preferred qualifications.
+- **Layer 2: Recruiter Pedigree & Company Pulse** — Enriches the hiring manager's experience, tenure, and education. Smartly skips individual scraping if published by a company page. Pulls verified headcount, industry, and deduplicated global office locations.
+- **Layer 3: Factual Diagnostics & Flags** — Cross-checks application email domain against official company websites to detect mismatches, flags role-to-industry discrepancies, and highlights missing critical fields.
+
+### 2. Zero-Hallucination Email Guard & Gmail Composer
+- **Strict Code-Level Verification** — An application email is accepted *only* if it literally appears in the raw post text and is explicitly designated as the application channel. Deterministic regex verification discards any LLM hallucinations.
+- **1-Click Gmail Draft** — Uses the restricted `gmail.compose` scope to generate an outreach draft in the user's Gmail with their designated CV attached from Google Drive or storage. Never sends emails automatically.
+
+### 3. Community Curator Mode (Telegram & Slack Admins)
+- **Instant Channel Post Formatter** — Formats unstructured posts into structured, ready-to-publish Markdown briefs for Telegram, Slack, and Discord hiring communities.
+- **Bilingual Clean Output** — Generates synchronized English and modern Arabic (RTL) templates with white-labeled formatting.
+
+### 4. Dual-Channel Omnichannel Delivery
+- **Web Dashboard** — Interactive URL scanner with paste detection, real-time status stepper, rich card report viewer, and analysis history (search, filter, delete, export JSON/Markdown).
+- **Telegram Bot** — Paste links or `lnkd.in` shortlinks on mobile. Receives live status updates via `editMessageText`, rich Telegram Markdown reports, and inline interactive action buttons.
+- **Cryptographic Account Linking** — Link Web accounts to Telegram via single-use 10-minute tokens (`/connect <TOKEN>`) or direct numeric ID pairing.
+
+### 5. Multi-Tier Subscription & Billing Engine
+- **Flexible Plans** — Free Starter (5 scans/mo, ad-supported), Job Seeker Pro ($5/mo, 100 scans, 1-click Gmail draft), and Community & Curator ($15/mo, 350 scans, channel formatter).
+- **Billing Intervals** — Monthly, Yearly (20% discount), and Pay-As-You-Go credit packs.
+- **Stripe & Mock Checkout** — Integrated webhook listener (`/api/billing/webhook`) and a development Mock Checkout provider for instant plan activation.
+- **Dynamic Entitlements** — Per-workflow usage meters (`runs`, `ai_tokens`) managed via database RPCs (`apply_plan_entitlements`, `revoke_subscription_access`).
+
+### 6. Platform Admin Center (`/admin`)
+- **Fleet Telemetry** — Monitor active users, pending access requests, execution runs, and total quotas consumed.
+- **Workflow Management** — Toggle workflow status (Active/Suspended), edit metadata, upload workflow banners to Supabase Storage, and configure external channels (Telegram bots, WhatsApp handles).
+- **Plans & Pricing CRUD** — Create and edit subscription plans, billing intervals, prices, and JSONB entitlement limits.
+- **User & Quota Administration** — Approve, reject, or lock accounts; adjust or reset quota meters; assign subscription plans; manage user roles (Admin/User).
+- **Payments Ledger** — Immutable audit log of all transactions with real-time status filtering and search.
+- **Usage Meters Catalog** — Define and register consumable metrics for workflow quota allocation.
+
+### 7. Interactive Workflow Test Bench (`/test-workflow`)
+- **Visual Node Graph Debugger** — Visualizes the execution graph with real-time node state inspection.
+- **Node Inspector** — Inspect live input/output JSON, HTTP status, and millisecond execution times.
+- **Live Terminal Logs** — Streams step-by-step diagnostic logs.
+- **Instant Presets** — Test links with email, without email, direct company posts, or custom live URLs.
+
+### 8. Native Bilingual & RTL-First Engine
+- **Transcreated Copywriting** — Idiomatic modern SaaS Arabic (عربية فصحى معاصرة) tailored for the MENA job market rather than robotic machine translations.
+- **RTL-First Styling** — Tailwind logical properties (`ms-*`, `me-*`, `ps-*`, `pe-*`), mirrored directional icons, and Cairo typography.
+
+---
+
+## 🛠️ Tech Stack
+
+| Domain | Technology |
 |---|---|
-| [n8n](https://n8n.io) (recent version, publicly reachable HTTPS URL) | Runs the workflow. The Telegram trigger needs a public webhook URL, and the workflow uses the Telegram node's *Send Rich Message* operation. |
-| Telegram bot ([@BotFather](https://t.me/BotFather)) | User interface |
-| PostgreSQL 13+ (e.g. Supabase) | Users, workflows, access grants, quotas |
-| [Apify](https://apify.com) account | LinkedIn post, profile, and company scrapers |
-| Google Gemini API | Primary report model |
-| Anthropic API | Fallback report model |
-| Google Drive and Gmail (OAuth2) | CV download and draft creation (optional feature) |
+| **Framework** | Next.js 16 (App Router, React 19, Server Components) |
+| **Language** | TypeScript (Strict mode, Zod validation at all boundaries) |
+| **Styling** | Tailwind CSS v4, CSS Variables, Radix UI Primitives, Lucide Icons |
+| **Internationalization** | `next-intl` (English & Arabic RTL) |
+| **Database & ORM** | PostgreSQL (Supabase) via Drizzle ORM |
+| **Authentication** | Auth.js / NextAuth (Google OAuth, encrypted refresh tokens) |
+| **Orchestration** | Inngest background event-driven pipeline |
+| **AI Models** | Vercel AI SDK: Google Gemini 2.0 Flash (Primary), Claude 3.5 Sonnet (Fallback) |
+| **Scraping** | Apify Actors (Post, Author profile, Company profile) |
+| **Storage & Email** | Supabase Storage (Images & CVs), Google Drive & Gmail API (`gmail.compose`) |
+| **Logging & Monitoring** | Pino logger, structured error mapping via `AppError` |
 
-## Setup
+---
 
-### 1. Create the database
+## 🔐 Database & Gatekeeper Architecture
 
-Run [`schema.sql`](schema.sql) on your PostgreSQL database. It creates the enums, the `users`, `workflows`, and `user_workflow_access` tables, indexes, triggers, and two functions:
+Access and quota consumption are enforced atomically in PostgreSQL:
+1. `authenticate_gatekeeper(p_user_id / p_telegram_id, p_workflow_slug)`: Read-only access check enforcing account approval, workflow availability, grant validity, and quota availability.
+2. `consume_workflow_usage(p_user_id, p_workflow_slug)`: Atomic guarded `UPDATE` executing **only after** a report has been successfully delivered. Failed runs never consume credits.
 
-- `authenticate_gatekeeper(telegram_id, workflow_slug, username)` is the read-only access check.
-- `consume_workflow_usage(user_id, workflow_slug)` is the atomic, guarded usage increment.
-
-On Supabase, both functions are restricted to `service_role`, so connect n8n with a role that may execute them (the default `postgres` connection works).
-
-### 2. Register the workflow, a user, and a grant
-
-The workflow uses its own **n8n workflow name as the slug**, so the workflow must stay named `job-xray` (or change the slug below to match).
-
-```sql
--- the workflow
-INSERT INTO public.workflows (slug, name)
-VALUES ('job-xray', 'JobPost X-Ray');
-
--- an approved user (replace with your Telegram numeric ID)
-INSERT INTO public.users (telegram_id, username, full_name, status, role)
-VALUES (123456789, 'your_username', 'Your Name', 'approved', 'user');
-
--- grant access with a quota of 50 runs and per-user preferences
-INSERT INTO public.user_workflow_access (user_id, workflow_id, usage_limit, metadata)
-SELECT u.id, w.id, 50,
-       '{"preferred_language":"en",
-         "cv":"https://drive.google.com/file/d/YOUR_FILE_ID/view",
-         "fullName":"Your Name",
-         "sendEmail":true}'::jsonb
-FROM public.users u, public.workflows w
-WHERE u.telegram_id = 123456789 AND w.slug = 'job-xray';
+```
+Gatekeeper Error Codes:
+• UNREGISTERED (401)       • ACCOUNT_PENDING (403)    • ACCOUNT_REJECTED (403)
+• ACCOUNT_LOCKED (423)     • WORKFLOW_FORBIDDEN (403) • WORKFLOW_DISABLED (503)
+• ACCESS_EXPIRED (403)     • QUOTA_EXCEEDED (429)
 ```
 
-Set `usage_limit` to `NULL` for unlimited use, and `expires_at` to limit the grant in time.
+---
 
-**Per-user settings (`user_workflow_access.metadata`):**
+## ⚙️ Quick Start & Setup
 
-| Key | Meaning |
-|---|---|
-| `preferred_language` | `en` or `ar`. Controls the report language and right-to-left layout. |
-| `cv` | Google Drive URL of the CV attached to email drafts. |
-| `fullName` | Used in the draft's subject line and signature. |
-| `sendEmail` | `true` to offer the email-draft feature to this user. |
+### 1. Clone & Install Dependencies
+```bash
+git clone https://github.com/your-org/epiflow.git
+cd epiflow
+pnpm install # or npm install
+```
 
-### 3. Import and configure the workflow
+### 2. Configure Environment Variables
+Copy `.env.example` to `.env.local` and provide your API keys:
+```bash
+# Database & Auth
+DATABASE_URL=postgresql://postgres:...@db.supabase.co:5432/postgres
+AUTH_SECRET=your-random-32-character-secret
+AUTH_GOOGLE_ID=your-google-oauth-client-id
+AUTH_GOOGLE_SECRET=your-google-oauth-client-secret
 
-1. In n8n, import [`job-xray.json`](job-xray.json).
-2. Create credentials and select them on the matching nodes: Telegram API (bot token), Postgres, Apify (OAuth2), Google Gemini, Anthropic, Google Drive (OAuth2), and Gmail (OAuth2).
-3. Check the three Apify nodes: they run store actors by ID, so your Apify account must be able to run them.
-4. Activate the workflow and send your bot a LinkedIn post link.
+# AI Models & Scraping
+GOOGLE_GENERATIVE_AI_API_KEY=your-gemini-api-key
+ANTHROPIC_API_KEY=your-anthropic-api-key
+APIFY_API_TOKEN=your-apify-token
 
-## Access control
+# Telegram & Storage
+TELEGRAM_BOT_TOKEN=your-telegram-bot-token
+TELEGRAM_WEBHOOK_SECRET=your-webhook-secret-token
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+```
 
-| Result | Code | Meaning |
-|---|---|---|
-| ✅ Authorized | 200 | Proceeds with the run |
-| `UNREGISTERED` | 401 | Telegram ID not in `users` |
-| `ACCOUNT_PENDING` / `ACCOUNT_REJECTED` | 403 | Account not approved |
-| `ACCOUNT_LOCKED` | 423 | Account suspended |
-| `WORKFLOW_FORBIDDEN` | 403 | No grant for this workflow |
-| `WORKFLOW_DISABLED` | 503 | Workflow switched off (`is_active = false`) |
-| `ACCESS_EXPIRED` | 403 | Grant past `expires_at` |
-| `QUOTA_EXCEEDED` | 429 | `usage_count` reached `usage_limit` |
+### 3. Database Migration
+Apply database migrations using Drizzle Kit:
+```bash
+pnpm db:generate
+pnpm db:migrate
+```
 
-Blocked users receive a clear message with the error code. A user who has used up their quota can still answer an existing email-draft prompt, because drafting an email does not consume quota.
+### 4. Run Development Servers
+```bash
+# Start Next.js web application
+pnpm dev
 
-## Design notes
+# In a separate terminal, run the Telegram development poller (optional)
+pnpm bot:poll
+```
 
-- **Usage counts only on success.** The check and the increment are separate functions. The quota is consumed after the report reaches Telegram, so scrape errors, AI errors, and failed runs never cost the user a use. The increment is a single guarded `UPDATE`, so the limit can never be exceeded, even with concurrent requests.
-- **No hallucinated emails.** The AI may return an email only if it appears literally in the post text and the post explicitly names it as the application channel. Otherwise the value is `null` and the bot says no contact email was found.
-- **Stateless button prompts.** The role, company, HR name, and email are embedded in an invisible link inside the "draft an email?" message. When the user taps a button, the callback reads them back, so no extra storage is needed.
-- **Fail fast.** Empty scrape results stop the run immediately and tell the user, saving scraper credits.
+---
 
-## Known limitations
+## 📁 Repository Structure
 
-- If the **author** or **company** scrape fails, the user gets a notice and the run stops without a report. No quota is used.
-- Scraping depends on third-party Apify actors and LinkedIn's page structure, so results can vary or break over time.
-- Reports are AI-generated from scraped text. Verify details before applying or sending anything.
-- The email feature creates a **draft** only. You always review and send it yourself.
+```
+app/
+ ├── [locale]/
+ │    ├── (marketing)/    # Landing page, workflow showcase, contact page
+ │    ├── (auth)/         # Google OAuth sign-in flow
+ │    ├── (app)/          # Protected: Dashboard, workflows console, profile, admin
+ │    └── test-workflow/  # Interactive visual workflow test bench
+ └── api/                 # Telegram webhook, inngest, billing, analyze, health
+lib/
+ ├── actions/             # Server actions (admin, analyze, profile, plans, telegram)
+ ├── db/                  # Drizzle ORM schema, client connection, and queries
+ ├── jobs/                # Inngest asynchronous job pipeline definitions
+ └── services/            # Pure business logic (AI, Apify scraper, email, telegram)
+messages/                 # Bilingual transcreated strings (en.json, ar.json)
+```
 
-## Repository contents
+---
 
-| File | Description |
-|---|---|
-| `job-xray.json` | The n8n workflow |
-| `schema.sql` | PostgreSQL schema: tables, indexes, functions, triggers |
-| `README.md` | This file |
+## ⚖️ Legal & Privacy Disclaimer
 
-## Disclaimer
-
-Scraping LinkedIn data may be restricted by LinkedIn's terms of service and by privacy laws in your jurisdiction. You are responsible for how you use this project. It is provided as-is, without warranty.
+Scraping LinkedIn data is subject to LinkedIn's Terms of Service and local data regulations. EpiFlow extracts only publicly visible data, enforces strict zero-hallucination contact verification, requires explicit user confirmation before staging email drafts, and never sends emails autonomously. Provided as-is.

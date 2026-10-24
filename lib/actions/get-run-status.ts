@@ -56,10 +56,16 @@ export async function getRunStatusAction(
       };
     }
 
+    const output = run.output as Record<string, unknown> | null;
+    const effectiveStatus =
+      run.status === "running" && typeof output?.step === "string"
+        ? (output.step as string)
+        : run.status;
+
     return {
       success: true,
-      status: run.status,
-      report: run.report,
+      status: effectiveStatus,
+      report: output?.report,
       errorCode: run.errorCode,
       errorMessage: run.errorMessage,
     };

@@ -22,6 +22,7 @@ Reference docs: `vision.md` (product + roadmap), `schema.sql` (DB source of trut
 13. **Screen Real Estate & Arabic Layout:** Leverage the full responsive desktop viewport (`max-w-7xl` or dynamic grids) instead of artificially narrow containers. Arabic text (Cairo font) requires generous horizontal clearance—cards must never be squished into tight columns that cause excessive, tall, and awkward line wrapping.
 14. **Cross-Device Responsiveness & Mobile Burger:** All pages must be fully responsive across desktop, tablet, and mobile. On mobile/small screens (`< md`), navigation must collapse into an accessible slide-out/modal hamburger menu (`menu burger`) rather than crowding the header bar.
 15. **Idiomatic Arabic Copywriting (Transcreation over Literal Translation):** Never use literal, robotic machine translations (e.g. translating "decode" to "فك التشفير"). All Arabic user-facing text must be transcreated into modern, fluent, and professional Arabic SaaS copywriting (عربية فصحى معاصرة وأصيلة للتطبيقات السحابية) that preserves the conceptual intent, value proposition, and cultural clarity for Arab users.
+16. **Keyboard Navigation & Form Accessibility:** All interactive elements, forms, fields, modals, and drawers must be fully keyboard accessible without requiring a mouse. Form controls require programmatic labels (`id` + `htmlFor`), modals must dismiss on `Escape` and trap/restore focus, forms submit on `Enter`, and all focus states must use visible focus rings (`focus-visible:ring-2 focus-visible:ring-[var(--accent)]`). Provide standard shortcuts (`Ctrl+K`/`⌘K`) for primary search/scan inputs.
 
 ---
 ## 1. Tech Stack
@@ -174,7 +175,8 @@ The result must not look like a stock AI landing page. Concretely:
 - **Admin:** dense tables, filters, audit log, manual quota adjust with confirmation dialog.
 
 ### 4.6 Accessibility & responsiveness
-- WCAG 2.2 AA. Semantic HTML, one `<h1>` per page, landmarks, visible focus ring (`--accent`, 2px, offset 2px), full keyboard support, `aria-live="polite"` for status updates, labeled form controls, 44px minimum touch targets.
+- WCAG 2.2 AA. Semantic HTML, one `<h1>` per page, landmarks, visible focus ring (`--accent`, 2px, offset 2px), full keyboard navigation (Tab order, auto-focus first control, Enter to submit, Escape to dismiss dialogs), `aria-live="polite"` for status updates, labeled form controls (`<label htmlFor>` paired with input `id`), 44px minimum touch targets.
+- **Keyboard Navigation Standard:** Every form, input, filter, modal, and drawer must operate 100% via keyboard. Modals require `role="dialog"`, `aria-modal="true"`, focus trapping, and `Escape` key close handlers. Primary dashboard inputs must support `Ctrl+K`/`⌘K` quick-focus shortcuts. Filter lists and tables must support Tab navigation with visible `:focus-visible` states.
 - Mobile-first. Breakpoints `sm 640 / md 768 / lg 1024 / xl 1280`. Test every screen at 360px and 1440px, in LTR and RTL.
 - **Desktop & Screen Real Estate:** Expand main layouts (`max-w-7xl` or dynamic grids) so Arabic typography (Cairo) and dense dashboards have ample horizontal space without tall, cramped line wraps.
 - **Mobile Hamburger Navigation:** On mobile and small screens (`< md`), navigation controls and secondary actions collapse into an accessible slide-out/modal hamburger menu (`menu burger`) to keep the top bar clean and spacious.

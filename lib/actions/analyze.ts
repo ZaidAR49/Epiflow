@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { inngest } from "@/lib/jobs/client";
 import { linkedinUrlSchema } from "@/lib/validation/url";
 import { createJobRun, deleteJobRun } from "@/lib/db/queries/job-runs";
+import { getPrimaryWorkflow } from "@/lib/db/queries/workflows";
 import { ErrorCodes } from "@/lib/errors";
 
 const analyzeInputSchema = z.object({
@@ -50,12 +51,21 @@ export async function analyzePostAction(
   const { url, language } = parsed.data;
 
   try {
+    const workflow = await getPrimaryWorkflow();
+    if (!workflow) {
+      return {
+        success: false,
+        errorCode: ErrorCodes.INTERNAL_ERROR,
+        message: "Workflow not found",
+      };
+    }
+
     // 1. Create initial job run record
     const run = await createJobRun({
       userId,
+      workflowId: workflow.id,
       channel: "web",
-      url,
-      normalizedUrl: url,
+      input: { url, normalizedUrl: url, language },
       status: "pending",
     });
 

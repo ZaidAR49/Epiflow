@@ -95,7 +95,7 @@ export function ReportHeaderActions({
             <button
               type="button"
               onClick={onDraftEmail}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-500 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-500 focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:outline-hidden transition-colors cursor-pointer"
             >
               <Mail className="h-3.5 w-3.5" />
               <span>{t("draftGmail")}</span>
@@ -105,7 +105,7 @@ export function ReportHeaderActions({
           <button
             type="button"
             onClick={handleCopyMarkdown}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface-2)]/60 px-2.5 py-1.5 text-xs font-semibold text-[var(--text)] hover:border-[var(--accent)] transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface-2)]/60 px-2.5 py-1.5 text-xs font-semibold text-[var(--text)] hover:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden transition-colors cursor-pointer"
           >
             {copiedMarkdown ? (
               <Check className="h-3.5 w-3.5 text-emerald-400" />
@@ -118,7 +118,7 @@ export function ReportHeaderActions({
           <button
             type="button"
             onClick={handleExportJson}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface-2)]/60 px-2.5 py-1.5 text-xs font-semibold text-[var(--text)] hover:border-[var(--accent)] transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface-2)]/60 px-2.5 py-1.5 text-xs font-semibold text-[var(--text)] hover:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden transition-colors cursor-pointer"
           >
             <Download className="h-3.5 w-3.5 text-[var(--text-muted)]" />
             <span>{t("exportJson")}</span>
@@ -129,7 +129,7 @@ export function ReportHeaderActions({
               href={sourceUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface-2)]/60 px-2.5 py-1.5 text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text)] hover:border-[var(--accent)] transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface-2)]/60 px-2.5 py-1.5 text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text)] hover:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden transition-colors"
               title="Open LinkedIn Post"
             >
               <ExternalLink className="h-3.5 w-3.5" />
@@ -140,7 +140,7 @@ export function ReportHeaderActions({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-[var(--border)] px-2.5 py-1.5 text-xs font-semibold text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
+              className="rounded-lg border border-[var(--border)] px-2.5 py-1.5 text-xs font-semibold text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden cursor-pointer"
             >
               {t("closeViewer")}
             </button>

@@ -25,6 +25,7 @@ vi.mock("@/lib/db/queries/users", () => ({
   unlinkTelegramFromUser: vi.fn(),
   getUserById: vi.fn(),
   getUserByTelegramId: vi.fn(),
+  getUserTelegramIdentity: vi.fn(),
 }));
 
 vi.mock("@/lib/db/queries/telegram-link", () => ({
@@ -167,8 +168,9 @@ describe("Telegram Link Server Actions Authorization", () => {
 
   it("checks status and returns connection state for authenticated user", async () => {
     const { checkTelegramStatusAction } = await import("@/lib/actions/telegram-link");
-    const { getUserById } = await import("@/lib/db/queries/users");
+    const { getUserById, getUserTelegramIdentity } = await import("@/lib/db/queries/users");
     const mockGetUser = getUserById as unknown as ReturnType<typeof vi.fn>;
+    const mockGetIdentity = getUserTelegramIdentity as unknown as ReturnType<typeof vi.fn>;
 
     mockAuth.mockResolvedValueOnce({
       user: { id: "user-123" },
@@ -177,6 +179,9 @@ describe("Telegram Link Server Actions Authorization", () => {
 
     mockGetUser.mockResolvedValueOnce({
       id: "user-123",
+    });
+
+    mockGetIdentity.mockResolvedValueOnce({
       telegramId: 2076665816,
       username: "zaidr49",
     });

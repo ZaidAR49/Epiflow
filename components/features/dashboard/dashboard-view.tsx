@@ -16,6 +16,9 @@ import {
   syncActiveRunUrl,
   resolveInitialRun,
   requestDraftUrl,
+  extractReportFromRun,
+  extractMetadataFromRun,
+  extractUrlFromRun,
 } from "./dashboard-utils";
 
 interface DashboardViewProps {
@@ -23,6 +26,7 @@ interface DashboardViewProps {
   initialQuota: number | null;
   preferredLanguage?: "ar" | "en";
   initialSelectedRunId?: string;
+  isSubscribed?: boolean;
 }
 
 export function DashboardView({
@@ -30,6 +34,7 @@ export function DashboardView({
   initialQuota,
   preferredLanguage = "ar",
   initialSelectedRunId,
+  isSubscribed = false,
 }: DashboardViewProps) {
   const [runsList, setRunsList] = useState<JobRun[]>(initialRuns);
   const [quota, setQuota] = useState<number | null>(initialQuota);
@@ -37,51 +42,31 @@ export function DashboardView({
   const [currentStatus, setCurrentStatus] = useState("pending");
   const [scanError, setScanError] = useState<string | null>(null);
 
-  // Active / Selected Report State initialized from props, URL, or sessionStorage
-  const [selectedRunId, setSelectedRunId] = useState<string | undefined>(() => {
-    return resolveInitialRun(initialSelectedRunId, initialRuns).runId;
-  });
+  const initialResolved = resolveInitialRun(initialSelectedRunId, initialRuns);
+  const [selectedRunId, setSelectedRunId] = useState<string | undefined>(initialResolved.runId);
+  const [activeReport, setActiveReport] = useState<StructuredReport | null>(
+    () => extractReportFromRun(initialResolved.run)
+  );
+  const [activeMetadata, setActiveMetadata] = useState<OpportunityMetadata | null>(
+    () => extractMetadataFromRun(initialResolved.run)
+  );
+  const [activeSourceUrl, setActiveSourceUrl] = useState<string | undefined>(
+    () => extractUrlFromRun(initialResolved.run)
+  );
 
-  const [activeReport, setActiveReport] = useState<StructuredReport | null>(() => {
-    const { run } = resolveInitialRun(initialSelectedRunId, initialRuns);
-    return run?.report ? (run.report as StructuredReport) : null;
-  });
-
-  const [activeMetadata, setActiveMetadata] = useState<OpportunityMetadata | null>(() => {
-    const { run } = resolveInitialRun(initialSelectedRunId, initialRuns);
-    if (run?.report) {
-      const rep = run.report as StructuredReport & { metadata?: OpportunityMetadata };
-      return rep.metadata || null;
-    }
-    return null;
-  });
-
-  const [activeSourceUrl, setActiveSourceUrl] = useState<string | undefined>(() => {
-    const { run } = resolveInitialRun(initialSelectedRunId, initialRuns);
-    return run?.url;
-  });
-
-  // Sync active runId to URL query and storage without internal cascading renders
   useEffect(() => {
-    if (selectedRunId) {
-      syncActiveRunUrl(selectedRunId);
-    }
+    if (selectedRunId) syncActiveRunUrl(selectedRunId);
   }, [selectedRunId]);
 
-  // Delete Modal State
   const [deleteTargetRun, setDeleteTargetRun] = useState<JobRun | null>(null);
   const [isDeletingRun, setIsDeletingRun] = useState(false);
-
-  // Draft Modal State
   const [draftModalOpen, setDraftModalOpen] = useState(false);
   const [isDrafting, setIsDrafting] = useState(false);
   const [draftUrl, setDraftUrl] = useState<string | undefined>(undefined);
-
   const reportRef = useRef<HTMLDivElement>(null);
 
   const handleStartScan = async (url: string, language: "ar" | "en") => {
     if (isScanning) return;
-
     setIsScanning(true);
     setCurrentStatus("validating");
     setScanError(null);
@@ -118,7 +103,6 @@ export function DashboardView({
 
           try {
             const event = JSON.parse(trimmed.slice(6));
-
             if (event.type === "progress") {
               setCurrentStatus(event.status);
             } else if (event.type === "completed") {
@@ -135,7 +119,6 @@ export function DashboardView({
                 setQuota(event.remainingQuota);
               }
 
-              // Prepend newly completed run into history list
               const newRunItem = createCompletedRunItem(
                 event.runId,
                 url,
@@ -145,7 +128,6 @@ export function DashboardView({
               );
               setRunsList((prev) => [newRunItem, ...prev]);
 
-              // Smoothly scroll down to the generated report
               setTimeout(() => {
                 reportRef.current?.scrollIntoView({ behavior: "smooth" });
               }, 150);
@@ -153,7 +135,7 @@ export function DashboardView({
               setScanError(event.message || "Pipeline execution failed");
             }
           } catch {
-            // Ignore parse hiccups on malformed chunks
+            // Non-blocking JSON parse fallback
           }
         }
       }
@@ -165,11 +147,11 @@ export function DashboardView({
   };
 
   const handleSelectPastRun = (run: JobRun) => {
-    if (!run.report) return;
-    const rep = run.report as StructuredReport & { metadata?: OpportunityMetadata };
+    const rep = extractReportFromRun(run);
+    if (!rep) return;
     setActiveReport(rep);
-    setActiveMetadata(rep.metadata || null);
-    setActiveSourceUrl(run.url);
+    setActiveMetadata(extractMetadataFromRun(run));
+    setActiveSourceUrl(extractUrlFromRun(run));
     setSelectedRunId(run.id);
     syncActiveRunUrl(run.id);
 
@@ -181,18 +163,13 @@ export function DashboardView({
   const handleCreateDraft = async () => {
     if (!activeMetadata?.hrEmail || isDrafting) return;
     setIsDrafting(true);
-
     try {
       const draft = await requestDraftUrl(
         activeMetadata,
         activeReport?.role?.title,
         activeReport?.company?.name
       );
-      if (draft) {
-        setDraftUrl(draft);
-      }
-    } catch {
-      // Handled in modal
+      if (draft) setDraftUrl(draft);
     } finally {
       setIsDrafting(false);
     }
@@ -223,22 +200,20 @@ export function DashboardView({
     }
   };
 
+  const deleteReport = extractReportFromRun(deleteTargetRun ?? undefined);
+
   return (
     <div className="space-y-8 pb-16">
-      {/* 1. Quick Scan Bar */}
       <QuickScanBar
         onScan={handleStartScan}
         isScanning={isScanning}
         remainingQuota={quota}
         preferredLanguage={preferredLanguage}
+        isSubscribed={isSubscribed}
       />
 
-      {/* 2. Analysis Stepper Progress */}
-      {isScanning && (
-        <AnalysisStepper currentStatus={currentStatus} />
-      )}
+      {isScanning && <AnalysisStepper currentStatus={currentStatus} />}
 
-      {/* Scan Error Message */}
       {scanError && (
         <div className="flex items-center gap-3 rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-xs font-semibold text-rose-300 animate-in fade-in">
           <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
@@ -246,7 +221,6 @@ export function DashboardView({
         </div>
       )}
 
-      {/* 3. Active / Selected Report Viewer */}
       {activeReport && (
         <div ref={reportRef} className="pt-2 animate-in fade-in duration-200">
           <StructuredReportCard
@@ -268,7 +242,6 @@ export function DashboardView({
         </div>
       )}
 
-      {/* 4. Analysis History & Saved Reports Archive */}
       <HistoryArchive
         runs={runsList}
         selectedRunId={selectedRunId}
@@ -276,7 +249,6 @@ export function DashboardView({
         onDeleteRun={(run) => setDeleteTargetRun(run)}
       />
 
-      {/* 5. 1-Click Gmail Compose Modal */}
       {draftModalOpen && activeMetadata?.hrEmail && (
         <EmailPromptModal
           metadata={{
@@ -295,7 +267,6 @@ export function DashboardView({
         />
       )}
 
-      {/* 6. Delete Report Confirmation Modal */}
       {deleteTargetRun && (
         <DeleteReportModal
           isOpen={Boolean(deleteTargetRun)}
@@ -304,8 +275,8 @@ export function DashboardView({
           }}
           onConfirm={handleConfirmDelete}
           isDeleting={isDeletingRun}
-          roleTitle={(deleteTargetRun.report as StructuredReport)?.role?.title}
-          companyName={(deleteTargetRun.report as StructuredReport)?.role?.company}
+          roleTitle={deleteReport?.role?.title}
+          companyName={deleteReport?.role?.company}
         />
       )}
     </div>

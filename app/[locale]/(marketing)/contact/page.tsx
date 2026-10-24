@@ -36,6 +36,7 @@ export default async function ContactPage({ params }: ContactPageProps) {
         userName={session?.user?.name}
         userImage={session?.user?.image}
         isSignedIn={isSignedIn}
+        isSubscribed={session?.user?.isSubscribed}
       />
 
       <main className="flex-1">
@@ -55,9 +56,23 @@ export default async function ContactPage({ params }: ContactPageProps) {
             <span className="text-[var(--border)]">•</span>
             <Link
               href={`/${locale}/contact`}
-              className="text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors underline-offset-4 hover:underline"
+              className="text-[var(--accent)] font-medium transition-colors underline-offset-4 underline"
             >
               {tCommon("contactUs")}
+            </Link>
+            <span className="text-[var(--border)]">•</span>
+            <Link
+              href={`/${locale}/privacy`}
+              className="text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors underline-offset-4 hover:underline"
+            >
+              {tCommon("privacyPolicy")}
+            </Link>
+            <span className="text-[var(--border)]">•</span>
+            <Link
+              href={`/${locale}/terms`}
+              className="text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors underline-offset-4 hover:underline"
+            >
+              {tCommon("termsOfService")}
             </Link>
           </div>
 

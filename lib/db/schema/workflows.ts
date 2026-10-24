@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, boolean, timestamp, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, boolean, timestamp, jsonb, index } from "drizzle-orm/pg-core";
 
 export const workflows = pgTable(
   "workflows",
@@ -9,6 +9,8 @@ export const workflows = pgTable(
     isActive: boolean("is_active").default(true).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    requirements: jsonb("requirements").default({}).notNull(),
+    imageUrl: text("image_url"),
   },
   (table) => [
     index("idx_workflows_is_active").on(table.isActive),

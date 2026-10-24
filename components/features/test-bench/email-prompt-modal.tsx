@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Mail, FileText, CheckCircle2, ExternalLink, Loader2, X } from "lucide-react";
 
 interface EmailPromptModalProps {
@@ -23,8 +23,23 @@ export function EmailPromptModal({
   draftUrl,
   isDrafting,
 }: EmailPromptModalProps) {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !isDrafting) {
+        onDismiss();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isDrafting, onDismiss]);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="email-prompt-title"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+    >
       <div className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-2xl">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
@@ -32,7 +47,7 @@ export function EmailPromptModal({
               <Mail className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-[var(--text)]">
+              <h3 id="email-prompt-title" className="text-base font-bold text-[var(--text)]">
                 Draft Outreach Email?
               </h3>
               <p className="text-xs text-[var(--text-muted)]">
@@ -42,8 +57,10 @@ export function EmailPromptModal({
           </div>
           <button
             onClick={onDismiss}
+            disabled={isDrafting}
             type="button"
-            className="rounded-lg p-1 text-[var(--text-muted)] hover:bg-[var(--surface-2)]"
+            aria-label="Close"
+            className="rounded-lg p-1 text-[var(--text-muted)] hover:bg-[var(--surface-2)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden"
           >
             <X className="h-4 w-4" />
           </button>
@@ -96,7 +113,7 @@ export function EmailPromptModal({
                 onClick={onConfirm}
                 disabled={isDrafting}
                 type="button"
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2.5 text-xs font-semibold text-white hover:bg-[var(--accent-hover)] transition-colors disabled:opacity-50 shadow-sm"
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2.5 text-xs font-semibold text-white hover:bg-[var(--accent-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden transition-colors disabled:opacity-50 shadow-sm"
               >
                 {isDrafting ? (
                   <>
@@ -114,7 +131,7 @@ export function EmailPromptModal({
                 onClick={onDismiss}
                 disabled={isDrafting}
                 type="button"
-                className="rounded-xl border border-[var(--border)] px-4 py-2.5 text-xs font-medium text-[var(--text-muted)] hover:bg-[var(--surface-2)] transition-colors"
+                className="rounded-xl border border-[var(--border)] px-4 py-2.5 text-xs font-medium text-[var(--text-muted)] hover:bg-[var(--surface-2)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden transition-colors"
               >
                 No, Skip
               </button>

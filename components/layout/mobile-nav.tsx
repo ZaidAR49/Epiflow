@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import {
   Menu,
+  Home,
+  Layers,
   LayoutDashboard,
   Sliders,
   ShieldCheck,
@@ -15,6 +17,7 @@ import {
   Globe,
   Mail,
 } from "lucide-react";
+import Image from "next/image";
 import {
   Sheet,
   SheetTrigger,
@@ -24,12 +27,16 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { EpiFlowLogo } from "@/components/ui/epiflow-logo";
+import { UserAvatar } from "@/components/ui/user-avatar";
 
 interface MobileNavProps {
   userRole?: string;
   userName?: string | null;
   userImage?: string | null;
   isSignedIn?: boolean;
+  isSubscribed?: boolean;
+  logoUrl?: string | null;
+  workflowName?: string | null;
 }
 
 export function MobileNav({
@@ -37,6 +44,9 @@ export function MobileNav({
   userName,
   userImage,
   isSignedIn = false,
+  isSubscribed = false,
+  logoUrl,
+  workflowName,
 }: MobileNavProps) {
   const [open, setOpen] = useState(false);
   const locale = useLocale();
@@ -81,19 +91,12 @@ export function MobileNav({
             <SheetTitle className="flex items-center gap-3">
               {isSignedIn ? (
                 <div className="flex items-center gap-3">
-                  <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-[var(--accent)]/30 bg-[var(--surface-2)] border border-[var(--border)]">
-                    {userImage ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={userImage}
-                        alt={userName || "User"}
-                        className="h-full w-full object-cover"
-                        referrerPolicy="no-referrer"
-                      />
-                    ) : (
-                      <User className="h-5 w-5 text-[var(--accent)]" />
-                    )}
-                  </div>
+                  <UserAvatar
+                    src={userImage}
+                    name={userName}
+                    size="md"
+                    isSubscribed={isSubscribed}
+                  />
                   <div className="flex flex-col text-start">
                     <span className="text-sm font-bold text-[var(--text)]">
                       {userName || "User"}
@@ -119,8 +122,55 @@ export function MobileNav({
             </SheetDescription>
           </SheetHeader>
 
+          {/* Active Workflow Context (if present) */}
+          {workflowName && (
+            <div className="flex items-center gap-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]/60 p-2.5">
+              {logoUrl ? (
+                <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface)]">
+                  <Image
+                    src={logoUrl}
+                    alt={workflowName}
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                </div>
+              ) : (
+                <EpiFlowLogo variant="icon" height={28} />
+              )}
+              <div className="flex flex-col min-w-0">
+                <span className="text-xs font-bold text-[var(--text)] truncate">
+                  {workflowName}
+                </span>
+                <span className="text-[10px] text-[var(--accent)] font-semibold">
+                  Active Workflow
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Navigation Links */}
           <div className="space-y-1.5">
+            {/* Home - ALWAYS unblocked */}
+            <Link
+              href={`/${locale}`}
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-2)] hover:text-[var(--accent)] transition-colors"
+            >
+              <Home className="h-4 w-4 text-emerald-400" />
+              <span>{t("home")}</span>
+            </Link>
+
+            {/* Workflows Catalog */}
+            <Link
+              href={`/${locale}#workflows`}
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-2)] hover:text-[var(--accent)] transition-colors"
+            >
+              <Layers className="h-4 w-4 text-purple-400" />
+              <span>{t("workflows")}</span>
+            </Link>
+
             {isSignedIn && (
               <Link
                 href={`/${locale}/dashboard`}

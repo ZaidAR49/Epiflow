@@ -17,8 +17,8 @@ describe("Starter Plan Access & Authorization Routing", () => {
 
     await ensureUserWorkflowAccess(userId, slug);
 
-    expect(mockExecute).toHaveBeenCalledTimes(1);
-    const sqlCall = mockExecute.mock.calls[0]?.[0];
+    expect(mockExecute).toHaveBeenCalledTimes(2);
+    const sqlCall = mockExecute.mock.calls[1]?.[0];
     // Drizzle SQL object stores queryChunks with values
     const queryChunks = sqlCall?.queryChunks ?? [];
     const hasLimitFive = queryChunks.some(

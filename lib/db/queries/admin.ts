@@ -28,7 +28,7 @@ export interface AdminUserItem {
   id: string;
   email: string | null;
   fullName: string;
-  role: "admin" | "user" | "guest";
+  role: "admin" | "editor" | "viewer" | "user" | "guest";
   status: "pending" | "approved" | "rejected" | "locked";
   telegramId: number | null;
   username: string | null;
@@ -54,7 +54,7 @@ export async function getAdminStats(): Promise<AdminStats> {
       (SELECT COUNT(*)::text FROM public.workflows) AS total_workflows,
       (SELECT COUNT(*)::text FROM public.workflows WHERE is_active = true) AS active_workflows,
       (SELECT COUNT(*)::text FROM public.job_runs) AS total_runs,
-      (SELECT COALESCE(SUM(usage_count), 0)::text FROM public.user_workflow_access) AS total_quota_consumed;
+      (SELECT COALESCE(SUM(used), 0)::text FROM public.access_usage) AS total_quota_consumed;
   `);
 
   const row = result[0];
@@ -137,7 +137,7 @@ export async function getAdminUsers(): Promise<AdminUserItem[]> {
     id: string;
     email: string | null;
     full_name: string;
-    role: "admin" | "user" | "guest";
+    role: "admin" | "editor" | "viewer" | "user" | "guest";
     status: "pending" | "approved" | "rejected" | "locked";
     telegram_id: string | null;
     username: string | null;
@@ -153,16 +153,19 @@ export async function getAdminUsers(): Promise<AdminUserItem[]> {
       u.full_name,
       u.role,
       u.status,
-      u.telegram_id::text,
-      u.username,
-      u.image,
-      uwa.usage_count::text,
-      uwa.usage_limit::text,
+      ui.provider_user_id AS telegram_id,
+      ui.handle AS username,
+      NULL::text AS image,
+      COALESCE(au.used, 0)::text AS usage_count,
+      au.limit_value::text AS usage_limit,
       uwa.expires_at,
       u.created_at
     FROM public.users u
+    LEFT JOIN public.user_identities ui ON ui.user_id = u.id AND ui.provider = 'telegram'
     LEFT JOIN public.workflows w ON w.slug = 'job-xray'
     LEFT JOIN public.user_workflow_access uwa ON uwa.user_id = u.id AND uwa.workflow_id = w.id
+    LEFT JOIN public.usage_meters m ON m.key = 'runs'
+    LEFT JOIN public.access_usage au ON au.user_id = u.id AND au.workflow_id = w.id AND au.meter_id = m.id
     ORDER BY u.created_at DESC;
   `);
 
@@ -185,7 +188,7 @@ export async function getAdminUsers(): Promise<AdminUserItem[]> {
 export async function updateUserRoleAndStatus(
   userId: string,
   data: {
-    role?: "admin" | "user" | "guest";
+    role?: "admin" | "editor" | "viewer" | "user" | "guest";
     status?: "pending" | "approved" | "rejected" | "locked";
   }
 ): Promise<boolean> {
@@ -211,16 +214,25 @@ export async function updateUserWorkflowQuota(
   }
 ): Promise<boolean> {
   const result = await db.execute<{ updated: boolean }>(sql`
-    WITH target_workflow AS (
-      SELECT id FROM public.workflows WHERE slug = ${workflowSlug}::text LIMIT 1
+    WITH target AS (
+      SELECT au.user_id, au.workflow_id, au.meter_id
+      FROM public.access_usage au
+      JOIN public.usage_meters m ON m.id = au.meter_id
+      JOIN public.workflows w ON w.id = au.workflow_id
+      WHERE au.user_id = ${userId}::uuid
+        AND w.slug = ${workflowSlug}::text
+        AND m.key = 'runs'
     )
-    UPDATE public.user_workflow_access uwa
+    UPDATE public.access_usage au
     SET 
-      usage_limit = ${data.usageLimit !== undefined ? data.usageLimit : sql`uwa.usage_limit`},
-      usage_count = CASE WHEN ${Boolean(data.resetCount)} THEN 0 ELSE uwa.usage_count END
-    FROM target_workflow tw
-    WHERE uwa.user_id = ${userId}::uuid
-      AND uwa.workflow_id = tw.id
+      limit_value = CASE WHEN ${data.usageLimit !== undefined} THEN ${data.usageLimit} ELSE au.limit_value END,
+      used = CASE WHEN ${Boolean(data.resetCount)} THEN 0 ELSE au.used END,
+      period_start = CASE WHEN ${Boolean(data.resetCount)} THEN now() ELSE au.period_start END,
+      updated_at = now()
+    FROM target t
+    WHERE au.user_id = t.user_id
+      AND au.workflow_id = t.workflow_id
+      AND au.meter_id = t.meter_id
     RETURNING true AS updated;
   `);
 

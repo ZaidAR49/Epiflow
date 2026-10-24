@@ -2,12 +2,17 @@ import React from "react";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { auth } from "@/auth";
-import { getUserById } from "@/lib/db/queries/users";
+import { getUserById, getUserTelegramIdentity } from "@/lib/db/queries/users";
 import { getUserWorkflowsList } from "@/lib/db/queries/workflows";
+import { getUserSubscription } from "@/lib/db/queries/subscriptions";
+import { getAllPlans } from "@/lib/db/queries/plans";
 import { Header } from "@/components/layout/header";
-import { ProfileForm } from "@/components/features/profile/profile-form";
-import { TelegramLinkCard } from "@/components/features/profile/telegram-link-card";
-import { RegisteredWorkflowsCard } from "@/components/features/profile/registered-workflows-card";
+import {
+  ProfileForm,
+  TelegramLinkCard,
+  RegisteredWorkflowsCard,
+  UserSubscriptionCard,
+} from "@/components/features/profile";
 import { AdminBanner } from "@/components/features/admin/admin-banner";
 
 interface ProfilePageProps {
@@ -27,9 +32,20 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
     redirect(`/${locale}/sign-in`);
   }
 
-  const workflows = await getUserWorkflowsList(user.id);
-  const primaryLogoUrl = workflows.find((w) => w.slug === "job-xray")?.imageUrl || workflows[0]?.imageUrl;
+  const [workflows, telegramIdentity, subscription, allPlans] = await Promise.all([
+    getUserWorkflowsList(user.id),
+    getUserTelegramIdentity(user.id),
+    getUserSubscription(user.id),
+    getAllPlans(),
+  ]);
+
+  const primaryLogoUrl =
+    workflows.find((w) => w.slug === "job-xray")?.imageUrl || workflows[0]?.imageUrl;
   const t = await getTranslations("profile");
+
+  const isSubscribed = Boolean(
+    subscription && (subscription.status === "active" || subscription.status === "trialing")
+  );
 
   return (
     <div className="min-h-screen bg-[var(--bg)] text-[var(--text)]">
@@ -39,6 +55,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         userImage={session.user.image}
         logoUrl={primaryLogoUrl}
         isSignedIn={Boolean(user.id)}
+        isSubscribed={isSubscribed}
       />
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
@@ -61,21 +78,27 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                 id: user.id,
                 fullName: user.fullName,
                 email: user.email,
-                image: session.user.image || user.image,
+                image: session.user.image || null,
                 role: user.role,
                 status: user.status,
                 preferredLanguage: (user.preferredLanguage as "ar" | "en") || "ar",
               }}
+              isSubscribed={isSubscribed}
             />
 
             <RegisteredWorkflowsCard workflows={workflows} />
           </div>
 
-          {/* Side Column: Telegram & Integrations */}
+          {/* Side Column: Subscription & Telegram Integrations */}
           <div className="lg:col-span-5 xl:col-span-4 space-y-8">
+            <UserSubscriptionCard
+              subscription={subscription}
+              availablePlans={allPlans}
+            />
+
             <TelegramLinkCard
-              telegramId={user.telegramId}
-              username={user.username}
+              telegramId={telegramIdentity?.telegramId ?? null}
+              username={telegramIdentity?.username ?? null}
             />
           </div>
         </div>

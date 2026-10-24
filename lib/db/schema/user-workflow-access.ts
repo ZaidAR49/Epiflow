@@ -1,7 +1,6 @@
 import {
   pgTable,
   uuid,
-  integer,
   timestamp,
   jsonb,
   primaryKey,
@@ -9,6 +8,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { users } from "./users";
 import { workflows } from "./workflows";
+import { accessGrantSourceEnum } from "./enums";
 
 export const userWorkflowAccess = pgTable(
   "user_workflow_access",
@@ -19,16 +19,18 @@ export const userWorkflowAccess = pgTable(
     workflowId: uuid("workflow_id")
       .notNull()
       .references(() => workflows.id, { onDelete: "cascade" }),
-    usageCount: integer("usage_count").default(0).notNull(),
-    usageLimit: integer("usage_limit"), // null = unlimited
     lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
     grantedAt: timestamp("granted_at", { withTimezone: true }).defaultNow().notNull(),
     expiresAt: timestamp("expires_at", { withTimezone: true }),
     metadata: jsonb("metadata").default({}),
+    grantedVia: accessGrantSourceEnum("granted_via").default("admin").notNull(),
+    subscriptionId: uuid("subscription_id"),
   },
   (table) => [
     primaryKey({ columns: [table.userId, table.workflowId] }),
     index("idx_user_workflow_access_workflow_id").on(table.workflowId),
+    index("idx_user_workflow_access_expires_at").on(table.expiresAt),
+    index("idx_user_workflow_access_subscription_id").on(table.subscriptionId),
   ]
 );
 
