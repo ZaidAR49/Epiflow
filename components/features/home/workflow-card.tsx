@@ -2,7 +2,7 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useTranslations, useLocale } from "next-intl";
-import { ArrowRight, CheckCircle2, Clock, Sparkles, ExternalLink } from "lucide-react";
+import { ArrowRight, CheckCircle2, Clock, Sparkles } from "lucide-react";
 import type { WorkflowSummary } from "@/lib/db/queries/workflows";
 
 interface WorkflowCardProps {

@@ -62,6 +62,13 @@ export function Header({
 
         {/* Desktop Navigation: User & Localization */}
         <div className="hidden md:flex items-center gap-3">
+          <Link
+            href={`/${locale}/contact`}
+            className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors"
+          >
+            {t("contact")}
+          </Link>
+          <div className="h-4 w-px bg-[var(--border)]" />
           <UserNav
             isSignedIn={isSignedIn}
             userName={userName}

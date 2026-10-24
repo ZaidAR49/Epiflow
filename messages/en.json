@@ -18,7 +18,9 @@
     "dashboard": "Dashboard",
     "testBench": "Test Bench",
     "admin": "Admin",
-    "profile": "Profile"
+    "profile": "Profile",
+    "contact": "Contact",
+    "contactUs": "Contact Us"
   },
   "errors": {
     "UNREGISTERED": "Your account is not registered. Please contact an administrator for access.",
@@ -732,5 +734,30 @@
     "workflowNotFound": "Workflow not found",
     "workflowNotFoundDesc": "The requested workflow does not exist or has been disabled.",
     "backHome": "Back to Home"
+  },
+  "contact": {
+    "badge": "GET IN TOUCH // INQUIRIES & PARTNERSHIPS",
+    "title": "Let's Start a Conversation",
+    "subtitle": "Have questions about EpiFlow, need custom workflow integrations, or looking to partner? Reach out directly and our engineering team will respond promptly.",
+    "nameLabel": "Your Full Name",
+    "namePlaceholder": "e.g. Sarah Jenkins",
+    "emailLabel": "Email Address",
+    "emailPlaceholder": "you@company.com",
+    "categoryLabel": "Inquiry Topic",
+    "catGeneral": "General Inquiry",
+    "catSupport": "Technical Support & Workflows",
+    "catPartnership": "Partnerships & Custom Solutions",
+    "catFeedback": "Product Feedback & Suggestions",
+    "catBilling": "Billing & Account Access",
+    "subjectLabel": "Subject",
+    "subjectPlaceholder": "Brief summary of your inquiry...",
+    "messageLabel": "Your Message",
+    "messagePlaceholder": "Tell us about your project, workflow question, or how we can help you...",
+    "sendButton": "Send Message",
+    "sendingButton": "Transmitting Message...",
+    "successTitle": "Message Sent Successfully!",
+    "successDesc": "Thank you for reaching out. We have received your inquiry and will reply directly to your email address shortly.",
+    "simulatedNotice": "Note: Currently in development simulation mode. Set RESEND_API_KEY & CONTACT_TO_EMAIL in your environment to dispatch live emails.",
+    "sendAnother": "Send Another Message"
   }
 }

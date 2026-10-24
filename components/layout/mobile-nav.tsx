@@ -13,6 +13,7 @@ import {
   LogIn,
   LogOut,
   Globe,
+  Mail,
 } from "lucide-react";
 import {
   Sheet,
@@ -163,6 +164,15 @@ export function MobileNav({
                 <span>{t("profile")}</span>
               </Link>
             )}
+
+            <Link
+              href={`/${locale}/contact`}
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-2)] hover:text-[var(--accent)] transition-colors"
+            >
+              <Mail className="h-4 w-4 text-indigo-400" />
+              <span>{t("contact")}</span>
+            </Link>
           </div>
         </div>
 
