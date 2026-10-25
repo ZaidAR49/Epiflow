@@ -24,6 +24,12 @@ const serverEnvSchema = z.object({
   RESEND_API_KEY: z.string().trim().optional().or(z.literal("")),
   CONTACT_TO_EMAIL: z.string().trim().email().optional().or(z.literal("")),
   CONTACT_FROM_EMAIL: z.string().trim().optional().or(z.literal("")),
+  LEMONSQUEEZY_API_KEY: z.string().trim().optional().or(z.literal("")),
+  LEMONSQUEEZY_STORE_ID: z.string().trim().optional().or(z.literal("")),
+  LEMONSQUEEZY_WEBHOOK_SECRET: z.string().trim().optional().or(z.literal("")),
+  NEXT_PUBLIC_APP_NAME: z.string().trim().default("EpiFlow"),
+  NEXT_PUBLIC_PLATFORM_NAME: z.string().trim().default("epiflow"),
+  GOOGLE_WORKFLOW_REDIRECT_URI: z.string().url().optional().or(z.literal("")),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
@@ -34,8 +40,9 @@ function parseEnv(): ServerEnv {
     const formattedErrors = result.error.issues
       .map((issue) => ` - ${issue.path.join(".")}: ${issue.message}`)
       .join("\n");
+    const appName = process.env.NEXT_PUBLIC_APP_NAME || "EpiFlow";
     throw new Error(
-      `[JobPost X-Ray] Invalid server environment configuration:\n${formattedErrors}`
+      `[${appName}] Invalid server environment configuration:\n${formattedErrors}`
     );
   }
   return result.data;

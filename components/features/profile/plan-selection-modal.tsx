@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useTransition, useEffect } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import {
   X,
   Sparkles,
@@ -12,7 +12,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import type { Plan } from "@/lib/db/queries/plans";
-import { mockSubscribeAction } from "@/lib/actions/subscriptions";
+import { createCheckoutSessionAction } from "@/lib/actions/subscriptions";
 
 interface PlanSelectionModalProps {
   isOpen: boolean;
@@ -28,6 +28,7 @@ export function PlanSelectionModal({
   currentPlanId,
 }: PlanSelectionModalProps) {
   const t = useTranslations("profile");
+  const locale = useLocale();
   const [isPending, startTransition] = useTransition();
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -52,8 +53,12 @@ export function PlanSelectionModal({
     setSuccessMessage(null);
 
     startTransition(async () => {
-      const result = await mockSubscribeAction(planId);
+      const result = await createCheckoutSessionAction(planId, locale);
       if (result.success) {
+        if ("checkoutUrl" in result && result.checkoutUrl) {
+          window.location.href = result.checkoutUrl;
+          return;
+        }
         setSuccessMessage(t("subscribeSuccess"));
         setTimeout(() => {
           onClose();

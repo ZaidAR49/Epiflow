@@ -23,7 +23,9 @@ export async function GET(
   }
 
   const origin = req.nextUrl.origin;
-  const redirectUri = `${origin}/api/workflows/${slug}/auth/google/callback`;
+  const redirectUri =
+    env.GOOGLE_WORKFLOW_REDIRECT_URI?.trim() ||
+    `${origin}/api/workflows/${slug}/auth/google/callback`;
   const state = Buffer.from(
     JSON.stringify({
       userId: session.user.id,

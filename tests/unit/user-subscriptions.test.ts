@@ -9,6 +9,7 @@ vi.mock("@/auth", () => ({
 const mockCreateMockSubscription = vi.fn();
 const mockCancelSubscription = vi.fn();
 const mockGetUserSubscription = vi.fn();
+const mockGetPlanById = vi.fn();
 
 vi.mock("@/lib/db/queries/subscriptions", () => ({
   createMockSubscription: (...args: unknown[]) => mockCreateMockSubscription(...args),
@@ -16,8 +17,23 @@ vi.mock("@/lib/db/queries/subscriptions", () => ({
   getUserSubscription: (...args: unknown[]) => mockGetUserSubscription(...args),
 }));
 
+vi.mock("@/lib/db/queries/plans", () => ({
+  getPlanById: (...args: unknown[]) => mockGetPlanById(...args),
+}));
+
 vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
+}));
+
+vi.mock("@/lib/env", () => ({
+  getServerEnv: () => ({
+    NEXT_PUBLIC_APP_URL: "http://localhost:3000",
+    LEMONSQUEEZY_API_KEY: "",
+    LEMONSQUEEZY_STORE_ID: "",
+    LEMONSQUEEZY_WEBHOOK_SECRET: "",
+    NEXT_PUBLIC_APP_NAME: "EpiFlow",
+    NEXT_PUBLIC_PLATFORM_NAME: "epiflow",
+  }),
 }));
 
 vi.mock("@/lib/logger", () => ({
@@ -36,6 +52,19 @@ import {
 describe("User Subscription & Mock Checkout Actions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockGetPlanById.mockResolvedValue({
+      id: "plan-123",
+      code: "pro",
+      name: "Pro Plan",
+      priceMinor: 1900,
+      currency: "USD",
+      billingInterval: "month",
+      trialDays: 0,
+      provider: "mock",
+      providerPriceId: null,
+      entitlements: { "job-xray": { runs: 100 } },
+      isActive: true,
+    });
   });
 
   describe("mockSubscribeAction", () => {

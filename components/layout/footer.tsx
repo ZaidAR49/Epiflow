@@ -139,6 +139,14 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link
+                  href={`/${locale}/refund`}
+                  className="hover:text-[var(--text)] transition-colors"
+                >
+                  {t("refundPolicy")}
+                </Link>
+              </li>
+              <li>
                 <div className="flex items-center gap-1.5 text-[11px] text-emerald-400/90 pt-1">
                   <Shield className="h-3 w-3 shrink-0" />
                   <span>Google OAuth Verified</span>
@@ -166,6 +174,13 @@ export function Footer() {
               className="hover:text-[var(--text)] transition-colors"
             >
               {t("terms")}
+            </Link>
+            <span>&bull;</span>
+            <Link
+              href={`/${locale}/refund`}
+              className="hover:text-[var(--text)] transition-colors"
+            >
+              {t("refund")}
             </Link>
             <span>&bull;</span>
             <Link

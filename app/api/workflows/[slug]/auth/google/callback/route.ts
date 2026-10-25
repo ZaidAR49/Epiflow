@@ -28,14 +28,22 @@ export async function GET(
   const state = searchParams.get("state");
   const cookieState = req.cookies.get("wf_oauth_state")?.value;
 
+  const env = getServerEnv();
+  const effectiveSlug =
+    slug.toLowerCase() === "epiflow" ||
+    slug.toLowerCase() === (env.NEXT_PUBLIC_PLATFORM_NAME || "epiflow").toLowerCase()
+      ? "job-xray"
+      : slug;
+
   if (!code || !state || state !== cookieState) {
     return NextResponse.redirect(
-      new URL(`/en/workflows/${slug}?error=invalid_state`, origin)
+      new URL(`/en/workflows/${effectiveSlug}?error=invalid_state`, origin)
     );
   }
 
-  const env = getServerEnv();
-  const redirectUri = `${origin}/api/workflows/${slug}/auth/google/callback`;
+  const redirectUri =
+    env.GOOGLE_WORKFLOW_REDIRECT_URI?.trim() ||
+    `${origin}/api/workflows/${slug}/auth/google/callback`;
 
   try {
     // 1. Exchange authorization code for tokens
@@ -53,7 +61,7 @@ export async function GET(
 
     if (!tokenRes.ok) {
       return NextResponse.redirect(
-        new URL(`/en/workflows/${slug}?error=token_exchange_failed`, origin)
+        new URL(`/en/workflows/${effectiveSlug}?error=token_exchange_failed`, origin)
       );
     }
 
@@ -62,7 +70,7 @@ export async function GET(
 
     if (!parsedTokens.success) {
       return NextResponse.redirect(
-        new URL(`/en/workflows/${slug}?error=invalid_token_payload`, origin)
+        new URL(`/en/workflows/${effectiveSlug}?error=invalid_token_payload`, origin)
       );
     }
 
@@ -87,7 +95,7 @@ export async function GET(
     if (refresh_token) {
       await saveWorkflowGoogleCredential({
         userId: session.user.id,
-        workflowSlug: slug,
+        workflowSlug: effectiveSlug,
         refreshToken: refresh_token,
         accountEmail,
         scopes: scope ? scope.split(" ") : undefined,
@@ -95,13 +103,13 @@ export async function GET(
     }
 
     const successResponse = NextResponse.redirect(
-      new URL(`/en/workflows/${slug}/console?credential_status=connected`, origin)
+      new URL(`/en/workflows/${effectiveSlug}/console?credential_status=connected`, origin)
     );
     successResponse.cookies.delete("wf_oauth_state");
     return successResponse;
   } catch {
     return NextResponse.redirect(
-      new URL(`/en/workflows/${slug}/console?error=credential_save_failed`, origin)
+      new URL(`/en/workflows/${effectiveSlug}/console?error=credential_save_failed`, origin)
     );
   }
 }

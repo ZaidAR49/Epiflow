@@ -9,6 +9,26 @@ const env = getServerEnv();
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   secret: env.AUTH_SECRET || "ee78a13c1a26c1f2e9698b8ce98fa714377b1051fc1d7829b5c06508275e7277",
+  // Required: trust incoming host header so PKCE cookies round-trip correctly
+  // in development and behind reverse proxies in production.
+  trustHost: true,
+  // Explicitly pin the PKCE cookie name to avoid the __Secure- prefix mismatch
+  // that occurs between the /signin and /callback legs under Turbopack in dev.
+  // Without this, Auth.js can set the cookie as "authjs.pkce.code_verifier" but
+  // attempt to read it back as "__Secure-authjs.pkce.code_verifier" (or vice versa),
+  // producing the "pkceCodeVerifier could not be parsed" InvalidCheck error.
+  cookies: {
+    pkceCodeVerifier: {
+      name: "authjs.pkce.code_verifier",
+      options: {
+        httpOnly: true,
+        sameSite: "lax" as const,
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 60 * 15, // 15 minutes
+      },
+    },
+  },
   providers: [
     Google({
       clientId: env.GOOGLE_CLIENT_ID,

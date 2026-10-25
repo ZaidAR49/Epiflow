@@ -11,10 +11,14 @@ import {
   Loader2,
   CheckCircle2,
   Layers,
+  ExternalLink,
 } from "lucide-react";
 import type { SubscriptionWithDetails } from "@/lib/db/queries/subscriptions";
 import type { Plan } from "@/lib/db/queries/plans";
-import { cancelUserSubscriptionAction } from "@/lib/actions/subscriptions";
+import {
+  cancelUserSubscriptionAction,
+  getBillingPortalUrlAction,
+} from "@/lib/actions/subscriptions";
 import { PlanSelectionModal } from "./plan-selection-modal";
 
 interface UserSubscriptionCardProps {
@@ -32,10 +36,26 @@ export function UserSubscriptionCard({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [isCanceling, startCancelTransition] = useTransition();
+  const [isOpeningPortal, startPortalTransition] = useTransition();
   const [statusMessage, setStatusMessage] = useState<{
     type: "success" | "error";
     text: string;
   } | null>(null);
+
+  const handleOpenBillingPortal = () => {
+    setStatusMessage(null);
+    startPortalTransition(async () => {
+      const result = await getBillingPortalUrlAction();
+      if (result.success && result.portalUrl) {
+        window.open(result.portalUrl, "_blank", "noopener,noreferrer");
+      } else {
+        setStatusMessage({
+          type: "error",
+          text: result.error || "Failed to load billing portal",
+        });
+      }
+    });
+  };
 
   const handleCancelSubscription = () => {
     if (!subscription) return;
@@ -154,6 +174,24 @@ export function UserSubscriptionCard({
                 <Layers className="h-3.5 w-3.5" />
                 <span>{t("changePlan")}</span>
               </button>
+
+              {subscription.provider === "lemonsqueezy" && (
+                <button
+                  type="button"
+                  onClick={handleOpenBillingPortal}
+                  disabled={isOpeningPortal}
+                  className="flex items-center justify-center gap-1.5 rounded-lg border border-[var(--accent)]/30 bg-[var(--accent)]/10 px-3 py-2 text-xs font-semibold text-[var(--accent)] hover:bg-[var(--accent)]/20 transition-colors"
+                >
+                  {isOpeningPortal ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  )}
+                  <span>
+                    {isOpeningPortal ? t("loadingPortal") : t("manageInPortal")}
+                  </span>
+                </button>
+              )}
 
               <button
                 type="button"

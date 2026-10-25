@@ -8,6 +8,7 @@ import {
   Bot,
   Send,
   Database,
+  CreditCard,
   Lock,
   CheckCircle2,
   AlertTriangle,
@@ -74,6 +75,18 @@ export function ThirdPartyDisclosures() {
         t("databaseP1"),
         t("databaseP2"),
       ],
+    },
+    {
+      id: "lemonsqueezy-billing",
+      icon: CreditCard,
+      title: t("lemonSqueezyTitle"),
+      badge: t("lemonSqueezyBadge"),
+      badgeColor: "text-amber-400 border-amber-400/30 bg-amber-400/10",
+      paragraphs: [
+        t("lemonSqueezyP1"),
+        t("lemonSqueezyP2"),
+      ],
+      encryptionNote: t("lemonSqueezyTokens"),
     },
   ];
 
