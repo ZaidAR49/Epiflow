@@ -2,11 +2,12 @@
 
 import { useState, useTransition, useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { X, Sparkles, Loader2 } from "lucide-react";
+import { X, Sparkles, Loader2, ShieldCheck } from "lucide-react";
 import type { PlanWithSubscriberCount } from "@/lib/db/queries/plans";
 import type { PlanEntitlements } from "@/lib/validation/plans";
 import { createPlanAction, updatePlanAction } from "@/lib/actions/plans";
 import { PlanEntitlementsEditor } from "./plan-entitlements-editor";
+import { PlanFormFields } from "./plan-form-fields";
 
 interface PlanFormModalProps {
   isOpen: boolean;
@@ -29,17 +30,49 @@ export function PlanFormModal({
 
   const [code, setCode] = useState(initialData?.code ?? "");
   const [name, setName] = useState(initialData?.name ?? "");
-  const [priceMinor, setPriceMinor] = useState<number>(initialData?.priceMinor ?? 1900);
+  const [priceMinor, setPriceMinor] = useState<number>(initialData?.priceMinor ?? 0);
   const [currency, setCurrency] = useState(initialData?.currency ?? "USD");
   const [billingInterval, setBillingInterval] = useState<"month" | "year" | "lifetime" | "one_time">(
     (initialData?.billingInterval as "month" | "year" | "lifetime" | "one_time") ?? "month"
   );
   const [trialDays, setTrialDays] = useState<number>(initialData?.trialDays ?? 0);
-  const [provider, setProvider] = useState(initialData?.provider ?? "mock");
+  const [provider, setProvider] = useState(initialData?.provider ?? "");
+  const [providerPriceId, setProviderPriceId] = useState(initialData?.providerPriceId ?? "");
   const [entitlements, setEntitlements] = useState<PlanEntitlements>(
-    (initialData?.entitlements as PlanEntitlements) ?? { "job-xray": { runs: 50 } }
+    (initialData?.entitlements as PlanEntitlements) ?? { "job-xray": { runs: 5 } }
   );
   const [isActive, setIsActive] = useState<boolean>(initialData?.isActive ?? true);
+
+  const isSystemPlan = initialData?.code === "free";
+
+  useEffect(() => {
+    if (initialData) {
+      setCode(initialData.code);
+      setName(initialData.name);
+      setPriceMinor(initialData.priceMinor);
+      setCurrency(initialData.currency);
+      setBillingInterval(
+        (initialData.billingInterval as "month" | "year" | "lifetime" | "one_time") ?? "month"
+      );
+      setTrialDays(initialData.trialDays ?? 0);
+      setProvider(initialData.provider ?? "");
+      setProviderPriceId(initialData.providerPriceId ?? "");
+      setEntitlements((initialData.entitlements as PlanEntitlements) ?? {});
+      setIsActive(initialData.isActive ?? true);
+    } else {
+      setCode("");
+      setName("");
+      setPriceMinor(0);
+      setCurrency("USD");
+      setBillingInterval("month");
+      setTrialDays(0);
+      setProvider("");
+      setProviderPriceId("");
+      setEntitlements({ "job-xray": { runs: 5 } });
+      setIsActive(true);
+    }
+    setError(null);
+  }, [initialData, isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -59,18 +92,23 @@ export function PlanFormModal({
     setError(null);
 
     startTransition(async () => {
+      const planPayload = {
+        code: isSystemPlan ? "free" : code.trim().toLowerCase(),
+        name: name.trim(),
+        priceMinor: Number(priceMinor),
+        currency: currency.trim().toUpperCase(),
+        billingInterval,
+        trialDays: Number(trialDays),
+        provider: provider.trim() || "system",
+        providerPriceId: providerPriceId.trim() || null,
+        entitlements,
+        isActive: isSystemPlan ? true : isActive,
+      };
+
       if (initialData) {
         const res = await updatePlanAction({
           id: initialData.id,
-          code,
-          name,
-          priceMinor: Number(priceMinor),
-          currency,
-          billingInterval,
-          trialDays: Number(trialDays),
-          provider,
-          entitlements,
-          isActive,
+          ...planPayload,
         });
 
         if (res.success) {
@@ -80,17 +118,7 @@ export function PlanFormModal({
           setError(res.error || "Update failed");
         }
       } else {
-        const res = await createPlanAction({
-          code,
-          name,
-          priceMinor: Number(priceMinor),
-          currency,
-          billingInterval,
-          trialDays: Number(trialDays),
-          provider,
-          entitlements,
-          isActive,
-        });
+        const res = await createPlanAction(planPayload);
 
         if (res.success) {
           onSuccess();
@@ -116,6 +144,12 @@ export function PlanFormModal({
             <h2 id="plan-form-title" className="text-base font-bold text-[var(--text)]">
               {initialData ? t("editPlan") : t("addPlan")}
             </h2>
+            {isSystemPlan && (
+              <span className="inline-flex items-center gap-1 rounded-md bg-[var(--accent)]/15 px-2 py-0.5 text-[10px] font-semibold text-[var(--accent)] border border-[var(--accent)]/30">
+                <ShieldCheck className="h-3 w-3" />
+                {t("defaultBadge")}
+              </span>
+            )}
           </div>
           <button
             type="button"
@@ -134,117 +168,25 @@ export function PlanFormModal({
         )}
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label htmlFor="plan-code" className="block text-xs font-semibold text-[var(--text-muted)] mb-1">
-                {t("codeLabel")}
-              </label>
-              <input
-                id="plan-code"
-                type="text"
-                value={code}
-                onChange={(e) => setCode(e.target.value.toLowerCase())}
-                placeholder={t("codePlaceholder")}
-                required
-                className="w-full rounded-md border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text)] font-mono focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="plan-name" className="block text-xs font-semibold text-[var(--text-muted)] mb-1">
-                {t("nameLabel")}
-              </label>
-              <input
-                id="plan-name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder={t("namePlaceholder")}
-                required
-                className="w-full rounded-md border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <label htmlFor="plan-price" className="block text-xs font-semibold text-[var(--text-muted)] mb-1">
-                {t("priceLabel")}
-              </label>
-              <input
-                id="plan-price"
-                type="number"
-                value={priceMinor}
-                onChange={(e) => setPriceMinor(Number(e.target.value))}
-                min={0}
-                required
-                className="w-full rounded-md border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden"
-              />
-              <span className="text-[10px] text-[var(--text-muted)]">{t("priceHelp")}</span>
-            </div>
-
-            <div>
-              <label htmlFor="plan-currency" className="block text-xs font-semibold text-[var(--text-muted)] mb-1">
-                {t("currencyLabel")}
-              </label>
-              <input
-                id="plan-currency"
-                type="text"
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value.toUpperCase())}
-                maxLength={3}
-                required
-                className="w-full rounded-md border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text)] uppercase font-mono focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="plan-interval" className="block text-xs font-semibold text-[var(--text-muted)] mb-1">
-                {t("intervalLabel")}
-              </label>
-              <select
-                id="plan-interval"
-                value={billingInterval}
-                onChange={(e) => setBillingInterval(e.target.value as "month" | "year" | "lifetime" | "one_time")}
-                className="w-full rounded-md border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden"
-              >
-                <option value="month">{t("intervalMonth")}</option>
-                <option value="year">{t("intervalYear")}</option>
-                <option value="lifetime">{t("intervalLifetime")}</option>
-                <option value="one_time">{t("intervalOneTime")}</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label htmlFor="plan-trial" className="block text-xs font-semibold text-[var(--text-muted)] mb-1">
-                {t("trialDaysLabel")}
-              </label>
-              <input
-                id="plan-trial"
-                type="number"
-                value={trialDays}
-                onChange={(e) => setTrialDays(Number(e.target.value))}
-                min={0}
-                className="w-full rounded-md border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="plan-provider" className="block text-xs font-semibold text-[var(--text-muted)] mb-1">
-                {t("providerLabel")}
-              </label>
-              <input
-                id="plan-provider"
-                type="text"
-                value={provider}
-                onChange={(e) => setProvider(e.target.value)}
-                placeholder="mock"
-                className="w-full rounded-md border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden"
-              />
-            </div>
-          </div>
+          <PlanFormFields
+            code={code}
+            setCode={setCode}
+            name={name}
+            setName={setName}
+            priceMinor={priceMinor}
+            setPriceMinor={setPriceMinor}
+            currency={currency}
+            setCurrency={setCurrency}
+            billingInterval={billingInterval}
+            setBillingInterval={setBillingInterval}
+            trialDays={trialDays}
+            setTrialDays={setTrialDays}
+            provider={provider}
+            setProvider={setProvider}
+            providerPriceId={providerPriceId}
+            setProviderPriceId={setProviderPriceId}
+            isSystemPlan={isSystemPlan}
+          />
 
           <PlanEntitlementsEditor
             value={entitlements}
@@ -256,13 +198,19 @@ export function PlanFormModal({
             <input
               type="checkbox"
               id="plan-active"
-              checked={isActive}
-              onChange={(e) => setIsActive(e.target.checked)}
-              className="rounded border-[var(--border)] text-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+              checked={isSystemPlan ? true : isActive}
+              onChange={(e) => !isSystemPlan && setIsActive(e.target.checked)}
+              disabled={isSystemPlan}
+              className="rounded border-[var(--border)] text-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-60"
             />
             <label htmlFor="plan-active" className="text-xs text-[var(--text)] cursor-pointer">
               {t("active")}
             </label>
+            {isSystemPlan && (
+              <span className="text-[10px] text-[var(--text-muted)] italic">
+                ({t("defaultBadge")})
+              </span>
+            )}
           </div>
 
           <div className="flex items-center justify-end gap-2 pt-4 border-t border-[var(--border)]">

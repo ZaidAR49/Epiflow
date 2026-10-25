@@ -402,6 +402,28 @@ BEGIN
 END;
 $function$;
 
+-- protect_system_plans: trigger: default system 'free' plan cannot be deleted or have its code altered
+CREATE OR REPLACE FUNCTION public.protect_system_plans()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO ''
+AS $function$
+BEGIN
+    IF TG_OP = 'DELETE' THEN
+        IF OLD.code = 'free' THEN
+            RAISE EXCEPTION 'System plan "%" cannot be deleted.', OLD.code;
+        END IF;
+        RETURN OLD;
+    ELSIF TG_OP = 'UPDATE' THEN
+        IF OLD.code = 'free' AND NEW.code <> 'free' THEN
+            RAISE EXCEPTION 'Cannot change the code of system plan "%".', OLD.code;
+        END IF;
+        RETURN NEW;
+    END IF;
+    RETURN NEW;
+END;
+$function$;
+
 -- authenticate_gatekeeper: bot/web entry check: identity (user_id or telegram_id), account status, workflow access, expiry, quota (any exhausted meter => 429)
 CREATE OR REPLACE FUNCTION public.authenticate_gatekeeper(
     p_user_id uuid DEFAULT NULL::uuid,
@@ -952,6 +974,7 @@ CREATE TRIGGER set_plans_updated_at BEFORE UPDATE ON public.plans FOR EACH ROW E
 CREATE TRIGGER validate_plan_entitlements BEFORE INSERT OR UPDATE OF entitlements ON public.plans FOR EACH ROW EXECUTE FUNCTION validate_plan_entitlements();
 CREATE TRIGGER set_subscriptions_updated_at BEFORE UPDATE ON public.subscriptions FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER protect_payments_ledger BEFORE DELETE OR UPDATE ON public.payments FOR EACH ROW EXECUTE FUNCTION protect_payment_ledger();
+CREATE TRIGGER protect_system_plans BEFORE DELETE OR UPDATE ON public.plans FOR EACH ROW EXECUTE FUNCTION protect_system_plans();
 
 -- ---------------------------------------------------------------------
 -- 9. ROW LEVEL SECURITY (no policies = service_role / backend only)

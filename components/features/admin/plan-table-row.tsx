@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import { useTranslations } from "next-intl";
-import { Edit2, Play, Pause, Users } from "lucide-react";
+import { Edit2, Play, Pause, Users, ShieldCheck } from "lucide-react";
 import type { PlanWithSubscriberCount } from "@/lib/db/queries/plans";
 import { togglePlanActiveAction } from "@/lib/actions/plans";
 
@@ -78,28 +78,38 @@ export function PlanTableRow({ plan, onEdit, onStatusChange }: PlanTableRowProps
             <span>{t("editPlan")}</span>
           </button>
 
-          <button
-            type="button"
-            onClick={handleToggle}
-            disabled={isPending}
-            className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
-              plan.isActive
-                ? "border border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
-                : "border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
-            }`}
-          >
-            {plan.isActive ? (
-              <>
-                <Pause className="h-3 w-3" />
-                <span>{t("pausePlan")}</span>
-              </>
-            ) : (
-              <>
-                <Play className="h-3 w-3" />
-                <span>{t("activatePlan")}</span>
-              </>
-            )}
-          </button>
+          {plan.code === "free" ? (
+            <span
+              className="inline-flex items-center gap-1 rounded-md border border-[var(--border)] bg-[var(--surface-2)] px-2.5 py-1 text-xs font-medium text-[var(--text-muted)] cursor-not-allowed select-none"
+              title={t("cannotDeactivateDefault")}
+            >
+              <ShieldCheck className="h-3 w-3 text-[var(--accent)]" />
+              <span>{t("defaultBadge")}</span>
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={handleToggle}
+              disabled={isPending}
+              className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+                plan.isActive
+                  ? "border border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
+                  : "border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+              }`}
+            >
+              {plan.isActive ? (
+                <>
+                  <Pause className="h-3 w-3" />
+                  <span>{t("pausePlan")}</span>
+                </>
+              ) : (
+                <>
+                  <Play className="h-3 w-3" />
+                  <span>{t("activatePlan")}</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
       </td>
     </tr>

@@ -44,8 +44,11 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   const t = await getTranslations("profile");
 
   const isSubscribed = Boolean(
-    subscription && (subscription.status === "active" || subscription.status === "trialing")
+    subscription &&
+      (subscription.status === "active" || subscription.status === "trialing") &&
+      subscription.planPriceMinor > 0
   );
+  const planCode = isSubscribed ? subscription?.planCode : undefined;
 
   return (
     <div className="min-h-screen bg-[var(--bg)] text-[var(--text)]">
@@ -56,6 +59,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         logoUrl={primaryLogoUrl}
         isSignedIn={Boolean(user.id)}
         isSubscribed={isSubscribed}
+        planCode={planCode}
       />
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
@@ -84,6 +88,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                 preferredLanguage: (user.preferredLanguage as "ar" | "en") || "ar",
               }}
               isSubscribed={isSubscribed}
+              planCode={planCode}
             />
 
             <RegisteredWorkflowsCard workflows={workflows} />

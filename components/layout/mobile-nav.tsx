@@ -36,6 +36,7 @@ interface MobileNavProps {
   userImage?: string | null;
   isSignedIn?: boolean;
   isSubscribed?: boolean;
+  planCode?: string | null;
   logoUrl?: string | null;
   workflowName?: string | null;
   hideAuthActions?: boolean;
@@ -47,6 +48,7 @@ export function MobileNav({
   userImage,
   isSignedIn = false,
   isSubscribed = false,
+  planCode,
   logoUrl,
   workflowName,
   hideAuthActions = false,
@@ -99,16 +101,32 @@ export function MobileNav({
                     name={userName}
                     size="md"
                     isSubscribed={isSubscribed}
+                    planCode={planCode}
                   />
                   <div className="flex flex-col text-start">
                     <span className="text-sm font-bold text-[var(--text)]">
                       {userName || "User"}
                     </span>
-                    {userRole === "admin" && (
-                      <span className="text-[10px] font-semibold text-emerald-400">
-                        {t("admin")}
-                      </span>
-                    )}
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      {userRole === "admin" && (
+                        <span className="text-[10px] font-semibold text-emerald-400">
+                          {t("admin")}
+                        </span>
+                      )}
+                      {isSubscribed && (
+                        <span
+                          className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.2 text-[9px] font-bold border ${
+                            planCode && (planCode.toLowerCase() === "business" || planCode.toLowerCase().includes("business"))
+                              ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
+                              : "bg-sky-500/15 text-sky-400 border-sky-500/30"
+                          }`}
+                        >
+                          {planCode && (planCode.toLowerCase() === "business" || planCode.toLowerCase().includes("business"))
+                            ? "Business"
+                            : "Pro"}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -154,88 +172,35 @@ export function MobileNav({
 
           {/* Navigation Links */}
           <div className="space-y-1.5">
-            {/* Home - ALWAYS unblocked */}
-            <Link
-              href={`/${locale}`}
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-2)] hover:text-[var(--accent)] transition-colors"
-            >
-              <Home className="h-4 w-4 text-emerald-400" />
-              <span>{t("home")}</span>
-            </Link>
-
-            {/* Workflows Catalog */}
-            <Link
-              href={`/${locale}#workflows`}
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-2)] hover:text-[var(--accent)] transition-colors"
-            >
-              <Layers className="h-4 w-4 text-purple-400" />
-              <span>{t("workflows")}</span>
-            </Link>
-
-            {/* Architecture / Platform Pillars */}
-            <Link
-              href={`/${locale}#pillars`}
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-2)] hover:text-[var(--accent)] transition-colors"
-            >
-              <Cpu className="h-4 w-4 text-sky-400" />
-              <span>{t("architecture")}</span>
-            </Link>
-
-            {isSignedIn && (
-              <Link
-                href={`/${locale}/dashboard`}
-                onClick={() => setOpen(false)}
-                className="flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-2)] hover:text-[var(--accent)] transition-colors"
-              >
-                <LayoutDashboard className="h-4 w-4 text-[var(--accent)]" />
-                <span>{t("dashboard")}</span>
-              </Link>
-            )}
-
-            {userRole === "admin" && (
-              <>
+            {[
+              { href: `/${locale}`, label: t("home"), icon: Home, color: "text-emerald-400" },
+              { href: `/${locale}#workflows`, label: t("workflows"), icon: Layers, color: "text-purple-400" },
+              { href: `/${locale}#pillars`, label: t("architecture"), icon: Cpu, color: "text-sky-400" },
+              ...(isSignedIn ? [{ href: `/${locale}/dashboard`, label: t("dashboard"), icon: LayoutDashboard, color: "text-[var(--accent)]" }] : []),
+              ...(userRole === "admin" ? [
+                { href: `/${locale}/test-workflow`, label: t("testBench"), icon: Sliders, color: "text-sky-400" },
+                { href: `/${locale}/admin`, label: t("admin"), icon: ShieldCheck, color: "text-[var(--accent)]", highlight: true },
+              ] : []),
+              ...(isSignedIn ? [{ href: `/${locale}/profile`, label: t("profile"), icon: User, color: "text-emerald-400" }] : []),
+              { href: `/${locale}/contact`, label: t("contact"), icon: Mail, color: "text-indigo-400" },
+            ].map((item) => {
+              const Icon = item.icon;
+              return (
                 <Link
-                  href={`/${locale}/test-workflow`}
+                  key={item.href}
+                  href={item.href}
                   onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-2)] hover:text-[var(--accent)] transition-colors"
+                  className={`flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium transition-colors ${
+                    item.highlight
+                      ? "text-[var(--accent)] bg-[var(--accent)]/10 hover:bg-[var(--accent)]/20"
+                      : "text-[var(--text)] hover:bg-[var(--surface-2)] hover:text-[var(--accent)]"
+                  }`}
                 >
-                  <Sliders className="h-4 w-4 text-sky-400" />
-                  <span>{t("testBench")}</span>
+                  <Icon className={`h-4 w-4 ${item.color}`} />
+                  <span>{item.label}</span>
                 </Link>
-
-                <Link
-                  href={`/${locale}/admin`}
-                  onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium text-[var(--accent)] bg-[var(--accent)]/10 hover:bg-[var(--accent)]/20 transition-colors"
-                >
-                  <ShieldCheck className="h-4 w-4" />
-                  <span>{t("admin")}</span>
-                </Link>
-              </>
-            )}
-
-            {isSignedIn && (
-              <Link
-                href={`/${locale}/profile`}
-                onClick={() => setOpen(false)}
-                className="flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-2)] hover:text-[var(--accent)] transition-colors"
-              >
-                <User className="h-4 w-4 text-emerald-400" />
-                <span>{t("profile")}</span>
-              </Link>
-            )}
-
-            <Link
-              href={`/${locale}/contact`}
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-2)] hover:text-[var(--accent)] transition-colors"
-            >
-              <Mail className="h-4 w-4 text-indigo-400" />
-              <span>{t("contact")}</span>
-            </Link>
+              );
+            })}
           </div>
         </div>
 

@@ -28,6 +28,7 @@ interface HeaderProps {
   workflowHref?: string;
   isSignedIn?: boolean;
   isSubscribed?: boolean;
+  planCode?: string | null;
   /**
    * When true (e.g. on /sign-in), suppresses redundant sign-in buttons in header.
    */
@@ -43,6 +44,7 @@ export function Header({
   workflowHref,
   isSignedIn = false,
   isSubscribed = false,
+  planCode,
   hideAuthActions = false,
 }: HeaderProps = {}) {
   const t = useTranslations("common");
@@ -137,6 +139,7 @@ export function Header({
             userRole={userRole}
             userImage={userImage}
             isSubscribed={isSubscribed}
+            planCode={planCode}
             hideAuthActions={hideAuthActions}
           />
           <div className="h-4 w-px bg-[var(--border)]" />
@@ -152,6 +155,7 @@ export function Header({
             userImage={userImage}
             isSignedIn={isSignedIn}
             isSubscribed={isSubscribed}
+            planCode={planCode}
             logoUrl={logoUrl}
             workflowName={displayWorkflowName}
             hideAuthActions={hideAuthActions}

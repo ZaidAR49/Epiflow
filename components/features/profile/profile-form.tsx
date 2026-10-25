@@ -19,9 +19,14 @@ interface ProfileFormProps {
     preferredLanguage: "ar" | "en";
   };
   isSubscribed?: boolean;
+  planCode?: string | null;
 }
 
-export function ProfileForm({ initialData, isSubscribed = false }: ProfileFormProps) {
+export function ProfileForm({
+  initialData,
+  isSubscribed = false,
+  planCode,
+}: ProfileFormProps) {
   const t = useTranslations("profile");
   const tAuth = useTranslations("auth");
   const locale = useLocale();
@@ -103,6 +108,7 @@ export function ProfileForm({ initialData, isSubscribed = false }: ProfileFormPr
             name={initialData.fullName}
             size="lg"
             isSubscribed={isSubscribed}
+            planCode={planCode}
           />
           <div>
             <h2 className="text-lg font-bold text-[var(--text)]">{initialData.fullName}</h2>

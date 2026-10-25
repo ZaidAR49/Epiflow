@@ -31,6 +31,7 @@ export default async function TermsPage() {
         userImage={session?.user?.image}
         isSignedIn={isSignedIn}
         isSubscribed={session?.user?.isSubscribed}
+        planCode={session?.user?.planCode}
       />
 
       <main className="flex-1">

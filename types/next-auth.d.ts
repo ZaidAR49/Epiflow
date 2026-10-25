@@ -7,6 +7,7 @@ declare module "next-auth" {
       role?: "admin" | "editor" | "viewer" | "user" | "guest";
       status?: "pending" | "approved" | "rejected" | "locked";
       isSubscribed?: boolean;
+      planCode?: string;
     } & DefaultSession["user"];
   }
 
@@ -15,6 +16,7 @@ declare module "next-auth" {
     role?: "admin" | "editor" | "viewer" | "user" | "guest";
     status?: "pending" | "approved" | "rejected" | "locked";
     isSubscribed?: boolean;
+    planCode?: string;
   }
 }
 
@@ -24,5 +26,6 @@ declare module "next-auth/jwt" {
     role?: "admin" | "editor" | "viewer" | "user" | "guest";
     status?: "pending" | "approved" | "rejected" | "locked";
     isSubscribed?: boolean;
+    planCode?: string;
   }
 }

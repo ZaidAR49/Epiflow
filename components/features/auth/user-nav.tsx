@@ -14,6 +14,7 @@ import {
   ChevronDown,
   Loader2,
   Sparkles,
+  Crown,
 } from "lucide-react";
 import { UserAvatar } from "@/components/ui/user-avatar";
 
@@ -23,6 +24,7 @@ interface UserNavProps {
   userImage?: string | null;
   isSignedIn?: boolean;
   isSubscribed?: boolean;
+  planCode?: string | null;
   hideAuthActions?: boolean;
 }
 
@@ -32,6 +34,7 @@ export function UserNav({
   userImage,
   isSignedIn = false,
   isSubscribed = false,
+  planCode,
   hideAuthActions = false,
 }: UserNavProps) {
   const locale = useLocale();
@@ -118,26 +121,43 @@ export function UserNav({
             className="group flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface-2)]/60 ps-1.5 pe-2.5 py-1 text-xs font-semibold text-[var(--text)] hover:border-[var(--accent)]/50 hover:bg-[var(--surface-2)] transition-all shadow-xs cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-[var(--accent)]"
             title="Account Menu"
           >
-            <UserAvatar
-              src={userImage}
-              name={userName}
-              size="sm"
-              isSubscribed={isSubscribed}
-            />
-            <div className="flex flex-col items-start leading-tight">
-              <span className="text-xs font-semibold text-[var(--text)] group-hover:text-[var(--accent)] transition-colors">
-                {userName ? userName.split(" ")[0] : "Profile"}
-              </span>
-              {isSubscribed ? (
-                <span className="text-[9px] font-bold text-sky-400">
-                  Pro Member
-                </span>
-              ) : userRole === "admin" ? (
-                <span className="text-[9px] font-semibold text-emerald-400">
-                  Admin
-                </span>
-              ) : null}
-            </div>
+            {(() => {
+              const isBusiness = Boolean(
+                isSubscribed &&
+                  planCode &&
+                  (planCode.toLowerCase() === "business" ||
+                    planCode.toLowerCase().includes("business"))
+              );
+              return (
+                <>
+                  <UserAvatar
+                    src={userImage}
+                    name={userName}
+                    size="sm"
+                    isSubscribed={isSubscribed}
+                    planCode={planCode}
+                  />
+                  <div className="flex flex-col items-start leading-tight">
+                    <span className="text-xs font-semibold text-[var(--text)] group-hover:text-[var(--accent)] transition-colors">
+                      {userName ? userName.split(" ")[0] : "Profile"}
+                    </span>
+                    {isSubscribed ? (
+                      <span
+                        className={`text-[9px] font-bold ${
+                          isBusiness ? "text-amber-400" : "text-sky-400"
+                        }`}
+                      >
+                        {isBusiness ? "Business" : "Pro Member"}
+                      </span>
+                    ) : userRole === "admin" ? (
+                      <span className="text-[9px] font-semibold text-emerald-400">
+                        Admin
+                      </span>
+                    ) : null}
+                  </div>
+                </>
+              );
+            })()}
             <ChevronDown className={`h-3 w-3 text-[var(--text-muted)] transition-transform duration-200 ${isOpen ? "rotate-180 text-[var(--accent)]" : ""}`} />
           </button>
 
@@ -148,30 +168,51 @@ export function UserNav({
               role="menu"
             >
               {/* User summary with avatar */}
-              <div className="flex items-center gap-3 px-3 py-2.5 border-b border-[var(--border)] mb-1">
-                <UserAvatar
-                  src={userImage}
-                  name={userName}
-                  size="md"
-                  isSubscribed={isSubscribed}
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold text-[var(--text)] truncate">
-                    {userName || "User"}
-                  </p>
-                  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                    <span className="text-[10px] text-[var(--text-muted)] capitalize">
-                      {userRole || "User"}
-                    </span>
-                    {isSubscribed && (
-                      <span className="inline-flex items-center gap-0.5 rounded-full bg-sky-500/15 px-1.5 py-0.2 text-[9px] font-bold text-sky-400 border border-sky-500/30">
-                        <Sparkles className="h-2.5 w-2.5" />
-                        <span>Pro</span>
-                      </span>
-                    )}
+              {(() => {
+                const isBusiness = Boolean(
+                  isSubscribed &&
+                    planCode &&
+                    (planCode.toLowerCase() === "business" ||
+                      planCode.toLowerCase().includes("business"))
+                );
+                return (
+                  <div className="flex items-center gap-3 px-3 py-2.5 border-b border-[var(--border)] mb-1">
+                    <UserAvatar
+                      src={userImage}
+                      name={userName}
+                      size="md"
+                      isSubscribed={isSubscribed}
+                      planCode={planCode}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-bold text-[var(--text)] truncate">
+                        {userName || "User"}
+                      </p>
+                      <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                        <span className="text-[10px] text-[var(--text-muted)] capitalize">
+                          {userRole || "User"}
+                        </span>
+                        {isSubscribed && (
+                          <span
+                            className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.2 text-[9px] font-bold border ${
+                              isBusiness
+                                ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
+                                : "bg-sky-500/15 text-sky-400 border-sky-500/30"
+                            }`}
+                          >
+                            {isBusiness ? (
+                              <Crown className="h-2.5 w-2.5" />
+                            ) : (
+                              <Sparkles className="h-2.5 w-2.5" />
+                            )}
+                            <span>{isBusiness ? "Business" : "Pro"}</span>
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+                );
+              })()}
 
               <Link
                 href={`/${locale}/profile`}

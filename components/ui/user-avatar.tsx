@@ -1,13 +1,14 @@
 "use client";
 
 import React from "react";
-import { User, Sparkles } from "lucide-react";
+import { User, Sparkles, Crown } from "lucide-react";
 
 export interface UserAvatarProps {
   src?: string | null;
   name?: string | null;
   size?: "sm" | "md" | "lg" | "xl";
   isSubscribed?: boolean;
+  planCode?: string | null;
   className?: string;
 }
 
@@ -51,23 +52,38 @@ export function UserAvatar({
   name,
   size = "sm",
   isSubscribed = false,
+  planCode,
   className = "",
 }: UserAvatarProps) {
   const cfg = sizeConfig[size];
 
   if (isSubscribed) {
+    const isBusiness = Boolean(
+      planCode && (planCode.toLowerCase() === "business" || planCode.toLowerCase().includes("business"))
+    );
+
+    const titleSuffix = isBusiness ? "Business Member" : "Pro Member";
+
     return (
       <div
         className={`relative inline-flex items-center justify-center shrink-0 ${cfg.container} ${className}`}
-        title={name ? `${name} (Subscribed Member)` : "Subscribed Member"}
+        title={name ? `${name} (${titleSuffix})` : titleSuffix}
       >
-        {/* Animated Google-Style Liquid Sky Blue Outer Ring */}
+        {/* Animated Liquid Swirling Outer Ring */}
         <div
-          className={`relative flex items-center justify-center rounded-full overflow-hidden ${cfg.container} ${cfg.ringPadding} shadow-[0_0_12px_rgba(56,189,248,0.45)]`}
+          className={`relative flex items-center justify-center rounded-full overflow-hidden ${cfg.container} ${cfg.ringPadding} ${
+            isBusiness
+              ? "shadow-[0_0_14px_rgba(245,158,11,0.5)]"
+              : "shadow-[0_0_12px_rgba(56,189,248,0.45)]"
+          }`}
         >
-          {/* Swirling Conic Gradient mimicking Google One / AI Premium liquid halo */}
+          {/* Swirling Conic Gradient: Gold for Business, Sky/Cyan for Pro */}
           <div
-            className="absolute inset-[-60%] animate-[spin_5s_linear_infinite] bg-[conic-gradient(from_0deg,#38bdf8_0%,#0ea5e9_25%,#06b6d4_50%,#67e8f9_75%,#38bdf8_100%)] opacity-95 blur-[0.5px]"
+            className={`absolute inset-[-60%] animate-[spin_5s_linear_infinite] opacity-95 blur-[0.5px] ${
+              isBusiness
+                ? "bg-[conic-gradient(from_0deg,#d97706_0%,#f59e0b_25%,#fde047_50%,#fbbf24_75%,#d97706_100%)]"
+                : "bg-[conic-gradient(from_0deg,#38bdf8_0%,#0ea5e9_25%,#06b6d4_50%,#67e8f9_75%,#38bdf8_100%)]"
+            }`}
             aria-hidden="true"
           />
 
@@ -85,18 +101,30 @@ export function UserAvatar({
                   referrerPolicy="no-referrer"
                 />
               ) : (
-                <User className={`${cfg.icon} text-sky-400`} />
+                <User
+                  className={`${cfg.icon} ${
+                    isBusiness ? "text-amber-400" : "text-sky-400"
+                  }`}
+                />
               )}
             </div>
           </div>
         </div>
 
-        {/* Liquid Member Badge */}
+        {/* Liquid Member Badge: Crown for Business, Sparkles for Pro */}
         <div
-          className={`absolute z-20 flex items-center justify-center rounded-full bg-gradient-to-tr from-sky-500 via-sky-400 to-cyan-300 text-slate-950 shadow-md ring-1 ring-[var(--surface)] ${cfg.badge}`}
+          className={`absolute z-20 flex items-center justify-center rounded-full text-slate-950 shadow-md ring-1 ring-[var(--surface)] ${cfg.badge} ${
+            isBusiness
+              ? "bg-gradient-to-tr from-amber-500 via-amber-400 to-yellow-300"
+              : "bg-gradient-to-tr from-sky-500 via-sky-400 to-cyan-300"
+          }`}
           aria-hidden="true"
         >
-          <Sparkles className={cfg.badgeIcon} />
+          {isBusiness ? (
+            <Crown className={cfg.badgeIcon} />
+          ) : (
+            <Sparkles className={cfg.badgeIcon} />
+          )}
         </div>
       </div>
     );

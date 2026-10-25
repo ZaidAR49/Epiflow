@@ -171,7 +171,7 @@ export async function getUserWorkflowDetails(
       uwa.last_used_at,
       uwa.expires_at,
       uwa.metadata,
-      (s.id IS NOT NULL AND s.status IN ('active', 'trialing')) AS is_subscribed,
+      (s.id IS NOT NULL AND s.status IN ('active', 'trialing') AND COALESCE(p.price_minor, 0) > 0) AS is_subscribed,
       p.name AS plan_name
     FROM public.workflows w
     JOIN public.user_workflow_access uwa 

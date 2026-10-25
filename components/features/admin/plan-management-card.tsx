@@ -122,13 +122,19 @@ export function PlanManagementCard({
         </table>
       </div>
 
-      <PlanFormModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        initialData={editingPlan}
-        availableWorkflows={availableWorkflows}
-        onSuccess={handleSuccess}
-      />
+      {isModalOpen && (
+        <PlanFormModal
+          key={editingPlan?.id ?? "new"}
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setEditingPlan(null);
+          }}
+          initialData={editingPlan}
+          availableWorkflows={availableWorkflows}
+          onSuccess={handleSuccess}
+        />
+      )}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { getServerEnv } from "@/lib/env";
 import { upsertGoogleUser, getUserById } from "@/lib/db/queries/users";
 import { ensureUserWorkflowAccess } from "@/lib/db/queries/access";
 import { getUserSubscription } from "@/lib/db/queries/subscriptions";
+import { ensureUserFreeSubscription } from "@/lib/db/queries/free-plan";
 
 const env = getServerEnv();
 
@@ -52,6 +53,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         });
 
         await ensureUserWorkflowAccess(dbUser.id, "job-xray", 5);
+        await ensureUserFreeSubscription(dbUser.id);
         user.id = dbUser.id;
         user.role = dbUser.role;
         user.status = dbUser.status;
@@ -90,9 +92,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             token.role = dbUser.role;
             token.status = dbUser.status;
           }
-          token.isSubscribed = Boolean(
-            sub && (sub.status === "active" || sub.status === "trialing")
+          const isPaidSub = Boolean(
+            sub &&
+              (sub.status === "active" || sub.status === "trialing") &&
+              sub.planPriceMinor > 0
           );
+          token.isSubscribed = isPaidSub;
+          token.planCode = isPaidSub && sub ? sub.planCode : undefined;
         } catch {
           // Keep existing token values if DB query fails
         }
@@ -106,8 +112,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (typeof token.picture === "string" && session.user) {
         session.user.image = token.picture;
       }
-      if (session.user) {
-        session.user.isSubscribed = Boolean(token.isSubscribed);
+      if (session.user && typeof token.userId === "string") {
+        try {
+          const sub = await getUserSubscription(token.userId);
+          const isPaid = Boolean(
+            sub &&
+              (sub.status === "active" || sub.status === "trialing") &&
+              sub.planPriceMinor > 0 &&
+              sub.planCode !== "free"
+          );
+          session.user.isSubscribed = isPaid;
+          session.user.planCode = isPaid && sub ? sub.planCode : undefined;
+        } catch {
+          session.user.isSubscribed = false;
+          session.user.planCode = undefined;
+        }
       }
       if (
         session.user &&

@@ -89,6 +89,15 @@ export async function updatePlanAction(rawInput: unknown) {
       return { success: false, error: "Plan not found" };
     }
 
+    if (existing.code === "free") {
+      if (patch.code && patch.code !== "free") {
+        return { success: false, error: "The default free plan code cannot be altered" };
+      }
+      if (patch.isActive === false) {
+        return { success: false, error: "The default free plan cannot be deactivated" };
+      }
+    }
+
     if (patch.code && patch.code !== existing.code) {
       const duplicate = await getPlanByCode(patch.code);
       if (duplicate && duplicate.id !== id) {
@@ -116,6 +125,15 @@ export async function togglePlanActiveAction(planId: string) {
   }
 
   try {
+    const existing = await getPlanById(planId);
+    if (!existing) {
+      return { success: false, error: "Plan not found" };
+    }
+
+    if (existing.code === "free") {
+      return { success: false, error: "The default free plan cannot be deactivated" };
+    }
+
     const updated = await togglePlanActive(planId);
     if (!updated) {
       return { success: false, error: "Plan not found" };

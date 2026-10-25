@@ -30,6 +30,7 @@ export default async function RefundPage() {
         userImage={session?.user?.image}
         isSignedIn={isSignedIn}
         isSubscribed={session?.user?.isSubscribed}
+        planCode={session?.user?.planCode}
       />
 
       <main className="flex-1">
