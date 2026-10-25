@@ -9,7 +9,6 @@ import {
   Home,
   Layers,
   LayoutDashboard,
-  Sliders,
   ShieldCheck,
   User,
   LogIn,
@@ -178,7 +177,6 @@ export function MobileNav({
               { href: `/${locale}#pillars`, label: t("architecture"), icon: Cpu, color: "text-sky-400" },
               ...(isSignedIn ? [{ href: `/${locale}/dashboard`, label: t("dashboard"), icon: LayoutDashboard, color: "text-[var(--accent)]" }] : []),
               ...(userRole === "admin" ? [
-                { href: `/${locale}/test-workflow`, label: t("testBench"), icon: Sliders, color: "text-sky-400" },
                 { href: `/${locale}/admin`, label: t("admin"), icon: ShieldCheck, color: "text-[var(--accent)]", highlight: true },
               ] : []),
               ...(isSignedIn ? [{ href: `/${locale}/profile`, label: t("profile"), icon: User, color: "text-emerald-400" }] : []),

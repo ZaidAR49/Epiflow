@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { X, Gauge, AlertCircle, Loader2 } from "lucide-react";
 import { createUsageMeterAction } from "@/lib/actions/usage-meters";
+import { useToast } from "@/hooks/use-toast";
 
 interface UsageMeterModalProps {
   isOpen: boolean;
@@ -12,20 +13,21 @@ interface UsageMeterModalProps {
 
 export function UsageMeterModal({ isOpen, onClose }: UsageMeterModalProps) {
   const t = useTranslations("admin.usageMeters");
+  const toast = useToast();
   const [key, setKey] = useState("");
   const [name, setName] = useState("");
   const [unit, setUnit] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const resetAndClose = () => {
+  const resetAndClose = useCallback(() => {
     setKey("");
     setName("");
     setUnit("");
     setError(null);
     setIsSubmitting(false);
     onClose();
-  };
+  }, [onClose]);
 
   // Keyboard navigation: Escape key dismisses modal
   useEffect(() => {
@@ -37,7 +39,7 @@ export function UsageMeterModal({ isOpen, onClose }: UsageMeterModalProps) {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen]);
+  }, [isOpen, resetAndClose]);
 
   if (!isOpen) return null;
 
@@ -53,6 +55,7 @@ export function UsageMeterModal({ isOpen, onClose }: UsageMeterModalProps) {
     });
 
     if (result.success) {
+      toast.success(t("createSuccess"));
       resetAndClose();
     } else {
       setError(result.error || "Failed to create meter");

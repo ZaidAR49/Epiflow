@@ -1,10 +1,12 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { Edit2, Play, Pause, Users, ShieldCheck } from "lucide-react";
 import type { PlanWithSubscriberCount } from "@/lib/db/queries/plans";
 import { togglePlanActiveAction } from "@/lib/actions/plans";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useToast } from "@/hooks/use-toast";
 
 interface PlanTableRowProps {
   plan: PlanWithSubscriberCount;
@@ -14,13 +16,22 @@ interface PlanTableRowProps {
 
 export function PlanTableRow({ plan, onEdit, onStatusChange }: PlanTableRowProps) {
   const t = useTranslations("admin.plans");
+  const tCommon = useTranslations("common");
+  const toast = useToast();
   const [isPending, startTransition] = useTransition();
+  const [showConfirm, setShowConfirm] = useState(false);
 
-  const handleToggle = () => {
+  const handleConfirmToggle = () => {
     startTransition(async () => {
       const res = await togglePlanActiveAction(plan.id);
-      if (res.success && onStatusChange) {
-        onStatusChange();
+      if (res.success) {
+        toast.success(plan.isActive ? t("pausePlan") : t("activatePlan"));
+        setShowConfirm(false);
+        if (onStatusChange) {
+          onStatusChange();
+        }
+      } else {
+        toast.error(tCommon("error"), res.error);
       }
     });
   };
@@ -89,9 +100,9 @@ export function PlanTableRow({ plan, onEdit, onStatusChange }: PlanTableRowProps
           ) : (
             <button
               type="button"
-              onClick={handleToggle}
+              onClick={() => setShowConfirm(true)}
               disabled={isPending}
-              className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+              className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
                 plan.isActive
                   ? "border border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
                   : "border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
@@ -111,6 +122,24 @@ export function PlanTableRow({ plan, onEdit, onStatusChange }: PlanTableRowProps
             </button>
           )}
         </div>
+
+        {showConfirm && (
+          <ConfirmDialog
+            isOpen={showConfirm}
+            onClose={() => setShowConfirm(false)}
+            onConfirm={handleConfirmToggle}
+            title={plan.isActive ? t("pausePlan") : t("activatePlan")}
+            description={
+              plan.isActive
+                ? `${t("pausePlan")} (${plan.name})?`
+                : `${t("activatePlan")} (${plan.name})?`
+            }
+            confirmLabel={plan.isActive ? t("pausePlan") : t("activatePlan")}
+            cancelLabel={tCommon("cancel")}
+            variant={plan.isActive ? "warning" : "primary"}
+            isPending={isPending}
+          />
+        )}
       </td>
     </tr>
   );

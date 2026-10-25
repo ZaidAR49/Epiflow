@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getUserWorkflowDetails } from "@/lib/db/queries/access";
 import { getWorkflowCredentialStatus } from "@/lib/db/queries/credentials";
+import { getUserTelegramIdentity } from "@/lib/db/queries/users";
+import { getWorkflowChannelBySlug } from "@/lib/db/queries/workflow-channels";
 import { getTranslations } from "next-intl/server";
 import { Header } from "@/components/layout/header";
 import { WorkflowConsoleView } from "@/components/features/workflow-console/workflow-console-view";
@@ -20,15 +22,20 @@ export default async function WorkflowConsolePage({ params }: WorkflowConsolePag
     redirect(`/${locale}/sign-in`);
   }
 
-  const [workflow, initialCredential, tCommon] = await Promise.all([
-    getUserWorkflowDetails(session.user.id, slug),
-    getWorkflowCredentialStatus(session.user.id, slug, "google"),
-    getTranslations("common"),
-  ]);
+  const [workflow, initialCredential, telegramIdentity, telegramChannel, tCommon] =
+    await Promise.all([
+      getUserWorkflowDetails(session.user.id, slug),
+      getWorkflowCredentialStatus(session.user.id, slug, "google"),
+      getUserTelegramIdentity(session.user.id),
+      getWorkflowChannelBySlug(slug, "telegram"),
+      getTranslations("common"),
+    ]);
 
   if (!workflow) {
     redirect(`/${locale}/profile`);
   }
+
+  const supportsTelegram = Boolean(telegramChannel || slug === "job-xray");
 
   return (
     <div className="min-h-screen bg-[var(--bg)] text-[var(--text)]">
@@ -49,6 +56,8 @@ export default async function WorkflowConsolePage({ params }: WorkflowConsolePag
           workflow={workflow}
           slug={slug}
           initialCredential={initialCredential}
+          telegramIdentity={telegramIdentity}
+          supportsTelegram={supportsTelegram}
         />
 
         {slug === "job-xray" && (

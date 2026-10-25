@@ -3,9 +3,9 @@
 import React, { useState, useTransition } from "react";
 import { signOut } from "next-auth/react";
 import { useTranslations, useLocale } from "next-intl";
-import { User, CheckCircle2, AlertCircle, Save, Loader2, ShieldCheck, Mail, LogOut } from "lucide-react";
+import { CheckCircle2, AlertCircle, Save, Loader2, ShieldCheck, Mail, LogOut } from "lucide-react";
 import { updateProfileAction } from "@/lib/actions/profile";
-
+import { useToast } from "@/hooks/use-toast";
 import { UserAvatar } from "@/components/ui/user-avatar";
 
 interface ProfileFormProps {
@@ -29,6 +29,7 @@ export function ProfileForm({
 }: ProfileFormProps) {
   const t = useTranslations("profile");
   const tAuth = useTranslations("auth");
+  const toast = useToast();
   const locale = useLocale();
   const [isPending, startTransition] = useTransition();
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -54,8 +55,10 @@ export function ProfileForm({
 
       if (result.success) {
         setStatusMessage({ type: "success", text: t("saved") });
+        toast.success(t("saved"));
       } else {
         setStatusMessage({ type: "error", text: result.message });
+        toast.error(result.message);
       }
     });
   };

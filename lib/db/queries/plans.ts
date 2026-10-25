@@ -1,5 +1,5 @@
 import "server-only";
-import { sql, eq, desc } from "drizzle-orm";
+import { sql, eq } from "drizzle-orm";
 import { db } from "../client";
 import { plans, type Plan, type NewPlan } from "../schema/plans";
 

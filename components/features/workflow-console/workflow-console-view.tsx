@@ -10,6 +10,7 @@ import { EmailPromptModal } from "@/components/features/test-bench/email-prompt-
 import { WorkflowQuotaCard } from "@/components/features/profile/workflow-quota-card";
 import { WorkflowSettingsForm } from "@/components/features/settings/workflow-settings-form";
 import { WorkflowCredentialsCard } from "@/components/features/settings/workflow-credentials-card";
+import { TelegramLinkCard } from "@/components/features/profile/telegram-link-card";
 import { useWorkflowStream } from "@/hooks/use-workflow-stream";
 import type { UserWorkflowProfile } from "@/lib/db/queries/access";
 import type { WorkflowCredentialStatus } from "@/lib/db/queries/credentials";
@@ -18,12 +19,16 @@ interface WorkflowConsoleViewProps {
   workflow: UserWorkflowProfile;
   slug: string;
   initialCredential: WorkflowCredentialStatus | null;
+  telegramIdentity?: { telegramId: number; username: string | null } | null;
+  supportsTelegram?: boolean;
 }
 
 export function WorkflowConsoleView({
   workflow,
   slug,
   initialCredential,
+  telegramIdentity = null,
+  supportsTelegram = false,
 }: WorkflowConsoleViewProps) {
   const t = useTranslations("workflowConsole");
   const locale = useLocale();
@@ -146,6 +151,14 @@ export function WorkflowConsoleView({
             slug={slug}
             initialCredential={initialCredential}
           />
+
+          {supportsTelegram && (
+            <TelegramLinkCard
+              telegramId={telegramIdentity?.telegramId ?? null}
+              username={telegramIdentity?.username ?? null}
+              workflowSlug={slug}
+            />
+          )}
         </div>
       </div>
 

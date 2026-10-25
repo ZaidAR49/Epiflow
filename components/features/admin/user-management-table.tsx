@@ -12,6 +12,7 @@ import {
 import { UserActionDialog, type UserActionDialogProps } from "./user-action-dialog";
 import { UserQuotaModal } from "./user-quota-modal";
 import { UserTableRow, type ActionType } from "./user-table-row";
+import { useToast } from "@/hooks/use-toast";
 
 interface UserManagementTableProps {
   users: AdminUserItem[];
@@ -25,6 +26,8 @@ interface PendingAction {
 
 export function UserManagementTable({ users, currentUserId }: UserManagementTableProps) {
   const t = useTranslations("admin.users");
+  const tCommon = useTranslations("common");
+  const toast = useToast();
   const [search, setSearch] = useState("");
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [quotaUser, setQuotaUser] = useState<AdminUserItem | null>(null);
@@ -62,9 +65,13 @@ export function UserManagementTable({ users, currentUserId }: UserManagementTabl
 
       setPendingAction(null);
       if (res?.success) {
-        setFeedback({ msg: type === "delete" ? t("userDeleted") : t("statusSaved") });
+        const msg = type === "delete" ? t("userDeleted") : t("statusSaved");
+        setFeedback({ msg });
+        toast.success(msg);
       } else {
-        setFeedback({ msg: res?.error || "Action failed", err: true });
+        const err = res?.error || "Action failed";
+        setFeedback({ msg: err, err: true });
+        toast.error(tCommon("error"), err);
       }
     });
   };
@@ -80,8 +87,11 @@ export function UserManagementTable({ users, currentUserId }: UserManagementTabl
       setQuotaUser(null);
       if (res.success) {
         setFeedback({ msg: t("quotaSaved") });
+        toast.success(t("quotaSaved"));
       } else {
-        setFeedback({ msg: res.error || "Failed", err: true });
+        const err = res.error || "Failed";
+        setFeedback({ msg: err, err: true });
+        toast.error(tCommon("error"), err);
       }
     });
   };

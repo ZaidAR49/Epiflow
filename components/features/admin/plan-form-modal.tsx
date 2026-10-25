@@ -8,6 +8,7 @@ import type { PlanEntitlements } from "@/lib/validation/plans";
 import { createPlanAction, updatePlanAction } from "@/lib/actions/plans";
 import { PlanEntitlementsEditor } from "./plan-entitlements-editor";
 import { PlanFormFields } from "./plan-form-fields";
+import { useToast } from "@/hooks/use-toast";
 
 interface PlanFormModalProps {
   isOpen: boolean;
@@ -44,35 +45,7 @@ export function PlanFormModal({
   const [isActive, setIsActive] = useState<boolean>(initialData?.isActive ?? true);
 
   const isSystemPlan = initialData?.code === "free";
-
-  useEffect(() => {
-    if (initialData) {
-      setCode(initialData.code);
-      setName(initialData.name);
-      setPriceMinor(initialData.priceMinor);
-      setCurrency(initialData.currency);
-      setBillingInterval(
-        (initialData.billingInterval as "month" | "year" | "lifetime" | "one_time") ?? "month"
-      );
-      setTrialDays(initialData.trialDays ?? 0);
-      setProvider(initialData.provider ?? "");
-      setProviderPriceId(initialData.providerPriceId ?? "");
-      setEntitlements((initialData.entitlements as PlanEntitlements) ?? {});
-      setIsActive(initialData.isActive ?? true);
-    } else {
-      setCode("");
-      setName("");
-      setPriceMinor(0);
-      setCurrency("USD");
-      setBillingInterval("month");
-      setTrialDays(0);
-      setProvider("");
-      setProviderPriceId("");
-      setEntitlements({ "job-xray": { runs: 5 } });
-      setIsActive(true);
-    }
-    setError(null);
-  }, [initialData, isOpen]);
+  const toast = useToast();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -112,6 +85,7 @@ export function PlanFormModal({
         });
 
         if (res.success) {
+          toast.success(t("updateSuccess"));
           onSuccess();
           onClose();
         } else {
@@ -121,6 +95,7 @@ export function PlanFormModal({
         const res = await createPlanAction(planPayload);
 
         if (res.success) {
+          toast.success(t("createSuccess"));
           onSuccess();
           onClose();
         } else {

@@ -11,6 +11,8 @@ import {
 } from "@/lib/actions/workflow-channels";
 import { WorkflowChannelItemRow } from "./workflow-channel-item-row";
 import { WorkflowChannelForm } from "./workflow-channel-form";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useToast } from "@/hooks/use-toast";
 
 export interface ChannelDraft {
   channel: string;
@@ -33,9 +35,12 @@ export function WorkflowChannelsEditor({
   onDraftChange,
 }: WorkflowChannelsEditorProps) {
   const t = useTranslations("admin.channels");
+  const tCommon = useTranslations("common");
+  const toast = useToast();
   const router = useRouter();
   const [channels, setChannels] = useState<WorkflowChannelItem[]>(initialChannels);
   const [editingChannel, setEditingChannel] = useState<WorkflowChannelItem | null>(null);
+  const [channelToDelete, setChannelToDelete] = useState<string | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(initialChannels.length === 0);
 
   // Form states
@@ -119,19 +124,29 @@ export function WorkflowChannelsEditor({
   };
 
   const handleDelete = (channelId: string) => {
+    setChannelToDelete(channelId);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!channelToDelete) return;
+    const id = channelToDelete;
     startTransition(async () => {
       const res = await deleteWorkflowChannelAction({
-        channelId,
+        channelId: id,
         workflowId,
       });
 
+      setChannelToDelete(null);
       if (res.success) {
-        setChannels((prev) => prev.filter((c) => c.id !== channelId));
+        setChannels((prev) => prev.filter((c) => c.id !== id));
         setFeedback({ msg: t("deletedSuccess") });
+        toast.success(t("deletedSuccess"));
         onChannelsChanged?.();
         router.refresh();
       } else {
-        setFeedback({ msg: res.error || "Delete failed", err: true });
+        const err = res.error || "Delete failed";
+        setFeedback({ msg: err, err: true });
+        toast.error(tCommon("error"), err);
       }
     });
   };
@@ -221,6 +236,18 @@ export function WorkflowChannelsEditor({
           ))
         )}
       </div>
+
+      <ConfirmDialog
+        isOpen={Boolean(channelToDelete)}
+        onClose={() => setChannelToDelete(null)}
+        onConfirm={handleConfirmDelete}
+        title={t("confirmDeleteTitle")}
+        description={t("confirmDeleteDesc")}
+        confirmLabel={t("deleteChannel")}
+        cancelLabel={t("cancel")}
+        variant="danger"
+        isPending={isPending}
+      />
     </div>
   );
 }

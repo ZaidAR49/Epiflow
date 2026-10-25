@@ -4,6 +4,8 @@ import React from "react";
 import { useTranslations, useLocale } from "next-intl";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
+import { ShieldCheck, ArrowLeft } from "lucide-react";
 import { LocaleSwitcher } from "./locale-switcher";
 import { UserNav } from "@/components/features/auth/user-nav";
 import { MobileNav } from "./mobile-nav";
@@ -33,6 +35,17 @@ interface HeaderProps {
    * When true (e.g. on /sign-in), suppresses redundant sign-in buttons in header.
    */
   hideAuthActions?: boolean;
+  /**
+   * Optional badge text rendered alongside the breadcrumb (e.g. "Platform Owner").
+   */
+  badgeText?: string | null;
+  /**
+   * Optional back link (e.g. "Return to Profile" on Admin page).
+   */
+  backLink?: {
+    href: string;
+    label: string;
+  };
 }
 
 export function Header({
@@ -46,11 +59,14 @@ export function Header({
   isSubscribed = false,
   planCode,
   hideAuthActions = false,
+  badgeText,
+  backLink,
 }: HeaderProps = {}) {
   const t = useTranslations("common");
   const locale = useLocale();
 
   const displayWorkflowName = workflowName || null;
+  const pathname = usePathname();
 
   return (
     <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--surface)]/85 backdrop-blur-md transition-colors">
@@ -104,35 +120,59 @@ export function Header({
                 <span className="text-xs sm:text-sm font-semibold text-[var(--text)] truncate transition-colors group-hover/wf:text-[var(--accent)]">
                   {displayWorkflowName}
                 </span>
+                {badgeText && (
+                  <span className="hidden sm:inline-flex items-center gap-1 rounded-md bg-[var(--accent)]/15 px-2 py-0.5 text-[10px] font-bold text-[var(--accent)] border border-[var(--accent)]/30 shrink-0">
+                    <ShieldCheck className="h-3 w-3" />
+                    <span>{badgeText}</span>
+                  </span>
+                )}
               </Link>
             </div>
           )}
         </div>
 
         {/* Center Navigation Links (Clean SaaS style) */}
-        <nav className="hidden md:flex items-center gap-1 lg:gap-1.5 text-xs font-semibold text-[var(--text-muted)]">
-          <Link
-            href={`/${locale}#workflows`}
-            className="rounded-lg px-3 py-1.5 hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors"
-          >
-            {t("workflows")}
-          </Link>
-          <Link
-            href={`/${locale}#pillars`}
-            className="rounded-lg px-3 py-1.5 hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors"
-          >
-            {t("architecture")}
-          </Link>
-          <Link
-            href={`/${locale}/contact`}
-            className="rounded-lg px-3 py-1.5 hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors"
-          >
-            {t("contact")}
-          </Link>
+        <nav className="hidden md:flex items-center gap-1 lg:gap-1.5 text-xs font-semibold" aria-label="Main navigation">
+          {([
+            { href: `/${locale}#workflows`, label: t("workflows") },
+            { href: `/${locale}#pillars`, label: t("architecture") },
+            { href: `/${locale}/contact`, label: t("contact") },
+            ...(isSignedIn ? [{ href: `/${locale}/dashboard`, label: t("dashboard") }] : []),
+            ...(userRole === "admin" ? [{ href: `/${locale}/admin`, label: t("admin") }] : []),
+          ] as { href: string; label: string }[]).map(({ href, label }) => {
+            const segment = href.split("#")[0] ?? "";
+            const isActive = segment.length > 3 && pathname === segment;
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`relative rounded-lg px-3 py-1.5 transition-colors group ${
+                  isActive
+                    ? "text-[var(--accent)] bg-[var(--accent)]/10"
+                    : "text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]"
+                }`}
+                aria-current={isActive ? "page" : undefined}
+              >
+                {label}
+                {isActive && (
+                  <span className="absolute bottom-0.5 start-1/2 -translate-x-1/2 h-0.5 w-3 rounded-full bg-[var(--accent)]" />
+                )}
+              </Link>
+            );
+          })}
         </nav>
 
-        {/* Desktop Actions: User & Localization */}
-        <div className="hidden md:flex items-center gap-3 shrink-0">
+        {/* Desktop Actions: Back link + User & Localization */}
+        <div className="hidden md:flex items-center gap-2.5 sm:gap-3 shrink-0">
+          {backLink && (
+            <Link
+              href={backLink.href}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface-2)]/70 px-2.5 py-1.5 text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] hover:border-[var(--accent)]/40 transition-colors"
+            >
+              <ArrowLeft className="h-3.5 w-3.5 rtl:-scale-x-100" />
+              <span>{backLink.label}</span>
+            </Link>
+          )}
           <UserNav
             isSignedIn={isSignedIn}
             userName={userName}

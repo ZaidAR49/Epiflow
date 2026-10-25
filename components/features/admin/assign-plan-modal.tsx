@@ -4,6 +4,7 @@ import { useState, useTransition, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { X, CreditCard, Loader2 } from "lucide-react";
 import { assignPlanToUserAction } from "@/lib/actions/subscriptions";
+import { useToast } from "@/hooks/use-toast";
 
 interface AssignPlanModalProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ export function AssignPlanModal({
   onSuccess,
 }: AssignPlanModalProps) {
   const t = useTranslations("admin.subscriptions");
+  const toast = useToast();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -54,6 +56,7 @@ export function AssignPlanModal({
       });
 
       if (res.success) {
+        toast.success(t("assignSuccess"));
         onSuccess();
         onClose();
       } else {

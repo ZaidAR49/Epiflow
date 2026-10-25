@@ -103,3 +103,7 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+
+/* Utility: hide scrollbars while keeping scroll functionality */
+.scrollbar-hide { scrollbar-width: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }

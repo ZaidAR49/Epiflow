@@ -7,7 +7,9 @@ import {
   primaryKey,
   index,
 } from "drizzle-orm/pg-core";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { users } from "./users";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { workflows } from "./workflows";
 import { usageMeters } from "./usage-meters";
 

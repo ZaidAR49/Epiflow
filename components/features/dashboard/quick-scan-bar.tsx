@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { Search, Sparkles, Clipboard, ArrowRight, AlertCircle, Globe, Command } from "lucide-react";
+import { Search, Sparkles, Clipboard, ArrowRight, AlertCircle, Globe } from "lucide-react";
 
 interface QuickScanBarProps {
   onScan: (url: string, language: "ar" | "en") => void;

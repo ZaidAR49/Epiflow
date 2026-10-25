@@ -19,14 +19,23 @@ import {
 } from "@/lib/actions/telegram-link";
 import { TelegramDeepLinkView } from "./telegram-deep-link-view";
 import { TelegramManualForm } from "./telegram-manual-form";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useToast } from "@/hooks/use-toast";
 
 interface TelegramLinkCardProps {
   telegramId: number | null;
   username: string | null;
+  workflowSlug?: string;
 }
 
-export function TelegramLinkCard({ telegramId, username }: TelegramLinkCardProps) {
+export function TelegramLinkCard({
+  telegramId,
+  username,
+  workflowSlug = "job-xray",
+}: TelegramLinkCardProps) {
   const t = useTranslations("profile");
+  const tCommon = useTranslations("common");
+  const toast = useToast();
   const router = useRouter();
 
   const [localConnection, setLocalConnection] = useState<{
@@ -40,6 +49,7 @@ export function TelegramLinkCard({ telegramId, username }: TelegramLinkCardProps
   const [deepLinkData, setDeepLinkData] = useState<TelegramDeepLinkData | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
   const [showManualForm, setShowManualForm] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -47,7 +57,7 @@ export function TelegramLinkCard({ telegramId, username }: TelegramLinkCardProps
     setErrorMessage(null);
     setIsGenerating(true);
     try {
-      const res = await generateTelegramLinkTokenAction();
+      const res = await generateTelegramLinkTokenAction(workflowSlug);
       if (res.success) {
         setDeepLinkData(res.data);
       } else {
@@ -60,19 +70,21 @@ export function TelegramLinkCard({ telegramId, username }: TelegramLinkCardProps
     }
   };
 
-  const handleDisconnect = async () => {
-    if (!window.confirm(t("confirmDisconnect"))) return;
-
+  const handleConfirmDisconnect = async () => {
     setIsDisconnecting(true);
     try {
       const res = await disconnectTelegramAction();
       if (res.success) {
         setLocalConnection({ id: null, username: null });
         setDeepLinkData(null);
+        setShowDisconnectConfirm(false);
+        toast.success(t("disconnectedSuccess"));
         router.refresh();
+      } else {
+        toast.error(t("failedToDisconnect"));
       }
     } catch {
-      // Disconnect error
+      toast.error(t("failedToDisconnect"));
     } finally {
       setIsDisconnecting(false);
     }
@@ -124,9 +136,9 @@ export function TelegramLinkCard({ telegramId, username }: TelegramLinkCardProps
           <div className="flex justify-end pt-1">
             <button
               type="button"
-              onClick={handleDisconnect}
+              onClick={() => setShowDisconnectConfirm(true)}
               disabled={isDisconnecting}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-xs font-semibold text-rose-300 hover:bg-rose-500/20 transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-xs font-semibold text-rose-300 hover:bg-rose-500/20 transition-colors disabled:opacity-50 cursor-pointer"
             >
               {isDisconnecting ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -206,6 +218,18 @@ export function TelegramLinkCard({ telegramId, username }: TelegramLinkCardProps
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={showDisconnectConfirm}
+        onClose={() => setShowDisconnectConfirm(false)}
+        onConfirm={handleConfirmDisconnect}
+        title={t("disconnectTelegram")}
+        description={t("confirmDisconnect")}
+        confirmLabel={t("disconnectTelegram")}
+        cancelLabel={tCommon("cancel")}
+        variant="danger"
+        isPending={isDisconnecting}
+      />
     </div>
   );
 }

@@ -31,9 +31,9 @@ export interface TelegramDeepLinkData {
 /**
  * Generates a single-use 10-minute token for 1-click Telegram deep linking.
  */
-export async function generateTelegramLinkTokenAction(): Promise<
-  TelegramLinkActionResult<TelegramDeepLinkData>
-> {
+export async function generateTelegramLinkTokenAction(
+  workflowSlug: string = "job-xray"
+): Promise<TelegramLinkActionResult<TelegramDeepLinkData>> {
   const session = await auth();
   if (!session?.user?.id) {
     return {
@@ -50,7 +50,7 @@ export async function generateTelegramLinkTokenAction(): Promise<
 
     const saved = await saveTelegramLinkToken(
       session.user.id,
-      "job-xray",
+      workflowSlug,
       tokenHash,
       expiresAt
     );
@@ -63,7 +63,7 @@ export async function generateTelegramLinkTokenAction(): Promise<
       };
     }
 
-    const channel = await getWorkflowChannelBySlug("job-xray", "telegram");
+    const channel = await getWorkflowChannelBySlug(workflowSlug, "telegram");
     const botHandle = channel?.handle || process.env.TELEGRAM_BOT_USERNAME || "";
 
     if (!botHandle) {
@@ -79,7 +79,7 @@ export async function generateTelegramLinkTokenAction(): Promise<
     const command = `/connect ${rawToken}`;
 
     logger.info(
-      { userId: session.user.id, botHandle },
+      { userId: session.user.id, botHandle, workflowSlug },
       "Generated Telegram connection deep link token"
     );
 

@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
 import { routing } from "@/i18n/routing";
 import { inter, plusJakartaSans, cairo } from "@/styles/fonts";
+import { ToastProvider } from "@/components/ui/toast-provider";
 import "@/styles/globals.css";
 
 export const metadata: Metadata = {
@@ -46,7 +47,9 @@ export default async function RootLocaleLayout({
     <html lang={locale} dir={isRtl ? "rtl" : "ltr"} className={fontClass}>
       <body className="min-h-screen bg-[var(--bg)] text-[var(--text)] antialiased">
         <NextIntlClientProvider messages={messages} locale={locale}>
-          {children}
+          <ToastProvider>
+            {children}
+          </ToastProvider>
         </NextIntlClientProvider>
       </body>
     </html>

@@ -164,6 +164,41 @@ describe("Telegram Link Server Actions Authorization", () => {
       expect(result.data.deepLink).toContain("https://t.me/JobPostXRayBot?start=connect_");
       expect(result.data.command).toContain("/connect ");
     }
+    expect(mockSaveToken).toHaveBeenCalledWith(
+      "user-123",
+      "job-xray",
+      expect.any(String),
+      expect.any(Date)
+    );
+    expect(mockGetChannel).toHaveBeenCalledWith("job-xray", "telegram");
+  });
+
+  it("supports custom workflowSlug when generating link token", async () => {
+    mockAuth.mockResolvedValueOnce({
+      user: { id: "user-456", email: "custom@example.com" },
+      expires: "2099-01-01",
+    });
+
+    mockSaveToken.mockResolvedValueOnce(true);
+    mockGetChannel.mockResolvedValueOnce({
+      id: "chan-2",
+      workflowId: "wf-2",
+      channel: "telegram",
+      handle: "CustomBot",
+      url: "https://t.me/CustomBot",
+      isActive: true,
+      createdAt: new Date(),
+    });
+
+    const result = await generateTelegramLinkTokenAction("custom-flow");
+    expect(result.success).toBe(true);
+    expect(mockSaveToken).toHaveBeenCalledWith(
+      "user-456",
+      "custom-flow",
+      expect.any(String),
+      expect.any(Date)
+    );
+    expect(mockGetChannel).toHaveBeenCalledWith("custom-flow", "telegram");
   });
 
   it("checks status and returns connection state for authenticated user", async () => {

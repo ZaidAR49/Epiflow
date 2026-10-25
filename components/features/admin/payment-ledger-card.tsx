@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useTranslations, useLocale } from "next-intl";
-import { Receipt, Search, DollarSign, Filter } from "lucide-react";
+import { Receipt, Search, DollarSign } from "lucide-react";
 import type { PaymentWithDetails, PaymentStats } from "@/lib/db/queries/payments";
 import { PaymentTableRow } from "./payment-table-row";
 

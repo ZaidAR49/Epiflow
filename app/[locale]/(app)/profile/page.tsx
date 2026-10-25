@@ -2,15 +2,12 @@ import React from "react";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { auth } from "@/auth";
-import { getUserById, getUserTelegramIdentity } from "@/lib/db/queries/users";
-import { getUserWorkflowsList } from "@/lib/db/queries/workflows";
+import { getUserById } from "@/lib/db/queries/users";
 import { getUserSubscription } from "@/lib/db/queries/subscriptions";
 import { getAllPlans } from "@/lib/db/queries/plans";
 import { Header } from "@/components/layout/header";
 import {
   ProfileForm,
-  TelegramLinkCard,
-  RegisteredWorkflowsCard,
   UserSubscriptionCard,
 } from "@/components/features/profile";
 import { AdminBanner } from "@/components/features/admin/admin-banner";
@@ -32,15 +29,11 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
     redirect(`/${locale}/sign-in`);
   }
 
-  const [workflows, telegramIdentity, subscription, allPlans] = await Promise.all([
-    getUserWorkflowsList(user.id),
-    getUserTelegramIdentity(user.id),
+  const [subscription, allPlans] = await Promise.all([
     getUserSubscription(user.id),
     getAllPlans(),
   ]);
 
-  const primaryLogoUrl =
-    workflows.find((w) => w.slug === "job-xray")?.imageUrl || workflows[0]?.imageUrl;
   const t = await getTranslations("profile");
 
   const isSubscribed = Boolean(
@@ -56,7 +49,6 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         userRole={user.role}
         userName={user.fullName}
         userImage={session.user.image}
-        logoUrl={primaryLogoUrl}
         isSignedIn={Boolean(user.id)}
         isSubscribed={isSubscribed}
         planCode={planCode}
@@ -75,7 +67,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Main Column: User Profile & Registered Workflows */}
+          {/* Main Column: User Profile */}
           <div className="lg:col-span-7 xl:col-span-8 space-y-8">
             <ProfileForm
               initialData={{
@@ -90,20 +82,13 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
               isSubscribed={isSubscribed}
               planCode={planCode}
             />
-
-            <RegisteredWorkflowsCard workflows={workflows} />
           </div>
 
-          {/* Side Column: Subscription & Telegram Integrations */}
+          {/* Side Column: Subscription */}
           <div className="lg:col-span-5 xl:col-span-4 space-y-8">
             <UserSubscriptionCard
               subscription={subscription}
               availablePlans={allPlans}
-            />
-
-            <TelegramLinkCard
-              telegramId={telegramIdentity?.telegramId ?? null}
-              username={telegramIdentity?.username ?? null}
             />
           </div>
         </div>

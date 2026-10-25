@@ -1,10 +1,12 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { Ban, Calendar, User as UserIcon } from "lucide-react";
 import type { SubscriptionWithDetails } from "@/lib/db/queries/subscriptions";
 import { cancelSubscriptionAction } from "@/lib/actions/subscriptions";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useToast } from "@/hooks/use-toast";
 
 interface SubscriptionTableProps {
   subscriptions: SubscriptionWithDetails[];
@@ -16,18 +18,25 @@ export function SubscriptionTable({
   onActionComplete,
 }: SubscriptionTableProps) {
   const t = useTranslations("admin.subscriptions");
+  const tCommon = useTranslations("common");
+  const toast = useToast();
   const [isPending, startTransition] = useTransition();
+  const [cancelingSub, setCancelingSub] = useState<SubscriptionWithDetails | null>(null);
 
-  const handleCancel = (sub: SubscriptionWithDetails) => {
-    const confirmed = window.confirm(
-      t("cancelPrompt", { name: sub.userName || sub.userEmail || "user" })
-    );
-    if (!confirmed) return;
+  const handleConfirmCancel = () => {
+    if (!cancelingSub) return;
+    const subToCancel = cancelingSub;
 
     startTransition(async () => {
-      const res = await cancelSubscriptionAction({ subscriptionId: sub.id });
-      if (res.success && onActionComplete) {
-        onActionComplete();
+      const res = await cancelSubscriptionAction({ subscriptionId: subToCancel.id });
+      if (res.success) {
+        toast.success(t("cancelSuccess"));
+        setCancelingSub(null);
+        if (onActionComplete) {
+          onActionComplete();
+        }
+      } else {
+        toast.error(tCommon("error"), res.error);
       }
     });
   };
@@ -153,9 +162,9 @@ export function SubscriptionTable({
                   {sub.status !== "canceled" && (
                     <button
                       type="button"
-                      onClick={() => handleCancel(sub)}
+                      onClick={() => setCancelingSub(sub)}
                       disabled={isPending}
-                      className="inline-flex items-center gap-1 rounded-md border border-rose-500/30 px-2.5 py-1 text-xs font-medium text-rose-400 hover:bg-rose-500/10 transition-colors disabled:opacity-50"
+                      className="inline-flex items-center gap-1 rounded-md border border-rose-500/30 px-2.5 py-1 text-xs font-medium text-rose-400 hover:bg-rose-500/10 transition-colors disabled:opacity-50 cursor-pointer"
                     >
                       <Ban className="h-3 w-3" />
                       <span>{t("cancelSubscription")}</span>
@@ -167,6 +176,22 @@ export function SubscriptionTable({
           )}
         </tbody>
       </table>
+
+      {cancelingSub && (
+        <ConfirmDialog
+          isOpen={Boolean(cancelingSub)}
+          onClose={() => setCancelingSub(null)}
+          onConfirm={handleConfirmCancel}
+          title={t("cancelSubscription")}
+          description={t("cancelPrompt", {
+            name: cancelingSub.userName || cancelingSub.userEmail || "user",
+          })}
+          confirmLabel={t("cancelSubscription")}
+          cancelLabel={tCommon("cancel")}
+          variant="danger"
+          isPending={isPending}
+        />
+      )}
     </div>
   );
 }

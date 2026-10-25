@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   Send,
   MessageCircle,
@@ -13,6 +14,7 @@ import {
   XCircle,
 } from "lucide-react";
 import type { WorkflowChannelItem } from "@/lib/db/queries/workflow-channels";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface WorkflowChannelItemRowProps {
   channel: WorkflowChannelItem;
@@ -35,6 +37,8 @@ export function WorkflowChannelItemRow({
   onEdit,
   onDelete,
 }: WorkflowChannelItemRowProps) {
+  const t = useTranslations("admin.channels");
+  const tCommon = useTranslations("common");
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const getChannelIcon = (type: string) => {
@@ -98,46 +102,40 @@ export function WorkflowChannelItemRow({
 
       {/* Actions */}
       <div className="flex items-center gap-1 shrink-0 ms-2">
-        {confirmDelete ? (
-          <div className="flex items-center gap-1.5 bg-rose-500/10 border border-rose-500/20 rounded-md p-1">
-            <span className="text-[10px] text-rose-300 px-1">Confirm?</span>
-            <button
-              type="button"
-              disabled={isPending}
-              onClick={() => onDelete(channel.id)}
-              className="text-xs font-bold text-rose-400 hover:text-rose-300 px-1"
-            >
-              Yes
-            </button>
-            <button
-              type="button"
-              onClick={() => setConfirmDelete(false)}
-              className="text-xs text-[var(--text-muted)] hover:text-[var(--text)] px-1"
-            >
-              No
-            </button>
-          </div>
-        ) : (
-          <>
-            <button
-              type="button"
-              onClick={() => onEdit(channel)}
-              className="p-1.5 rounded text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]"
-              title={editLabel}
-            >
-              <Edit2 className="h-3.5 w-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setConfirmDelete(true)}
-              className="p-1.5 rounded text-rose-400/80 hover:text-rose-400 hover:bg-rose-500/10"
-              title={deleteLabel}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
-          </>
-        )}
+        <button
+          type="button"
+          onClick={() => onEdit(channel)}
+          className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors cursor-pointer"
+          title={editLabel}
+        >
+          <Edit2 className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => setConfirmDelete(true)}
+          className="p-1.5 rounded-lg text-rose-400/80 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+          title={deleteLabel}
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
       </div>
+
+      {confirmDelete && (
+        <ConfirmDialog
+          isOpen={confirmDelete}
+          onClose={() => setConfirmDelete(false)}
+          onConfirm={() => {
+            onDelete(channel.id);
+            setConfirmDelete(false);
+          }}
+          title={t("confirmDeleteTitle")}
+          description={t("confirmDeleteDesc")}
+          confirmLabel={t("deleteChannel")}
+          cancelLabel={tCommon("cancel")}
+          variant="danger"
+          isPending={isPending}
+        />
+      )}
     </div>
   );
 }
