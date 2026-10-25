@@ -13,6 +13,7 @@ import {
 } from "@/lib/db/queries/subscriptions";
 import { getUserById } from "@/lib/db/queries/users";
 import { getPlanById } from "@/lib/db/queries/plans";
+import { ensureUserFreeSubscription } from "@/lib/db/queries/free-plan";
 import {
   createLemonSqueezyCheckout,
   getLemonSqueezyCustomerPortalUrl,
@@ -53,8 +54,8 @@ export async function assignPlanToUserAction(rawInput: unknown) {
     const { userId, planId, periodDays } = parsed.data;
     const result = await createMockSubscription(userId, planId, periodDays);
 
-    revalidatePath("/[locale]/admin", "page");
-    revalidatePath("/[locale]/profile", "page");
+    revalidatePath("/admin");
+    revalidatePath("/profile");
 
     return { success: true, subscriptionId: result.subscriptionId };
   } catch (error) {
@@ -84,8 +85,8 @@ export async function cancelSubscriptionAction(rawInput: unknown) {
       return { success: false, error: "Subscription not found or already canceled" };
     }
 
-    revalidatePath("/[locale]/admin", "page");
-    revalidatePath("/[locale]/profile", "page");
+    revalidatePath("/admin");
+    revalidatePath("/profile");
 
     return { success: true };
   } catch (error) {
@@ -97,8 +98,10 @@ export async function cancelSubscriptionAction(rawInput: unknown) {
 
 /**
  * Initiates a checkout session for the authenticated user.
- * If Lemon Squeezy is configured and the plan has a variant ID, redirects to Lemon Squeezy checkout.
- * Otherwise, falls back to instant mock subscription for development testing.
+ * - For Free tier (priceMinor === 0): enrolls the user in the free plan and refreshes quotas.
+ * - For Paid plans (Lemon Squeezy): validates configuration and creates a hosted checkout session.
+ * - For Mock plans (test environments only): creates mock subscription ONLY if plan.provider === 'mock'.
+ * Never automatically upgrades users to a paid plan without payment.
  */
 export async function createCheckoutSessionAction(planId: string, locale?: string) {
   const session = await auth();
@@ -112,14 +115,41 @@ export async function createCheckoutSessionAction(planId: string, locale?: strin
       return { success: false, error: "Selected plan is unavailable" };
     }
 
+    const loc = locale || "en";
+
+    // 1. Free plan selection: enroll directly
+    if (plan.priceMinor === 0 || plan.code === "free") {
+      await ensureUserFreeSubscription(session.user.id);
+      revalidatePath(`/${loc}/profile`);
+      revalidatePath(`/${loc}/admin`);
+      return {
+        success: true,
+        isFreePlan: true,
+      };
+    }
+
     const env = getServerEnv();
     const hasLemonKeys = Boolean(
       env.LEMONSQUEEZY_API_KEY?.trim() && env.LEMONSQUEEZY_STORE_ID?.trim()
     );
 
-    // If configured with Lemon Squeezy variant ID and live API keys:
-    if (hasLemonKeys && plan.provider === "lemonsqueezy" && plan.providerPriceId) {
-      const redirectUrl = `${env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, "")}/${locale || "en"}/profile?billing=success`;
+    // 2. Lemon Squeezy provider: strictly enforce provider variant ID and gateway configuration
+    if (plan.provider === "lemonsqueezy") {
+      if (!plan.providerPriceId?.trim()) {
+        return {
+          success: false,
+          error: "This plan is not yet configured for online checkout (missing payment provider variant ID).",
+        };
+      }
+
+      if (!hasLemonKeys) {
+        return {
+          success: false,
+          error: "Payment gateway is not currently configured on the server.",
+        };
+      }
+
+      const redirectUrl = `${env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, "")}/${loc}/profile?billing=success`;
 
       const checkoutRes = await createLemonSqueezyCheckout({
         variantId: plan.providerPriceId,
@@ -141,16 +171,22 @@ export async function createCheckoutSessionAction(planId: string, locale?: strin
       };
     }
 
-    // Development / Testbench Fallback: Activate mock subscription immediately
-    const mockResult = await createMockSubscription(session.user.id, planId, 30);
+    // 3. Mock provider (Only allowed for plans explicitly configured with provider='mock' for local tests)
+    if (plan.provider === "mock") {
+      const mockResult = await createMockSubscription(session.user.id, planId, 30);
+      revalidatePath(`/${loc}/profile`);
+      revalidatePath(`/${loc}/admin`);
 
-    revalidatePath("/[locale]/profile", "page");
-    revalidatePath("/[locale]/admin", "page");
+      return {
+        success: true,
+        subscriptionId: mockResult.subscriptionId,
+        isMock: true,
+      };
+    }
 
     return {
-      success: true,
-      subscriptionId: mockResult.subscriptionId,
-      isMock: true,
+      success: false,
+      error: "Unsupported payment provider for this plan.",
     };
   } catch (error) {
     logger.error(
@@ -219,8 +255,8 @@ export async function cancelUserSubscriptionAction(subscriptionId: string) {
       return { success: false, error: "Failed to cancel subscription" };
     }
 
-    revalidatePath("/[locale]/profile", "page");
-    revalidatePath("/[locale]/admin", "page");
+    revalidatePath("/profile");
+    revalidatePath("/admin");
 
     return { success: true };
   } catch (error) {

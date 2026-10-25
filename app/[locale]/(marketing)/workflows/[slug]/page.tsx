@@ -3,6 +3,8 @@ import { getTranslations } from "next-intl/server";
 import { auth } from "@/auth";
 import { getWorkflowBySlug } from "@/lib/db/queries/workflows";
 import { getUserWorkflowDetails } from "@/lib/db/queries/access";
+import { getActivePlans } from "@/lib/db/queries/plans";
+import { getUserSubscription } from "@/lib/db/queries/subscriptions";
 import { WorkflowLandingView } from "@/components/features/workflow-landing";
 
 interface WorkflowLandingPageProps {
@@ -32,9 +34,10 @@ export default async function WorkflowLandingPage({
   params,
 }: WorkflowLandingPageProps) {
   const { slug } = await params;
-  const [session, workflow] = await Promise.all([
+  const [session, workflow, plans] = await Promise.all([
     auth(),
     getWorkflowBySlug(slug),
+    getActivePlans(),
   ]);
 
   if (!workflow || !workflow.isActive) {
@@ -43,9 +46,17 @@ export default async function WorkflowLandingPage({
 
   const isAuthenticated = Boolean(session?.user?.id);
   let hasAccess = false;
+  let currentPlanId: string | null = null;
+  let currentPlanCode: string | null = null;
+
   if (session?.user?.id) {
-    const userWorkflow = await getUserWorkflowDetails(session.user.id, slug);
+    const [userWorkflow, subscription] = await Promise.all([
+      getUserWorkflowDetails(session.user.id, slug),
+      getUserSubscription(session.user.id),
+    ]);
     hasAccess = Boolean(userWorkflow);
+    currentPlanId = subscription?.planId ?? null;
+    currentPlanCode = subscription?.planCode ?? null;
   }
 
   return (
@@ -55,6 +66,9 @@ export default async function WorkflowLandingPage({
       imageUrl={workflow.imageUrl}
       hasAccess={hasAccess}
       isAuthenticated={isAuthenticated}
+      plans={plans}
+      currentPlanId={currentPlanId}
+      currentPlanCode={currentPlanCode}
     />
   );
 }

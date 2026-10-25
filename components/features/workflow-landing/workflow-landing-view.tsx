@@ -2,8 +2,10 @@
 
 import React, { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import type { Plan } from "@/types";
 import type { WorkflowLandingProps } from "./types";
 import { DEFAULT_PRESET, getLocalizedPreset } from "./presets-data";
+import { createCheckoutSessionAction } from "@/lib/actions/subscriptions";
 import { WorkflowNavBar } from "./workflow-nav-bar";
 import { WorkflowHeroHeader } from "./workflow-hero-header";
 import { WorkflowExplorer } from "./workflow-explorer";
@@ -24,12 +26,17 @@ export function WorkflowLandingView({
   imageUrl,
   hasAccess = false,
   isAuthenticated = false,
+  plans = [],
+  currentPlanId = null,
+  currentPlanCode = null,
 }: WorkflowLandingProps) {
   const locale = useLocale();
   const t = useTranslations("workflowLanding");
+  const p = useTranslations("profile");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isGmailModalOpen, setIsGmailModalOpen] = useState(false);
   const [isCuratorModalOpen, setIsCuratorModalOpen] = useState(false);
+  const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
 
   // If user is authorized, navigate straight to workflow console; if unauthorized, redirect to sign-in
   const tryWorkflowUrl = isAuthenticated
@@ -43,8 +50,47 @@ export function WorkflowLandingView({
     }, 4000);
   };
 
-  const handleSelectPaidPlan = (planName: string) => {
-    showToast(t("comingSoonNotice", { plan: planName }));
+  const handleSelectPaidPlan = async (plan: Plan) => {
+    if (plan.priceMinor === 0 || plan.code === "free") {
+      window.location.href = tryWorkflowUrl;
+      return;
+    }
+
+    if (!isAuthenticated) {
+      window.location.href = `/${locale}/sign-in?callbackUrl=/${locale}/workflows/${slug}#pricing`;
+      return;
+    }
+
+    setLoadingPlanId(plan.id);
+    try {
+      const result = await createCheckoutSessionAction(plan.id, locale);
+      if (result.success) {
+        if ("checkoutUrl" in result && result.checkoutUrl) {
+          window.location.href = result.checkoutUrl;
+          return;
+        }
+        showToast(p("subscribeSuccess"));
+      } else {
+        showToast(result.error || "Failed to initiate checkout");
+      }
+    } catch {
+      showToast("Network error initiating checkout");
+    } finally {
+      setLoadingPlanId(null);
+    }
+  };
+
+  const handleSelectPaidPlanByName = (planName: string) => {
+    const matched =
+      plans.find((p) => p.code.toLowerCase() === planName.toLowerCase()) ||
+      plans.find((p) => p.name.toLowerCase().includes(planName.toLowerCase())) ||
+      plans.find((p) => p.code === "pro");
+
+    if (matched) {
+      handleSelectPaidPlan(matched);
+    } else {
+      showToast(t("comingSoonNotice", { plan: planName }));
+    }
   };
 
   const handleCopyCuratorMarkdown = () => {
@@ -99,8 +145,12 @@ export function WorkflowLandingView({
 
         {/* Simple, Honest Pricing Section ($0 / $5 / $15 + 3 Modes) */}
         <WorkflowPricingEngine
+          plans={plans}
+          slug={slug}
+          currentPlanId={currentPlanId}
           tryWorkflowUrl={tryWorkflowUrl}
           onSelectPaidPlan={handleSelectPaidPlan}
+          loadingPlanId={loadingPlanId}
         />
 
         {/* Interactive FAQ Accordion */}
@@ -123,7 +173,7 @@ export function WorkflowLandingView({
         onCloseGmailModal={() => setIsGmailModalOpen(false)}
         onCloseCuratorModal={() => setIsCuratorModalOpen(false)}
         onCopyCuratorMarkdown={handleCopyCuratorMarkdown}
-        onSelectPaidPlan={handleSelectPaidPlan}
+        onSelectPaidPlan={handleSelectPaidPlanByName}
         activePreset={activePreset}
         toastMessage={toastMessage}
       />

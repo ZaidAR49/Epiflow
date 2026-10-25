@@ -1,3 +1,5 @@
+import type { Plan } from "@/types";
+
 export interface CommunityPostFormat {
   title: string;
   meta: string;
@@ -42,4 +44,7 @@ export interface WorkflowLandingProps {
   imageUrl?: string | null;
   hasAccess?: boolean;
   isAuthenticated?: boolean;
+  plans?: Plan[];
+  currentPlanId?: string | null;
+  currentPlanCode?: string | null;
 }

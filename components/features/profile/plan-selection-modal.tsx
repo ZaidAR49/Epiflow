@@ -213,7 +213,13 @@ export function PlanSelectionModal({
                     ) : (
                       <>
                         <Zap className="h-3.5 w-3.5" />
-                        <span>{t("subscribeMockCta")}</span>
+                        <span>
+                          {plan.priceMinor === 0
+                            ? t("selectFreePlan")
+                            : plan.provider === "lemonsqueezy"
+                            ? t("subscribeCta")
+                            : t("subscribeMockCta")}
+                        </span>
                       </>
                     )}
                   </button>

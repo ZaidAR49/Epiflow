@@ -2,17 +2,26 @@
 
 import React, { useState } from "react";
 import { useTranslations } from "next-intl";
+import type { Plan } from "@/types";
 import type { PricingBillingMode } from "./types";
 import { WorkflowPricingCards } from "./workflow-pricing-cards";
 
 interface WorkflowPricingEngineProps {
-  onSelectPaidPlan: (planName: string) => void;
+  plans?: Plan[];
+  slug?: string;
+  currentPlanId?: string | null;
+  onSelectPaidPlan: (plan: Plan) => void;
   tryWorkflowUrl: string;
+  loadingPlanId?: string | null;
 }
 
 export function WorkflowPricingEngine({
+  plans = [],
+  slug = "job-xray",
+  currentPlanId,
   onSelectPaidPlan,
   tryWorkflowUrl,
+  loadingPlanId,
 }: WorkflowPricingEngineProps) {
   const t = useTranslations("workflowLanding");
   const [billingMode, setBillingMode] = useState<PricingBillingMode>("monthly");
@@ -79,9 +88,13 @@ export function WorkflowPricingEngine({
 
         {/* 3 Spacious Pricing Cards Subcomponent */}
         <WorkflowPricingCards
+          plans={plans}
+          slug={slug}
           billingMode={billingMode}
+          currentPlanId={currentPlanId}
           onSelectPaidPlan={onSelectPaidPlan}
           tryWorkflowUrl={tryWorkflowUrl}
+          loadingPlanId={loadingPlanId}
         />
 
         {/* Transparency Preview: Free vs Pro Ad-Free Output */}

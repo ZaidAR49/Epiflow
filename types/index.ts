@@ -7,3 +7,4 @@ export type { User, NewUser } from "../lib/db/schema/users";
 export type { Workflow, NewWorkflow } from "../lib/db/schema/workflows";
 export type { UserWorkflowAccess, NewUserWorkflowAccess } from "../lib/db/schema/user-workflow-access";
 export type { JobRun, NewJobRun } from "../lib/db/schema/job-runs";
+export type { Plan, NewPlan } from "../lib/db/schema/plans";
