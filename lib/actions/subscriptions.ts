@@ -21,15 +21,19 @@ import {
 import { getServerEnv } from "@/lib/env";
 import { logger } from "@/lib/logger";
 
-async function verifyAdminCaller() {
+async function verifyAdminOrEditorCaller() {
   const session = await auth();
   if (!session?.user?.id) {
     return { ok: false, error: "Unauthorized: Please sign in" };
   }
 
   const caller = await getUserById(session.user.id);
-  if (!caller || caller.role !== "admin" || caller.status === "locked") {
-    return { ok: false, error: "Unauthorized: Admin privileges required" };
+  if (
+    !caller ||
+    (caller.role !== "admin" && caller.role !== "editor") ||
+    caller.status === "locked"
+  ) {
+    return { ok: false, error: "Unauthorized: Admin or Editor privileges required" };
   }
 
   return { ok: true, callerId: session.user.id };
@@ -39,7 +43,7 @@ async function verifyAdminCaller() {
  * Admin action: assigns a plan to any user and immediately activates workflow entitlements.
  */
 export async function assignPlanToUserAction(rawInput: unknown) {
-  const authCheck = await verifyAdminCaller();
+  const authCheck = await verifyAdminOrEditorCaller();
   if (!authCheck.ok) {
     return { success: false, error: authCheck.error };
   }
@@ -69,7 +73,7 @@ export async function assignPlanToUserAction(rawInput: unknown) {
  * Admin action: cancels a customer's subscription and immediately revokes granted workflow access.
  */
 export async function cancelSubscriptionAction(rawInput: unknown) {
-  const authCheck = await verifyAdminCaller();
+  const authCheck = await verifyAdminOrEditorCaller();
   if (!authCheck.ok) {
     return { success: false, error: authCheck.error };
   }

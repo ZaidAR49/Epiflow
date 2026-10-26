@@ -30,6 +30,7 @@ const serverEnvSchema = z.object({
   NEXT_PUBLIC_APP_NAME: z.string().trim().default("EpiFlow"),
   NEXT_PUBLIC_PLATFORM_NAME: z.string().trim().default("epiflow"),
   GOOGLE_WORKFLOW_REDIRECT_URI: z.string().url().optional().or(z.literal("")),
+  CRON_SECRET: z.string().trim().optional().or(z.literal("")),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;

@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import type { AdminUserItem } from "@/lib/db/queries/admin";
 
+import type { AdminCallerRole } from "./admin-shell";
+
 export type ActionType =
   | "approve"
   | "lock"
@@ -27,6 +29,7 @@ export type ActionType =
 interface UserTableRowProps {
   user: AdminUserItem;
   isSelf: boolean;
+  callerRole: AdminCallerRole;
   onAction: (type: ActionType, user: AdminUserItem) => void;
   onOpenQuota: (user: AdminUserItem) => void;
 }
@@ -34,6 +37,7 @@ interface UserTableRowProps {
 export function UserTableRow({
   user: u,
   isSelf,
+  callerRole,
   onAction,
   onOpenQuota,
 }: UserTableRowProps) {
@@ -102,26 +106,33 @@ export function UserTableRow({
         </span>
       </td>
 
-      {/* Quota Button */}
+      {/* Quota Button — hidden for viewers */}
       <td className="py-3 text-[var(--text)]">
-        <button
-          type="button"
-          onClick={() => onOpenQuota(u)}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface-2)]/60 px-2.5 py-1 text-xs text-[var(--text)] hover:border-[var(--accent)] transition-colors"
-          title={t("adjustQuota")}
-        >
-          <Sliders className="h-3 w-3 text-[var(--accent)]" />
-          <span>
+        {callerRole !== "viewer" && (
+          <button
+            type="button"
+            onClick={() => onOpenQuota(u)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface-2)]/60 px-2.5 py-1 text-xs text-[var(--text)] hover:border-[var(--accent)] transition-colors"
+            title={t("adjustQuota")}
+          >
+            <Sliders className="h-3 w-3 text-[var(--accent)]" />
+            <span>
+              {u.usageCount} / {u.usageLimit !== null ? u.usageLimit : t("unlimited")}
+            </span>
+          </button>
+        )}
+        {callerRole === "viewer" && (
+          <span className="text-xs text-[var(--text-muted)]">
             {u.usageCount} / {u.usageLimit !== null ? u.usageLimit : t("unlimited")}
           </span>
-        </button>
+        )}
       </td>
 
-      {/* Clear Labeled Actions */}
+      {/* Actions — conditional by callerRole */}
       <td className="py-3 text-end">
         <div className="inline-flex items-center gap-1.5 flex-wrap justify-end">
-          {/* Approval Actions */}
-          {u.status === "pending" && (
+          {/* Approval Actions — admin + editor (editor cannot act on admins) */}
+          {callerRole !== "viewer" && u.status === "pending" && (callerRole === "admin" || u.role !== "admin") && (
             <>
               <button
                 type="button"
@@ -142,8 +153,8 @@ export function UserTableRow({
             </>
           )}
 
-          {/* Unlock Action */}
-          {u.status === "locked" && (
+          {/* Unlock — admin + editor (editor cannot act on admins) */}
+          {callerRole !== "viewer" && u.status === "locked" && (callerRole === "admin" || u.role !== "admin") && (
             <button
               type="button"
               onClick={() => onAction("unlock", u)}
@@ -154,8 +165,8 @@ export function UserTableRow({
             </button>
           )}
 
-          {/* Lock Action */}
-          {u.status === "approved" && !isSelf && (
+          {/* Lock — admin + editor (editor cannot act on admins) */}
+          {callerRole !== "viewer" && u.status === "approved" && !isSelf && (callerRole === "admin" || u.role !== "admin") && (
             <button
               type="button"
               onClick={() => onAction("lock", u)}
@@ -166,8 +177,8 @@ export function UserTableRow({
             </button>
           )}
 
-          {/* Role Elevation Actions */}
-          {!isSelf && (
+          {/* Promote / Demote — admin only */}
+          {callerRole === "admin" && !isSelf && (
             <button
               type="button"
               onClick={() => onAction(u.role === "admin" ? "demote" : "promote", u)}
@@ -187,16 +198,18 @@ export function UserTableRow({
             </button>
           )}
 
-          {/* Delete User Action */}
-          <button
-            type="button"
-            onClick={() => onAction("delete", u)}
-            className="inline-flex items-center gap-1.5 rounded-md border border-rose-500/30 bg-rose-500/10 px-2 py-1 text-[11px] font-semibold text-rose-300 hover:bg-rose-500/20 transition-colors"
-            title="Delete User"
-          >
-            <Trash2 className="h-3 w-3" />
-            <span className="hidden xl:inline">{t("delete")}</span>
-          </button>
+          {/* Delete — admin only */}
+          {callerRole === "admin" && (
+            <button
+              type="button"
+              onClick={() => onAction("delete", u)}
+              className="inline-flex items-center gap-1.5 rounded-md border border-rose-500/30 bg-rose-500/10 px-2 py-1 text-[11px] font-semibold text-rose-300 hover:bg-rose-500/20 transition-colors"
+              title="Delete User"
+            >
+              <Trash2 className="h-3 w-3" />
+              <span className="hidden xl:inline">{t("delete")}</span>
+            </button>
+          )}
         </div>
       </td>
     </tr>

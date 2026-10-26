@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeTestBenchWorkflow } from "@/lib/services/test-bench/runner";
+import { auth } from "@/auth";
+import { getUserById } from "@/lib/db/queries/users";
 import { z } from "zod";
 
 const testBenchRunSchema = z.object({
@@ -9,6 +11,22 @@ const testBenchRunSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: "Unauthorized: Please sign in" },
+        { status: 401 }
+      );
+    }
+
+    const caller = await getUserById(session.user.id);
+    if (!caller || caller.role !== "admin") {
+      return NextResponse.json(
+        { error: "Forbidden: Admin privileges required" },
+        { status: 403 }
+      );
+    }
+
     const body: unknown = await req.json();
     const parsed = testBenchRunSchema.safeParse(body);
 

@@ -20,6 +20,8 @@ import { PaymentLedgerCard } from "./payment-ledger-card";
 import { UsageMetersCard } from "./usage-meters-card";
 import { UserManagementTable } from "./user-management-table";
 
+export type AdminCallerRole = "admin" | "editor" | "viewer";
+
 interface AdminShellProps {
   stats: AdminStats;
   workflows: AdminWorkflowItem[];
@@ -31,6 +33,7 @@ interface AdminShellProps {
   paymentStats: PaymentStats;
   usageMeters: UsageMeterWithDetails[];
   currentUserId: string;
+  callerRole: AdminCallerRole;
 }
 
 export function AdminShell({
@@ -44,6 +47,7 @@ export function AdminShell({
   paymentStats,
   usageMeters,
   currentUserId,
+  callerRole,
 }: AdminShellProps) {
   const t = useTranslations("admin");
   const [activeTab, setActiveTab] = useState<AdminTab>("overview");
@@ -117,6 +121,7 @@ export function AdminShell({
                 subscriptions={subscriptions}
                 users={userOptions}
                 plans={planOptions}
+                callerRole={callerRole}
               />
             </div>
           )}
@@ -138,7 +143,7 @@ export function AdminShell({
           {activeTab === "users" && (
             <div className="space-y-6">
               <SectionHeader title={t("usersTab")} count={pendingUsers > 0 ? pendingUsers : undefined} />
-              <UserManagementTable users={users} currentUserId={currentUserId} />
+              <UserManagementTable users={users} currentUserId={currentUserId} callerRole={callerRole} />
             </div>
           )}
         </main>

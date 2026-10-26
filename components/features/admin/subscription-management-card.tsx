@@ -7,17 +7,20 @@ import { CreditCard, Plus, Search } from "lucide-react";
 import type { SubscriptionWithDetails } from "@/lib/db/queries/subscriptions";
 import { SubscriptionTable } from "./subscription-table";
 import { AssignPlanModal } from "./assign-plan-modal";
+import type { AdminCallerRole } from "./admin-shell";
 
 interface SubscriptionManagementCardProps {
   subscriptions: SubscriptionWithDetails[];
   users: { id: string; fullName: string; email: string | null }[];
   plans: { id: string; name: string; code: string; priceMinor: number; currency: string }[];
+  callerRole: AdminCallerRole;
 }
 
 export function SubscriptionManagementCard({
   subscriptions,
   users,
   plans,
+  callerRole,
 }: SubscriptionManagementCardProps) {
   const t = useTranslations("admin.subscriptions");
   const router = useRouter();
@@ -66,14 +69,16 @@ export function SubscriptionManagementCard({
             />
           </div>
 
-          <button
-            type="button"
-            onClick={() => setIsAssignModalOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:opacity-90 transition-opacity shrink-0"
-          >
-            <Plus className="h-4 w-4" />
-            <span>{t("assignPlan")}</span>
-          </button>
+          {callerRole !== "viewer" && (
+            <button
+              type="button"
+              onClick={() => setIsAssignModalOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:opacity-90 transition-opacity shrink-0"
+            >
+              <Plus className="h-4 w-4" />
+              <span>{t("assignPlan")}</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -81,16 +86,19 @@ export function SubscriptionManagementCard({
         <SubscriptionTable
           subscriptions={filtered}
           onActionComplete={handleRefresh}
+          callerRole={callerRole}
         />
       </div>
 
-      <AssignPlanModal
-        isOpen={isAssignModalOpen}
-        onClose={() => setIsAssignModalOpen(false)}
-        users={users}
-        plans={plans}
-        onSuccess={handleRefresh}
-      />
+      {callerRole !== "viewer" && (
+        <AssignPlanModal
+          isOpen={isAssignModalOpen}
+          onClose={() => setIsAssignModalOpen(false)}
+          users={users}
+          plans={plans}
+          onSuccess={handleRefresh}
+        />
+      )}
     </div>
   );
 }

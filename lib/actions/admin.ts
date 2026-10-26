@@ -25,15 +25,53 @@ import {
   uploadPublicImage,
 } from "@/lib/services/storage/supabase-storage";
 import { isErr } from "@/lib/result";
+import type { User } from "@/lib/db/schema/users";
 
-export async function updateWorkflowAction(input: UpdateWorkflowInput) {
+// ---------------------------------------------------------------------------
+// Auth helpers — shared across all admin actions
+// ---------------------------------------------------------------------------
+
+type CallerRole = User["role"];
+
+async function resolveCaller(): Promise<
+  { ok: false; error: string } | { ok: true; caller: User; callerId: string }
+> {
   const session = await auth();
   if (!session?.user?.id) {
-    return { success: false, error: "Unauthorized: Please sign in" };
+    return { ok: false, error: "Unauthorized: Please sign in" };
   }
-
   const caller = await getUserById(session.user.id);
-  if (!caller || caller.role !== "admin" || caller.status === "locked") {
+  if (!caller || caller.status === "locked") {
+    return { ok: false, error: "Unauthorized: Account not accessible" };
+  }
+  return { ok: true, caller, callerId: session.user.id };
+}
+
+/** admin, editor, viewer can open the admin panel */
+function isAdminPanelRole(role: CallerRole): boolean {
+  return role === "admin" || role === "editor" || role === "viewer";
+}
+
+/** admin + editor can write subscriptions and quota */
+function canManageSubscriptions(role: CallerRole): boolean {
+  return role === "admin" || role === "editor";
+}
+
+/** Only admins perform destructive / privilege-elevation operations */
+function isAdmin(role: CallerRole): boolean {
+  return role === "admin";
+}
+
+// ---------------------------------------------------------------------------
+// Actions
+// ---------------------------------------------------------------------------
+
+/** Admin-only: update workflow details (name, active state, image URL) */
+export async function updateWorkflowAction(input: UpdateWorkflowInput) {
+  const res = await resolveCaller();
+  if (!res.ok) return { success: false, error: res.error };
+
+  if (!isAdmin(res.caller.role)) {
     return { success: false, error: "Unauthorized: Admin privileges required" };
   }
 
@@ -65,10 +103,27 @@ export async function updateWorkflowAction(input: UpdateWorkflowInput) {
   }
 }
 
+/**
+ * Role-aware user status / role update.
+ *
+ * Permission matrix:
+ * - admin  => can change any user's role/status, including promoting/demoting admins
+ * - editor => can approve/lock/reject/unlock non-admin users only; cannot touch
+ *             the `role` field; cannot act on other admins
+ * - viewer => no writes at all
+ */
 export async function updateUserStatusAction(input: UpdateUserStatusInput) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return { success: false, error: "Unauthorized: Please sign in" };
+  const res = await resolveCaller();
+  if (!res.ok) return { success: false, error: res.error };
+
+  const { caller } = res;
+
+  if (!isAdminPanelRole(caller.role)) {
+    return { success: false, error: "Unauthorized: Insufficient privileges" };
+  }
+
+  if (caller.role === "viewer") {
+    return { success: false, error: "Unauthorized: Viewers cannot modify users" };
   }
 
   const parsed = updateUserStatusSchema.safeParse(input);
@@ -76,32 +131,45 @@ export async function updateUserStatusAction(input: UpdateUserStatusInput) {
     return { success: false, error: "Invalid user update parameters" };
   }
 
-  const caller = await getUserById(session.user.id);
-  if (!caller || caller.role !== "admin" || caller.status === "locked") {
-    return { success: false, error: "Unauthorized: Admin privileges required" };
-  }
-
   const target = await getUserById(parsed.data.userId);
   if (!target) {
     return { success: false, error: "User not found" };
   }
 
-  const isDemotingAdmin =
-    target.role === "admin" &&
-    parsed.data.role !== undefined &&
-    parsed.data.role !== "admin";
-  const isLockingAdmin =
-    target.role === "admin" &&
-    (parsed.data.status === "locked" || parsed.data.status === "rejected");
-
-  if (isDemotingAdmin || isLockingAdmin) {
-    const activeAdminCount = await getActiveAdminCount();
-    if (activeAdminCount <= 1) {
+  // --- Editor-specific restrictions ---
+  if (caller.role === "editor") {
+    // Editors must not touch the role field at all
+    if (parsed.data.role !== undefined) {
+      return { success: false, error: "Unauthorized: Only admins can change user roles" };
+    }
+    // Editors must not act on admin accounts
+    if (target.role === "admin") {
       return {
         success: false,
-        error:
-          "Cannot demote or lock this administrator because they are the only administrator. Designate another administrator first.",
+        error: "Unauthorized: Editors cannot modify administrator accounts",
       };
+    }
+  }
+
+  // --- Admin: guard against demoting/locking the last admin ---
+  if (caller.role === "admin") {
+    const isDemotingAdmin =
+      target.role === "admin" &&
+      parsed.data.role !== undefined &&
+      parsed.data.role !== "admin";
+    const isLockingAdmin =
+      target.role === "admin" &&
+      (parsed.data.status === "locked" || parsed.data.status === "rejected");
+
+    if (isDemotingAdmin || isLockingAdmin) {
+      const activeAdminCount = await getActiveAdminCount();
+      if (activeAdminCount <= 1) {
+        return {
+          success: false,
+          error:
+            "Cannot demote or lock this administrator because they are the only administrator. Designate another administrator first.",
+        };
+      }
     }
   }
 
@@ -125,20 +193,18 @@ export async function updateUserStatusAction(input: UpdateUserStatusInput) {
   }
 }
 
+/** Admin-only: permanently delete a user and all associated data */
 export async function deleteUserAction(input: DeleteUserInput) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return { success: false, error: "Unauthorized: Please sign in" };
+  const res = await resolveCaller();
+  if (!res.ok) return { success: false, error: res.error };
+
+  if (!isAdmin(res.caller.role)) {
+    return { success: false, error: "Unauthorized: Admin privileges required" };
   }
 
   const parsed = deleteUserSchema.safeParse(input);
   if (!parsed.success) {
     return { success: false, error: "Invalid user deletion parameters" };
-  }
-
-  const caller = await getUserById(session.user.id);
-  if (!caller || caller.role !== "admin" || caller.status === "locked") {
-    return { success: false, error: "Unauthorized: Admin privileges required" };
   }
 
   const target = await getUserById(parsed.data.userId);
@@ -173,15 +239,16 @@ export async function deleteUserAction(input: DeleteUserInput) {
   }
 }
 
+/** Admin + Editor: adjust workflow usage quota for a user */
 export async function updateUserQuotaAction(input: UpdateUserQuotaInput) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return { success: false, error: "Unauthorized: Please sign in" };
-  }
+  const res = await resolveCaller();
+  if (!res.ok) return { success: false, error: res.error };
 
-  const caller = await getUserById(session.user.id);
-  if (!caller || caller.role !== "admin" || caller.status === "locked") {
-    return { success: false, error: "Unauthorized: Admin privileges required" };
+  if (!canManageSubscriptions(res.caller.role)) {
+    return {
+      success: false,
+      error: "Unauthorized: Admin or Editor privileges required",
+    };
   }
 
   const parsed = updateUserQuotaSchema.safeParse(input);
@@ -213,6 +280,7 @@ export async function updateUserQuotaAction(input: UpdateUserQuotaInput) {
   }
 }
 
+/** Admin-only: upload a workflow avatar image */
 export async function uploadWorkflowImageAction(formData: FormData) {
   const session = await auth();
   if (!session?.user?.id || session.user.role !== "admin") {

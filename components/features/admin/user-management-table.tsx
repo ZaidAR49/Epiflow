@@ -13,10 +13,12 @@ import { UserActionDialog, type UserActionDialogProps } from "./user-action-dial
 import { UserQuotaModal } from "./user-quota-modal";
 import { UserTableRow, type ActionType } from "./user-table-row";
 import { useToast } from "@/hooks/use-toast";
+import type { AdminCallerRole } from "./admin-shell";
 
 interface UserManagementTableProps {
   users: AdminUserItem[];
   currentUserId: string;
+  callerRole: AdminCallerRole;
 }
 
 interface PendingAction {
@@ -24,7 +26,7 @@ interface PendingAction {
   user: AdminUserItem;
 }
 
-export function UserManagementTable({ users, currentUserId }: UserManagementTableProps) {
+export function UserManagementTable({ users, currentUserId, callerRole }: UserManagementTableProps) {
   const t = useTranslations("admin.users");
   const tCommon = useTranslations("common");
   const toast = useToast();
@@ -210,6 +212,7 @@ export function UserManagementTable({ users, currentUserId }: UserManagementTabl
                 key={u.id}
                 user={u}
                 isSelf={u.id === currentUserId}
+                callerRole={callerRole}
                 onAction={(type, user) => setPendingAction({ type, user })}
                 onOpenQuota={(user) => setQuotaUser(user)}
               />

@@ -91,7 +91,7 @@ describe("Security & Authorization Controls", () => {
         role: "admin",
       });
       expect(res.success).toBe(false);
-      expect(res.error).toContain("Admin privileges required");
+      expect(res.error).toContain("Insufficient privileges");
     });
 
     it("prevents demoting the last active administrator", async () => {

@@ -13,22 +13,26 @@ import {
 import { getUserById } from "@/lib/db/queries/users";
 import { logger } from "@/lib/logger";
 
-async function verifyAdminCaller() {
+async function verifyAdminOrEditorCaller() {
   const session = await auth();
   if (!session?.user?.id) {
     return { ok: false, error: "Unauthorized: Please sign in" };
   }
 
   const caller = await getUserById(session.user.id);
-  if (!caller || caller.role !== "admin" || caller.status === "locked") {
-    return { ok: false, error: "Unauthorized: Admin privileges required" };
+  if (
+    !caller ||
+    (caller.role !== "admin" && caller.role !== "editor") ||
+    caller.status === "locked"
+  ) {
+    return { ok: false, error: "Unauthorized: Admin or Editor privileges required" };
   }
 
   return { ok: true, callerId: session.user.id };
 }
 
 export async function createPlanAction(rawInput: unknown) {
-  const authCheck = await verifyAdminCaller();
+  const authCheck = await verifyAdminOrEditorCaller();
   if (!authCheck.ok) {
     return { success: false, error: authCheck.error };
   }
@@ -70,7 +74,7 @@ export async function createPlanAction(rawInput: unknown) {
 }
 
 export async function updatePlanAction(rawInput: unknown) {
-  const authCheck = await verifyAdminCaller();
+  const authCheck = await verifyAdminOrEditorCaller();
   if (!authCheck.ok) {
     return { success: false, error: authCheck.error };
   }
@@ -119,7 +123,7 @@ export async function updatePlanAction(rawInput: unknown) {
 }
 
 export async function togglePlanActiveAction(planId: string) {
-  const authCheck = await verifyAdminCaller();
+  const authCheck = await verifyAdminOrEditorCaller();
   if (!authCheck.ok) {
     return { success: false, error: authCheck.error };
   }

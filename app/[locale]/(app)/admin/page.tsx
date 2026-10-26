@@ -27,7 +27,10 @@ export default async function AdminPage({ params }: AdminPageProps) {
   }
 
   const user = await getUserById(session.user.id);
-  if (!user || user.role !== "admin") {
+  if (
+    !user ||
+    (user.role !== "admin" && user.role !== "editor" && user.role !== "viewer")
+  ) {
     redirect(`/${locale}/profile`);
   }
 
@@ -79,6 +82,7 @@ export default async function AdminPage({ params }: AdminPageProps) {
         paymentStats={paymentStats}
         usageMeters={usageMeters}
         currentUserId={session.user.id}
+        callerRole={user.role}
       />
     </div>
   );

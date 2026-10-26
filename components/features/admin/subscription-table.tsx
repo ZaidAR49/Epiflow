@@ -7,15 +7,18 @@ import type { SubscriptionWithDetails } from "@/lib/db/queries/subscriptions";
 import { cancelSubscriptionAction } from "@/lib/actions/subscriptions";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/hooks/use-toast";
+import type { AdminCallerRole } from "./admin-shell";
 
 interface SubscriptionTableProps {
   subscriptions: SubscriptionWithDetails[];
   onActionComplete?: () => void;
+  callerRole?: AdminCallerRole;
 }
 
 export function SubscriptionTable({
   subscriptions,
   onActionComplete,
+  callerRole,
 }: SubscriptionTableProps) {
   const t = useTranslations("admin.subscriptions");
   const tCommon = useTranslations("common");
@@ -159,7 +162,7 @@ export function SubscriptionTable({
                 </td>
 
                 <td className="px-4 py-3 text-xs whitespace-nowrap">
-                  {sub.status !== "canceled" && (
+                  {sub.status !== "canceled" && callerRole !== "viewer" && (
                     <button
                       type="button"
                       onClick={() => setCancelingSub(sub)}

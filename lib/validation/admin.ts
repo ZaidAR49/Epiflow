@@ -11,7 +11,7 @@ export type UpdateWorkflowInput = z.infer<typeof updateWorkflowSchema>;
 
 export const updateUserStatusSchema = z.object({
   userId: z.string().uuid(),
-  role: z.enum(["admin", "user", "guest"]).optional(),
+  role: z.enum(["admin", "editor", "viewer", "user", "guest"]).optional(),
   status: z.enum(["pending", "approved", "rejected", "locked"]).optional(),
 });
 
