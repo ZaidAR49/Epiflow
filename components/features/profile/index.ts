@@ -3,4 +3,5 @@ export { TelegramLinkCard } from "./telegram-link-card";
 export { RegisteredWorkflowsCard } from "./registered-workflows-card";
 export { UserSubscriptionCard } from "./user-subscription-card";
 export { PlanSelectionModal } from "./plan-selection-modal";
+export { CancelSubscriptionModal } from "./cancel-subscription-modal";
 export { WorkflowQuotaCard } from "./workflow-quota-card";

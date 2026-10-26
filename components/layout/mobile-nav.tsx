@@ -15,7 +15,6 @@ import {
   LogOut,
   Globe,
   Mail,
-  Cpu,
 } from "lucide-react";
 import Image from "next/image";
 import {
@@ -174,7 +173,6 @@ export function MobileNav({
             {[
               { href: `/${locale}`, label: t("home"), icon: Home, color: "text-emerald-400" },
               { href: `/${locale}#workflows`, label: t("workflows"), icon: Layers, color: "text-purple-400" },
-              { href: `/${locale}#pillars`, label: t("architecture"), icon: Cpu, color: "text-sky-400" },
               ...(isSignedIn ? [{ href: `/${locale}/dashboard`, label: t("dashboard"), icon: LayoutDashboard, color: "text-[var(--accent)]" }] : []),
               ...(userRole === "admin" ? [
                 { href: `/${locale}/admin`, label: t("admin"), icon: ShieldCheck, color: "text-[var(--accent)]", highlight: true },

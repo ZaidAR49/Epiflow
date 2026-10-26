@@ -28,45 +28,47 @@ export function Stage1Panel({ data }: Stage1PanelProps) {
       </div>
 
       {/* Highlighted Post Content Box with Scanline */}
-      <div className="relative rounded-xl bg-[var(--bg)] p-6 sm:p-8 border hairline-border overflow-hidden">
+      <div className="relative rounded-xl bg-[var(--bg)] p-4 sm:p-6 lg:p-8 border hairline-border overflow-hidden min-w-0">
         <div className="xray-scanline" />
-        <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-xs text-[var(--text-muted)] pb-4 mb-5 border-b hairline-border">
-          <span>{data.authorMeta}</span>
-          <span className="text-[var(--accent)] truncate">{data.expandedUrl}</span>
+        <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-xs text-[var(--text-muted)] pb-3 sm:pb-4 mb-4 sm:mb-5 border-b hairline-border min-w-0">
+          <span className="truncate max-w-full">{data.authorMeta}</span>
+          <span className="text-[var(--accent)] truncate max-w-full font-mono text-[11px] sm:text-xs">
+            {data.expandedUrl}
+          </span>
         </div>
         <div
-          className="text-[var(--text-muted)] text-sm sm:text-base leading-relaxed whitespace-pre-line"
+          className="text-[var(--text-muted)] text-xs sm:text-sm lg:text-base leading-relaxed whitespace-pre-line break-words"
           dangerouslySetInnerHTML={{ __html: data.postHtml }}
         />
       </div>
 
       {/* 3 Clean Extracted Signal Pills */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-4 rounded-lg bg-[var(--bg)] border hairline-border">
-          <div className="font-mono text-xs text-[var(--text-muted)] mb-1">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 min-w-0">
+        <div className="p-3.5 sm:p-4 rounded-lg bg-[var(--bg)] border hairline-border min-w-0">
+          <div className="font-mono text-[11px] sm:text-xs text-[var(--text-muted)] mb-1">
             {t("s1EntityCheck")}
           </div>
-          <div className="font-mono font-semibold text-sm text-[var(--text)]">
+          <div className="font-mono font-semibold text-xs sm:text-sm text-[var(--text)] truncate">
             {data.entitySignal}
           </div>
         </div>
-        <div className="p-4 rounded-lg bg-[var(--bg)] border hairline-border">
-          <div className="font-mono text-xs text-[var(--text-muted)] mb-1">
+        <div className="p-3.5 sm:p-4 rounded-lg bg-[var(--bg)] border hairline-border min-w-0">
+          <div className="font-mono text-[11px] sm:text-xs text-[var(--text-muted)] mb-1">
             {t("s1FactualCheck")}
           </div>
           <div
-            className={`font-mono font-semibold text-sm ${
+            className={`font-mono font-semibold text-xs sm:text-sm truncate ${
               data.flagIsWarning ? "text-amber-400" : "text-emerald-400"
             }`}
           >
             {data.flagText}
           </div>
         </div>
-        <div className="p-4 rounded-lg bg-[var(--bg)] border hairline-border">
-          <div className="font-mono text-xs text-[var(--text-muted)] mb-1">
+        <div className="p-3.5 sm:p-4 rounded-lg bg-[var(--bg)] border hairline-border min-w-0">
+          <div className="font-mono text-[11px] sm:text-xs text-[var(--text-muted)] mb-1">
             {t("s1ExplicitEmail")}
           </div>
-          <div className="font-mono font-semibold text-sm text-[var(--accent)] truncate">
+          <div className="font-mono font-semibold text-xs sm:text-sm text-[var(--accent)] truncate">
             {data.email}
           </div>
         </div>

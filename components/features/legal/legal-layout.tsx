@@ -83,8 +83,8 @@ export function LegalLayout({
         {/* Main Grid: Sticky Sidebar + Content */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Table of Contents (Desktop Sticky) */}
-          <aside className="lg:col-span-4 sticky top-24 z-10">
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm backdrop-blur">
+          <aside className="lg:col-span-4 lg:sticky lg:top-24 z-10 min-w-0">
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-6 shadow-sm backdrop-blur">
               <div className="flex items-center gap-2 border-b border-[var(--border)] pb-3 mb-4">
                 <FileText className="h-4 w-4 text-[var(--accent)]" />
                 <h2 className="text-sm font-bold text-[var(--text)] tracking-wide">

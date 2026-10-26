@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import type { Plan } from "@/types";
 import type { WorkflowLandingProps } from "./types";
@@ -28,8 +29,8 @@ export function WorkflowLandingView({
   isAuthenticated = false,
   plans = [],
   currentPlanId = null,
-  currentPlanCode = null,
 }: WorkflowLandingProps) {
+  const router = useRouter();
   const locale = useLocale();
   const t = useTranslations("workflowLanding");
   const p = useTranslations("profile");
@@ -52,12 +53,12 @@ export function WorkflowLandingView({
 
   const handleSelectPaidPlan = async (plan: Plan) => {
     if (plan.priceMinor === 0 || plan.code === "free") {
-      window.location.href = tryWorkflowUrl;
+      router.push(tryWorkflowUrl);
       return;
     }
 
     if (!isAuthenticated) {
-      window.location.href = `/${locale}/sign-in?callbackUrl=/${locale}/workflows/${slug}#pricing`;
+      router.push(`/${locale}/sign-in?callbackUrl=/${locale}/workflows/${slug}#pricing`);
       return;
     }
 

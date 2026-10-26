@@ -95,7 +95,7 @@ export function HistoryArchive({
   };
 
   return (
-    <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-xl space-y-5">
+    <div className="rounded-2xl sm:rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-6 shadow-xl space-y-5 min-w-0">
       {/* Header & Search */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[var(--border)] pb-5">
         <div className="flex items-center gap-2.5">
@@ -184,11 +184,11 @@ export function HistoryArchive({
 
       {/* Runs List */}
       {runs.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-[var(--border)] p-12 text-center text-xs text-[var(--text-muted)]">
+        <div className="rounded-2xl border border-dashed border-[var(--border)] p-8 sm:p-12 text-center text-xs text-[var(--text-muted)]">
           {t("noHistory")}
         </div>
       ) : filteredRuns.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-[var(--border)] p-10 text-center text-xs text-[var(--text-muted)]">
+        <div className="rounded-2xl border border-dashed border-[var(--border)] p-8 sm:p-10 text-center text-xs text-[var(--text-muted)]">
           {t("noMatchingHistory")}
         </div>
       ) : (

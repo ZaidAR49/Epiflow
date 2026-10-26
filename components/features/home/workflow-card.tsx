@@ -46,7 +46,7 @@ export function WorkflowCard({
 
   return (
     <div
-      className={`group relative flex flex-col justify-between rounded-2xl border bg-[var(--surface)] p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${
+      className={`group relative flex flex-col justify-between rounded-2xl border bg-[var(--surface)] p-5 sm:p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl min-w-0 ${
         isSubscribed
           ? "border-sky-500/50 shadow-lg shadow-sky-500/15 hover:border-sky-400"
           : isFlagship
@@ -55,9 +55,9 @@ export function WorkflowCard({
       }`}
     >
       {/* Top Banner: Status & Flagship/Subscription Badges */}
-      <div>
+      <div className="min-w-0">
         <div className="flex items-center justify-between gap-2 flex-wrap mb-4">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 shrink-0">
             {workflow.isActive ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-400 border border-emerald-500/20">
                 <CheckCircle2 className="h-3 w-3" />
@@ -72,12 +72,12 @@ export function WorkflowCard({
           </div>
 
           {isSubscribed ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/15 px-2.5 py-0.5 text-[11px] font-bold text-sky-400 border border-sky-500/30 shadow-[0_0_8px_rgba(56,189,248,0.25)]">
+            <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/15 px-2.5 py-0.5 text-[11px] font-bold text-sky-400 border border-sky-500/30 shadow-[0_0_8px_rgba(56,189,248,0.25)] shrink-0">
               <Sparkles className="h-3 w-3 text-sky-300" />
               <span>{t("badgeSubscribed")}</span>
             </span>
           ) : isFlagship ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-teal-500/15 to-sky-500/15 px-2.5 py-0.5 text-[11px] font-bold text-sky-400 border border-sky-500/30">
+            <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-teal-500/15 to-sky-500/15 px-2.5 py-0.5 text-[11px] font-bold text-sky-400 border border-sky-500/30 shrink-0">
               <Sparkles className="h-3 w-3 text-teal-400" />
               <span>{t("badgeFlagship")}</span>
             </span>
@@ -85,8 +85,8 @@ export function WorkflowCard({
         </div>
 
         {/* Workflow Title & Category */}
-        <div className="flex items-start gap-3.5">
-          <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[var(--surface-2)] border border-[var(--border)] shadow-inner">
+        <div className="flex items-start gap-3 sm:gap-3.5 min-w-0">
+          <div className="relative flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[var(--surface-2)] border border-[var(--border)] shadow-inner">
             {workflow.imageUrl ? (
               <Image
                 src={workflow.imageUrl}
@@ -103,29 +103,29 @@ export function WorkflowCard({
           </div>
 
           <div className="min-w-0 flex-1">
-            <span className="block text-xs font-semibold text-sky-400 uppercase tracking-wider">
+            <span className="block text-xs font-semibold text-sky-400 uppercase tracking-wider truncate">
               {details.category}
             </span>
-            <h3 className="text-xl font-bold text-[var(--text)] tracking-tight truncate mt-0.5">
+            <h3 className="text-lg sm:text-xl font-bold text-[var(--text)] tracking-tight line-clamp-2 mt-0.5 break-words">
               {workflow.name}
             </h3>
-            <span className="font-mono text-[11px] text-[var(--text-muted)] block mt-0.5">
+            <span className="font-mono text-[11px] text-[var(--text-muted)] block mt-0.5 truncate">
               slug: {workflow.slug}
             </span>
           </div>
         </div>
 
         {/* Workflow Rich Description */}
-        <p className="mt-4 text-xs sm:text-sm text-[var(--text-muted)] leading-relaxed">
+        <p className="mt-3.5 sm:mt-4 text-xs sm:text-sm text-[var(--text-muted)] leading-relaxed break-words">
           {details.description}
         </p>
 
         {/* Capability Tags */}
-        <div className="mt-5 flex flex-wrap gap-1.5">
+        <div className="mt-4 sm:mt-5 flex flex-wrap gap-1.5 min-w-0">
           {details.tags.map((tag, idx) => (
             <span
               key={idx}
-              className="inline-block rounded-md bg-[var(--surface-2)] px-2 py-0.5 text-[11px] font-medium text-[var(--text)] border border-[var(--border)]/60"
+              className="inline-block rounded-md bg-[var(--surface-2)] px-2 py-0.5 text-[10px] sm:text-[11px] font-medium text-[var(--text)] border border-[var(--border)]/60 max-w-full truncate"
             >
               {tag}
             </span>
@@ -134,7 +134,7 @@ export function WorkflowCard({
       </div>
 
       {/* Call to Action Bar */}
-      <div className="mt-6 pt-5 border-t border-[var(--border)] flex items-center justify-between gap-3">
+      <div className="mt-5 sm:mt-6 pt-4 sm:pt-5 border-t border-[var(--border)] flex items-center justify-between gap-3 min-w-0">
         <Link
           href={`/${locale}/workflows/${workflow.slug}`}
           className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2.5 text-xs sm:text-sm font-semibold text-white shadow hover:bg-[var(--accent)]/90 transition-colors"

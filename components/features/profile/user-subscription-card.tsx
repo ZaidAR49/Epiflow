@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import {
   Sparkles,
@@ -20,6 +21,7 @@ import {
   getBillingPortalUrlAction,
 } from "@/lib/actions/subscriptions";
 import { PlanSelectionModal } from "./plan-selection-modal";
+import { CancelSubscriptionModal } from "./cancel-subscription-modal";
 
 interface UserSubscriptionCardProps {
   subscription: SubscriptionWithDetails | null;
@@ -37,10 +39,17 @@ export function UserSubscriptionCard({
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [isCanceling, startCancelTransition] = useTransition();
   const [isOpeningPortal, startPortalTransition] = useTransition();
+  const searchParams = useSearchParams();
   const [statusMessage, setStatusMessage] = useState<{
     type: "success" | "error";
     text: string;
   } | null>(null);
+
+  const displayMessage =
+    statusMessage ??
+    (searchParams?.get("billing") === "success"
+      ? { type: "success" as const, text: t("subscribeSuccess") }
+      : null);
 
   const handleOpenBillingPortal = () => {
     setStatusMessage(null);
@@ -79,6 +88,13 @@ export function UserSubscriptionCard({
   };
 
   const activePlans = availablePlans.filter((p) => p.isActive);
+  const isPaidSubscription = Boolean(
+    subscription &&
+      subscription.status === "active" &&
+      subscription.planPriceMinor > 0 &&
+      subscription.planCode !== "free" &&
+      subscription.provider !== "system"
+  );
 
   return (
     <>
@@ -94,7 +110,7 @@ export function UserSubscriptionCard({
             </h3>
           </div>
 
-          {subscription ? (
+          {subscription && isPaidSubscription ? (
             <span
               className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold border capitalize ${
                 subscription.status === "active"
@@ -114,25 +130,25 @@ export function UserSubscriptionCard({
         </div>
 
         {/* Feedback message */}
-        {statusMessage && (
+        {displayMessage && (
           <div
             className={`flex items-center gap-2 rounded-lg p-3 text-xs ${
-              statusMessage.type === "success"
+              displayMessage.type === "success"
                 ? "border border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
                 : "border border-rose-500/20 bg-rose-500/10 text-rose-400"
             }`}
           >
-            {statusMessage.type === "success" ? (
+            {displayMessage.type === "success" ? (
               <CheckCircle2 className="h-4 w-4 shrink-0" />
             ) : (
               <AlertTriangle className="h-4 w-4 shrink-0" />
             )}
-            <span>{statusMessage.text}</span>
+            <span>{displayMessage.text}</span>
           </div>
         )}
 
         {/* Card Body */}
-        {subscription && subscription.status === "active" ? (
+        {subscription && isPaidSubscription ? (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs text-[var(--text-muted)]">Plan:</span>
@@ -205,6 +221,13 @@ export function UserSubscriptionCard({
           </div>
         ) : (
           <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-[var(--text-muted)]">Plan:</span>
+              <span className="font-bold text-sm text-[var(--text)]">
+                {subscription?.planName || "FREE"}
+              </span>
+            </div>
+
             <p className="text-xs text-[var(--text-muted)] leading-relaxed">
               {t("freeTierDesc")}
             </p>
@@ -220,43 +243,16 @@ export function UserSubscriptionCard({
           </div>
         )}
 
-        {/* Cancellation Confirmation Dialog */}
-        {showCancelConfirm && (
-          <div className="rounded-xl border border-rose-500/30 bg-rose-500/5 p-4 space-y-3 animate-in fade-in">
-            <div className="flex items-start gap-2.5">
-              <AlertTriangle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
-              <p className="text-xs text-rose-300 leading-relaxed">
-                {t("confirmCancelSub")}
-              </p>
-            </div>
-            <div className="flex justify-end gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => setShowCancelConfirm(false)}
-                disabled={isCanceling}
-                className="rounded-lg px-3 py-1.5 text-xs font-medium text-[var(--text-muted)] hover:bg-[var(--surface-2)] transition-colors"
-              >
-                Back
-              </button>
-              <button
-                type="button"
-                onClick={handleCancelSubscription}
-                disabled={isCanceling}
-                className="flex items-center gap-1.5 rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-rose-700 transition-colors"
-              >
-                {isCanceling ? (
-                  <>
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    <span>{t("cancelingSub")}</span>
-                  </>
-                ) : (
-                  <span>{t("cancelSubscription")}</span>
-                )}
-              </button>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Strict Cancellation Confirmation Modal */}
+      <CancelSubscriptionModal
+        isOpen={showCancelConfirm}
+        onClose={() => setShowCancelConfirm(false)}
+        onConfirm={handleCancelSubscription}
+        isCanceling={isCanceling}
+        planName={subscription?.planName || "Pro"}
+      />
 
       {/* Upgrade / Select Plan Modal */}
       <PlanSelectionModal

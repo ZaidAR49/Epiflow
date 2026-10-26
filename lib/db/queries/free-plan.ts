@@ -64,7 +64,14 @@ export async function ensureUserFreeSubscription(userId: string): Promise<string
       'system',
       ${providerSubId}
     )
-    ON CONFLICT (provider, provider_subscription_id) DO NOTHING;
+    ON CONFLICT (provider, provider_subscription_id) DO UPDATE
+    SET
+      status = 'active',
+      current_period_start = now(),
+      current_period_end = now() + interval '100 years',
+      canceled_at = null,
+      cancel_at_period_end = false,
+      updated_at = now();
   `);
 
   const activeSubRows = await db.execute<{ id: string }>(sql`
@@ -114,7 +121,10 @@ export async function ensureUserFreeSubscription(userId: string): Promise<string
         FROM public.workflows w
         CROSS JOIN public.usage_meters m
         WHERE w.slug = ${wfSlug}::text AND m.key = ${meterKey}::text
-        ON CONFLICT (user_id, workflow_id, meter_id) DO NOTHING;
+        ON CONFLICT (user_id, workflow_id, meter_id) DO UPDATE
+        SET
+          limit_value = EXCLUDED.limit_value,
+          period = EXCLUDED.period;
       `);
     }
   }

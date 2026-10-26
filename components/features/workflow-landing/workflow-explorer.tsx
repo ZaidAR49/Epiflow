@@ -111,16 +111,16 @@ export function WorkflowExplorer({
       className="max-w-5xl mx-auto surface-card rounded-xl overflow-hidden shadow-[0_24px_80px_rgba(0,0,0,0.65)]"
     >
       {/* Top URL Bar & Preset Selector */}
-      <div className="p-6 sm:p-8 border-b hairline-border bg-[var(--bg)]/50 space-y-5">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-2">
+      <div className="p-4 sm:p-6 lg:p-8 border-b hairline-border bg-[var(--bg)]/50 space-y-4 sm:space-y-5 min-w-0">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
             <span className="font-mono text-xs text-[var(--text-muted)] me-1">
               {t("explorerSampleLinks")}
             </span>
             <button
               type="button"
               onClick={() => handleSelectPreset("acme", t("explorerPresetAcme"))}
-              className={`px-3 py-1.5 rounded-lg text-xs font-mono border transition-all ${
+              className={`px-2.5 sm:px-3 py-1 rounded-lg text-xs font-mono border transition-all ${
                 currentPresetKey === "acme"
                   ? "bg-[var(--accent)]/15 text-[var(--text)] border-[var(--accent)]/50"
                   : "surface-card text-[var(--text-muted)] hover:text-[var(--text)]"
@@ -131,7 +131,7 @@ export function WorkflowExplorer({
             <button
               type="button"
               onClick={() => handleSelectPreset("nebula", t("explorerPresetNebula"))}
-              className={`px-3 py-1.5 rounded-lg text-xs font-mono border transition-all ${
+              className={`px-2.5 sm:px-3 py-1 rounded-lg text-xs font-mono border transition-all ${
                 currentPresetKey === "nebula"
                   ? "bg-[var(--accent)]/15 text-[var(--text)] border-[var(--accent)]/50"
                   : "surface-card text-[var(--text-muted)] hover:text-[var(--text)]"
@@ -142,7 +142,7 @@ export function WorkflowExplorer({
             <button
               type="button"
               onClick={() => handleSelectPreset("stealth", t("explorerPresetStealth"))}
-              className={`px-3 py-1.5 rounded-lg text-xs font-mono border transition-all ${
+              className={`px-2.5 sm:px-3 py-1 rounded-lg text-xs font-mono border transition-all ${
                 currentPresetKey === "stealth"
                   ? "bg-[var(--accent)]/15 text-[var(--text)] border-[var(--accent)]/50"
                   : "surface-card text-[var(--text-muted)] hover:text-[var(--text)]"
@@ -156,14 +156,14 @@ export function WorkflowExplorer({
             <button
               type="button"
               onClick={() => setAutoStep(!autoStep)}
-              className="px-3 py-1.5 rounded-lg surface-card hover:bg-[var(--surface-2)] font-mono text-xs text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
+              className="flex-1 sm:flex-initial px-2.5 sm:px-3 py-1.5 rounded-lg surface-card hover:bg-[var(--surface-2)] font-mono text-xs text-[var(--text-muted)] hover:text-[var(--text)] transition-colors text-center"
             >
               {autoStep ? t("explorerPauseAutoStep") : t("explorerResumeAutoStep")}
             </button>
             <button
               type="button"
               onClick={() => setStackedMode(!stackedMode)}
-              className={`px-3.5 py-1.5 rounded-lg font-mono text-xs border transition-all ${
+              className={`flex-1 sm:flex-initial px-3 sm:px-3.5 py-1.5 rounded-lg font-mono text-xs border transition-all text-center ${
                 stackedMode
                   ? "bg-[var(--accent)] text-white border-[var(--accent)]"
                   : "surface-card hover:bg-[var(--surface-2)] text-[var(--accent)] border-[var(--accent)]/30"
@@ -175,9 +175,9 @@ export function WorkflowExplorer({
         </div>
 
         {/* URL Input Box + Trigger */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex-1 flex items-center px-4 py-3 rounded-lg bg-[var(--bg)] border hairline-border focus-within:border-[var(--accent)] transition-colors">
-            <span className="font-mono text-xs text-[var(--accent)] me-3 select-none shrink-0">
+        <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 min-w-0">
+          <div className="flex-1 flex items-center px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-lg bg-[var(--bg)] border hairline-border focus-within:border-[var(--accent)] transition-colors min-w-0">
+            <span className="font-mono text-[11px] sm:text-xs text-[var(--accent)] me-2 sm:me-3 select-none shrink-0">
               {t("explorerUrlLabel")}
             </span>
             <input
@@ -185,14 +185,14 @@ export function WorkflowExplorer({
               value={inputUrl}
               onChange={(e) => setInputUrl(e.target.value)}
               aria-label="LinkedIn Post URL"
-              className="w-full bg-transparent font-mono text-xs sm:text-sm text-[var(--text)] focus:outline-none truncate"
+              className="w-full bg-transparent font-mono text-xs sm:text-sm text-[var(--text)] focus:outline-none truncate min-w-0"
               dir="ltr"
             />
           </div>
           <button
             type="button"
             onClick={handleRunInspection}
-            className="px-6 py-3 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium text-sm shrink-0 transition-all flex items-center justify-center gap-2"
+            className="w-full sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium text-sm shrink-0 transition-all flex items-center justify-center gap-2"
           >
             <span>{t("explorerInspectBtn")}</span>
             <ArrowRight className="w-4 h-4 rtl:-scale-x-100" />
@@ -210,7 +210,7 @@ export function WorkflowExplorer({
       />
 
       {/* STAGE VIEWPORT AREA */}
-      <div className="p-8 sm:p-10 lg:p-12 min-h-[430px] flex flex-col justify-between bg-[var(--surface)]">
+      <div className="p-4 sm:p-8 lg:p-12 min-h-[380px] sm:min-h-[430px] flex flex-col justify-between bg-[var(--surface)] min-w-0">
         {stackedMode ? (
           <StackedXrayView
             data={activePreset}
@@ -242,11 +242,11 @@ export function WorkflowExplorer({
         )}
 
         {/* Clean Bottom Status Bar */}
-        <div className="pt-6 mt-8 border-t hairline-border flex flex-wrap items-center justify-between gap-4 font-mono text-xs text-[var(--text-muted)]">
-          <span>
+        <div className="pt-5 sm:pt-6 mt-6 sm:mt-8 border-t hairline-border flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4 font-mono text-xs text-[var(--text-muted)] text-start">
+          <span className="break-words">
             {stackedMode ? t("explorerStackedDesc") : stageDescriptions[currentStage]}
           </span>
-          <span>{t("explorerGuaranteeBar")}</span>
+          <span className="shrink-0">{t("explorerGuaranteeBar")}</span>
         </div>
       </div>
     </div>

@@ -24,30 +24,33 @@ export function WorkflowStepperBar({
         const isActive = currentStage === stageIndex && !stackedMode;
         const isFinished = currentStage > stageIndex && !stackedMode;
         const barWidth = isActive ? `${progress}%` : isFinished ? "100%" : "0%";
+        const isLastOddItem = idx === 4;
 
         return (
           <button
             key={stageIndex}
             type="button"
             onClick={() => onSelectStage(stageIndex)}
-            className={`text-start p-4 sm:p-5 border-e border-b lg:border-b-0 hairline-border relative focus:outline-none transition-colors ${
+            className={`text-start p-3 sm:p-4 lg:p-5 border-e border-b lg:border-b-0 hairline-border relative focus:outline-none transition-colors min-w-0 ${
+              isLastOddItem ? "col-span-2 sm:col-span-1" : ""
+            } ${
               isActive ? "bg-[var(--surface-2)]/70" : "hover:bg-[var(--surface-2)]/40"
             }`}
           >
-            <div className="flex items-center justify-between font-mono text-xs mb-1.5">
+            <div className="flex items-center justify-between font-mono text-[11px] sm:text-xs mb-1">
               <span
-                className={`font-semibold ${
+                className={`font-semibold shrink-0 ${
                   isActive ? "text-[var(--accent)]" : "text-[var(--text-muted)]"
                 }`}
               >
                 {s.num}
               </span>
-              <span className="text-[var(--text-muted)] text-[11px]">
+              <span className="text-[var(--text-muted)] text-[10px] sm:text-[11px] truncate ms-1">
                 {s.category}
               </span>
             </div>
             <div
-              className={`font-heading font-semibold text-xs sm:text-sm ${
+              className={`font-heading font-semibold text-xs sm:text-sm truncate ${
                 isActive ? "text-[var(--text)]" : "text-[var(--text-muted)]"
               }`}
             >

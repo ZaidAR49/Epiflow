@@ -93,8 +93,8 @@ export function ActivityFeed({ runs, locale }: ActivityFeedProps) {
           <p>{t("noRecentActivity")}</p>
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-start text-sm">
+        <div className="overflow-x-auto -mx-5 px-5 sm:mx-0 sm:px-0">
+          <table className="w-full min-w-[540px] text-start text-sm">
             <thead>
               <tr className="border-b border-[var(--border)]/60 text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">
                 <th className="py-2.5 ps-3 pe-4 text-start">{t("workflow")}</th>

@@ -33,7 +33,7 @@ export function WorkflowPricingCards({
   const activePlans = plans.filter((plan) => plan.isActive);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch text-start">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 items-stretch text-start min-w-0">
       {activePlans.map((plan) => {
         const isFree = plan.priceMinor === 0 || plan.code === "free";
         const isPro = plan.code === "pro";
@@ -131,7 +131,7 @@ export function WorkflowPricingCards({
         return (
           <div
             key={plan.id}
-            className={`p-8 sm:p-10 rounded-xl flex flex-col justify-between relative transition-all ${
+            className={`p-5 sm:p-8 lg:p-10 rounded-xl flex flex-col justify-between relative transition-all min-w-0 ${
               isPro
                 ? "bg-[var(--surface-2)] border-2 border-[var(--accent)] shadow-[0_0_45px_rgba(99,102,241,0.22)]"
                 : "surface-card"
@@ -184,7 +184,7 @@ export function WorkflowPricingCards({
               </p>
 
               {/* Entitlement Quota & Features */}
-              <ul className="space-y-4 text-sm text-[var(--text-muted)] mb-10">
+              <ul className="space-y-3 sm:space-y-4 text-sm text-[var(--text-muted)] mb-6 sm:mb-10">
                 <li className="flex items-center gap-3">
                   <span
                     className={`w-1.5 h-1.5 rounded-full ${

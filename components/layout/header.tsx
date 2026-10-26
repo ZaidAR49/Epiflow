@@ -135,7 +135,6 @@ export function Header({
         <nav className="hidden md:flex items-center gap-1 lg:gap-1.5 text-xs font-semibold" aria-label="Main navigation">
           {([
             { href: `/${locale}#workflows`, label: t("workflows") },
-            { href: `/${locale}#pillars`, label: t("architecture") },
             { href: `/${locale}/contact`, label: t("contact") },
             ...(isSignedIn ? [{ href: `/${locale}/dashboard`, label: t("dashboard") }] : []),
             ...(userRole === "admin" ? [{ href: `/${locale}/admin`, label: t("admin") }] : []),

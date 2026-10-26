@@ -33,27 +33,27 @@ export function Stage2Panel({ data }: Stage2PanelProps) {
         </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 min-w-0">
         {/* Card 1: Role & Meta */}
-        <div className="p-6 rounded-xl bg-[var(--bg)] border hairline-border flex flex-col justify-between">
+        <div className="p-4 sm:p-6 rounded-xl bg-[var(--bg)] border hairline-border flex flex-col justify-between min-w-0">
           <div>
             <span className="font-mono text-xs text-[var(--text-muted)] uppercase">
               {t("s2ScopeHeader")}
             </span>
-            <h4 className="text-lg font-bold text-[var(--text)] mt-2">
+            <h4 className="text-base sm:text-lg font-bold text-[var(--text)] mt-2 break-words">
               {data.role}
             </h4>
-            <div className="font-mono text-xs text-[var(--accent)] mt-2">
+            <div className="font-mono text-xs text-[var(--accent)] mt-2 break-words">
               {data.metaLine}
             </div>
           </div>
-          <p className="text-xs text-[var(--text-muted)] mt-6 pt-4 border-t hairline-border">
+          <p className="text-xs text-[var(--text-muted)] mt-5 sm:mt-6 pt-3 sm:pt-4 border-t hairline-border">
             {t("s2ScopeSub")}
           </p>
         </div>
 
         {/* Card 2: Key Responsibilities & Preferred Skills */}
-        <div className="p-6 rounded-xl bg-[var(--bg)] border hairline-border flex flex-col justify-between">
+        <div className="p-4 sm:p-6 rounded-xl bg-[var(--bg)] border hairline-border flex flex-col justify-between min-w-0">
           <div>
             <span className="font-mono text-xs text-[var(--text-muted)] uppercase">
               {t("s2ReqsHeader")}

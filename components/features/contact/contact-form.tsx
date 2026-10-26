@@ -100,7 +100,7 @@ export function ContactForm() {
   }
 
   return (
-    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-xl sm:p-8">
+    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-8 shadow-xl min-w-0">
       {errorMessage && (
         <div className="mb-6 flex items-start gap-3 rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-xs font-medium text-rose-300">
           <AlertCircle className="h-4 w-4 shrink-0 text-rose-400 mt-0.5" />
@@ -116,7 +116,7 @@ export function ContactForm() {
             opacity: 0,
             position: "absolute",
             top: 0,
-            left: 0,
+            insetInlineStart: 0,
             height: 0,
             width: 0,
             zIndex: -1,

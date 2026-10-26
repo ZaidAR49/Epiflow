@@ -4,6 +4,7 @@ import { sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { db } from "../client";
 import { logger } from "@/lib/logger";
+import { ensureUserFreeSubscription } from "./free-plan";
 
 export interface SyncSubscriptionParams {
   providerSubscriptionId: string;
@@ -129,6 +130,16 @@ export async function syncLemonSqueezySubscription(
         { userId, planId, subId, status: params.status },
         "[BillingWebhook] Applied plan entitlements successfully"
       );
+
+      // Close any other lingering active paid subscriptions for this user
+      await db.execute(sql`
+        UPDATE public.subscriptions
+        SET status = 'canceled', canceled_at = now(), updated_at = now()
+        WHERE user_id = ${userId}::uuid
+          AND id != ${subId}::uuid
+          AND status IN ('active', 'trialing')
+          AND provider != 'system';
+      `);
     } catch (rpcErr) {
       logger.error(
         { err: rpcErr, userId, planId, subId },
@@ -144,6 +155,9 @@ export async function syncLemonSqueezySubscription(
         { subId, status: params.status },
         "[BillingWebhook] Revoked subscription access successfully"
       );
+
+      // Re-enroll user in the default Free tier
+      await ensureUserFreeSubscription(userId);
     } catch (rpcErr) {
       logger.error(
         { err: rpcErr, subId },

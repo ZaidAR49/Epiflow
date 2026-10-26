@@ -14,9 +14,9 @@ export function Footer() {
     <footer className="border-t border-[var(--border)] bg-[var(--surface)]/95 text-xs text-[var(--text-muted)] mt-auto transition-colors">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-14">
         {/* Top Grid: Brand & Structured Navigation */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 lg:gap-8 pb-12 border-b border-[var(--border)]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 sm:gap-10 lg:gap-8 pb-10 sm:pb-12 border-b border-[var(--border)]">
           {/* Brand & Mission Column (Spans 2 cols on lg) */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className="sm:col-span-2 lg:col-span-2 space-y-4">
             <Link
               href={`/${locale}`}
               className="group inline-flex items-center gap-2.5 focus:outline-hidden"
@@ -83,14 +83,6 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  href={`/${locale}#pillars`}
-                  className="hover:text-[var(--text)] transition-colors"
-                >
-                  {t("architecture")}
-                </Link>
-              </li>
-              <li>
-                <Link
                   href={`/${locale}/contact`}
                   className="hover:text-[var(--text)] transition-colors"
                 >
@@ -141,11 +133,11 @@ export function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-[var(--text-muted)]">
+        <div className="pt-6 sm:pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-[var(--text-muted)] text-center sm:text-start">
           <p>
             {t("platformName")} &copy; {new Date().getFullYear()}. {t("allRightsReserved")}
           </p>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
             <Link
               href={`/${locale}/privacy`}
               className="hover:text-[var(--text)] transition-colors"

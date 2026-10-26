@@ -17,6 +17,7 @@ import { ensureUserFreeSubscription } from "@/lib/db/queries/free-plan";
 import {
   createLemonSqueezyCheckout,
   getLemonSqueezyCustomerPortalUrl,
+  cancelLemonSqueezySubscription,
 } from "@/lib/services/billing/lemonsqueezy";
 import { getServerEnv } from "@/lib/env";
 import { logger } from "@/lib/logger";
@@ -254,10 +255,22 @@ export async function cancelUserSubscriptionAction(subscriptionId: string) {
       return { success: false, error: "Active subscription not found for your account" };
     }
 
-    const success = await cancelSubscription(subscriptionId);
+    if (currentSub.planCode === "free" || currentSub.provider === "system" || currentSub.planPriceMinor === 0) {
+      return { success: false, error: "Free plan does not have an active billing subscription to cancel" };
+    }
+
+    // If active Lemon Squeezy subscription, terminate recurring billing at provider
+    if (currentSub.provider === "lemonsqueezy" && currentSub.providerSubscriptionId) {
+      await cancelLemonSqueezySubscription(currentSub.providerSubscriptionId);
+    }
+
+    const success = await cancelSubscription(subscriptionId, session.user.id);
     if (!success) {
       return { success: false, error: "Failed to cancel subscription" };
     }
+
+    // Seamlessly restore default Free tier access and quotas
+    await ensureUserFreeSubscription(session.user.id);
 
     revalidatePath("/profile");
     revalidatePath("/admin");

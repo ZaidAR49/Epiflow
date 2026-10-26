@@ -74,11 +74,11 @@ export function WorkflowConsoleView({
               </div>
             )}
             <div>
-              <div className="flex items-center gap-2.5">
-                <h1 className="text-2xl font-extrabold tracking-tight text-[var(--text)]">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 min-w-0">
+                <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--text)] break-words">
                   {workflow.workflowName}
                 </h1>
-                <span className="rounded-md bg-[var(--accent)]/10 px-2.5 py-0.5 text-xs font-semibold text-[var(--accent)] border border-[var(--accent)]/20">
+                <span className="rounded-md bg-[var(--accent)]/10 px-2.5 py-0.5 text-xs font-semibold text-[var(--accent)] border border-[var(--accent)]/20 shrink-0">
                   Console
                 </span>
               </div>
@@ -104,9 +104,9 @@ export function WorkflowConsoleView({
       </div>
 
       {/* Main Two-Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start min-w-0">
         {/* Left Column: Interactive Browser Chat (Spacious & Zoomable) */}
-        <div className="lg:col-span-7 space-y-4">
+        <div className="lg:col-span-7 space-y-4 min-w-0">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] flex items-center gap-1.5">
               <Sparkles className="h-3.5 w-3.5 text-[var(--accent)]" />
@@ -128,7 +128,7 @@ export function WorkflowConsoleView({
             isRunning={isRunning}
             syncToTelegram={syncToTelegram}
             onToggleSyncToTelegram={setSyncToTelegram}
-            heightClass="h-[620px]"
+            heightClass="h-[420px] sm:h-[520px] lg:h-[620px]"
             allowZoom={true}
             title={workflow.workflowName}
             avatarUrl={workflow.imageUrl}
@@ -136,7 +136,7 @@ export function WorkflowConsoleView({
         </div>
 
         {/* Right Column: Workflow-specific Usage Meter & Metadata Preferences */}
-        <div className="lg:col-span-5 space-y-6">
+        <div className="lg:col-span-5 space-y-5 sm:space-y-6 min-w-0">
           <WorkflowQuotaCard
             usageCount={workflow.usageCount}
             usageLimit={workflow.usageLimit}

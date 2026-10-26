@@ -25,7 +25,7 @@ export function WorkflowFooter({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
         {/* Top Row: Workflow Brand & Navigation Links */}
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 pb-8 border-b border-[var(--border)]">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <Link
               href={`/${locale}`}
               className="flex items-center gap-2.5 text-[var(--text)] hover:text-[var(--accent)] transition-colors"

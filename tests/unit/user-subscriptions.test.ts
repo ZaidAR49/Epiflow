@@ -21,6 +21,16 @@ vi.mock("@/lib/db/queries/plans", () => ({
   getPlanById: (...args: unknown[]) => mockGetPlanById(...args),
 }));
 
+vi.mock("@/lib/db/queries/free-plan", () => ({
+  ensureUserFreeSubscription: vi.fn().mockResolvedValue("free-sub-id"),
+}));
+
+vi.mock("@/lib/services/billing/lemonsqueezy", () => ({
+  createLemonSqueezyCheckout: vi.fn(),
+  getLemonSqueezyCustomerPortalUrl: vi.fn(),
+  cancelLemonSqueezySubscription: vi.fn().mockResolvedValue(true),
+}));
+
 vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
 }));
@@ -135,6 +145,25 @@ describe("User Subscription & Mock Checkout Actions", () => {
       expect(mockCancelSubscription).not.toHaveBeenCalled();
     });
 
+    it("rejects canceling a free plan subscription", async () => {
+      mockAuth.mockResolvedValueOnce({
+        user: { id: "user-456" },
+      });
+
+      mockGetUserSubscription.mockResolvedValueOnce({
+        id: "sub-free",
+        userId: "user-456",
+        planCode: "free",
+        provider: "system",
+        planPriceMinor: 0,
+      });
+
+      const result = await cancelUserSubscriptionAction("sub-free");
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("Free plan");
+      expect(mockCancelSubscription).not.toHaveBeenCalled();
+    });
+
     it("successfully cancels subscription when user owns it", async () => {
       mockAuth.mockResolvedValueOnce({
         user: { id: "user-456" },
@@ -143,13 +172,17 @@ describe("User Subscription & Mock Checkout Actions", () => {
       mockGetUserSubscription.mockResolvedValueOnce({
         id: "sub-789",
         userId: "user-456",
+        planCode: "pro",
+        provider: "lemonsqueezy",
+        planPriceMinor: 1900,
+        providerSubscriptionId: "ls_sub_123",
       });
 
       mockCancelSubscription.mockResolvedValueOnce(true);
 
       const result = await cancelUserSubscriptionAction("sub-789");
       expect(result.success).toBe(true);
-      expect(mockCancelSubscription).toHaveBeenCalledWith("sub-789");
+      expect(mockCancelSubscription).toHaveBeenCalledWith("sub-789", "user-456");
     });
   });
 });

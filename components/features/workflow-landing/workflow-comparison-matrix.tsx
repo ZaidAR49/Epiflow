@@ -40,52 +40,52 @@ export function WorkflowComparisonMatrix() {
   ];
 
   return (
-    <section id="comparison" className="py-24 lg:py-32 border-b hairline-border">
-      <div className="max-w-6xl mx-auto px-6 lg:px-8">
-        <div className="max-w-3xl mx-auto text-center mb-16 lg:mb-20">
+    <section id="comparison" className="py-12 sm:py-20 lg:py-28 border-b hairline-border">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 min-w-0">
+        <div className="max-w-3xl mx-auto text-center mb-10 sm:mb-16 lg:mb-20 min-w-0">
           <span className="font-mono text-xs uppercase tracking-widest text-[var(--accent)]">
             {t("compEyebrow")}
           </span>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--text)] mt-3 mb-5">
+          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-[var(--text)] mt-3 mb-4 break-words">
             {t("compTitle")}
           </h2>
-          <p className="text-[var(--text-muted)] text-lg">
+          <p className="text-[var(--text-muted)] text-sm sm:text-base lg:text-lg leading-relaxed">
             {t("compSubtitle")}
           </p>
         </div>
 
         {/* Spacious Comparison Table */}
-        <div className="surface-card rounded-xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-start border-collapse">
+        <div className="surface-card rounded-xl overflow-hidden min-w-0">
+          <div className="overflow-x-auto scrollbar-hide">
+            <table className="w-full text-start border-collapse min-w-[540px]">
               <thead>
                 <tr className="border-b hairline-border bg-[var(--bg)]/60 font-mono text-xs uppercase tracking-wider">
-                  <th className="py-5 px-6 sm:px-8 text-start text-[var(--text-muted)] w-1/4">
+                  <th className="py-3.5 sm:py-5 px-4 sm:px-6 lg:px-8 text-start text-[var(--text-muted)] w-1/4">
                     {t("compThCapability")}
                   </th>
-                  <th className="py-5 px-6 sm:px-8 text-start text-[var(--text-muted)] w-3/8">
+                  <th className="py-3.5 sm:py-5 px-4 sm:px-6 lg:px-8 text-start text-[var(--text-muted)] w-3/8">
                     {t("compThManual")}
                   </th>
-                  <th className="py-5 px-6 sm:px-8 text-start text-[var(--accent)] font-semibold bg-[var(--accent)]/10 w-3/8">
+                  <th className="py-3.5 sm:py-5 px-4 sm:px-6 lg:px-8 text-start text-[var(--accent)] font-semibold bg-[var(--accent)]/10 w-3/8">
                     {t("compThXray")}
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y hairline-border text-sm">
+              <tbody className="divide-y hairline-border text-xs sm:text-sm">
                 {rows.map((row, idx) => (
                   <tr key={idx}>
-                    <td className="py-5 px-6 sm:px-8 font-medium text-[var(--text)]">
+                    <td className="py-3.5 sm:py-5 px-4 sm:px-6 lg:px-8 font-medium text-[var(--text)]">
                       {row.cap}
                     </td>
                     <td
-                      className={`py-5 px-6 sm:px-8 text-[var(--text-muted)] ${
+                      className={`py-3.5 sm:py-5 px-4 sm:px-6 lg:px-8 text-[var(--text-muted)] ${
                         row.isNum ? "font-mono tabular" : ""
                       }`}
                     >
                       {row.manual}
                     </td>
                     <td
-                      className={`py-5 px-6 sm:px-8 bg-[var(--accent)]/5 ${
+                      className={`py-3.5 sm:py-5 px-4 sm:px-6 lg:px-8 bg-[var(--accent)]/5 ${
                         row.isNum
                           ? "font-mono font-semibold text-emerald-400 tabular"
                           : "text-[var(--text)] font-medium"

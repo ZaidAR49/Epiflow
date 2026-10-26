@@ -28,17 +28,26 @@ export function WorkflowNavBar({
   const t = useTranslations("workflowLanding");
   const tCommon = useTranslations("common");
 
+  React.useEffect(() => {
+    if (!isMobileMenuOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsMobileMenuOpen(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isMobileMenuOpen]);
+
   return (
     <header className="sticky top-0 z-40 bg-[var(--surface)]/85 backdrop-blur-md border-b border-[var(--border)] transition-colors">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3 sm:gap-4">
         {/* Brand & Breadcrumb Architecture (Apify / Vercel style) */}
-        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <Link
             href={`/${locale}`}
             className="group/brand flex items-center gap-2.5 shrink-0 transition-opacity hover:opacity-95 focus:outline-hidden"
             title={`${tCommon("platformName")} — ${tCommon("home")}`}
           >
-            <EpiFlowLogo variant="icon" height={34} glow />
+            <EpiFlowLogo variant="icon" height={32} glow />
             <span className="text-base font-extrabold tracking-tight text-[var(--text)] group-hover/brand:text-white transition-colors">
               {tCommon("platformName")}
             </span>
@@ -53,11 +62,11 @@ export function WorkflowNavBar({
 
           <a
             href="#top"
-            className="group/wf flex items-center gap-2 min-w-0 rounded-lg px-2 py-1 transition-colors hover:bg-[var(--surface-2)]"
+            className="group/wf flex items-center gap-1.5 sm:gap-2 min-w-0 rounded-lg px-1.5 sm:px-2 py-1 transition-colors hover:bg-[var(--surface-2)]"
             title={workflowName}
           >
             {imageUrl && (
-              <div className="relative flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-md border border-[var(--border)] bg-[var(--surface-2)] shadow-xs transition-transform duration-200 group-hover/wf:scale-105 group-hover/wf:border-[var(--accent)]/50">
+              <div className="relative flex h-5 w-5 sm:h-6 sm:w-6 shrink-0 items-center justify-center overflow-hidden rounded-md border border-[var(--border)] bg-[var(--surface-2)] shadow-xs transition-transform duration-200 group-hover/wf:scale-105 group-hover/wf:border-[var(--accent)]/50">
                 <Image
                   src={imageUrl}
                   alt={workflowName}
@@ -67,7 +76,7 @@ export function WorkflowNavBar({
                 />
               </div>
             )}
-            <span className="text-xs sm:text-sm font-semibold text-[var(--text)] truncate transition-colors group-hover/wf:text-[var(--accent)]">
+            <span className="text-xs sm:text-sm font-semibold text-[var(--text)] truncate max-w-[100px] xs:max-w-[150px] sm:max-w-xs transition-colors group-hover/wf:text-[var(--accent)]">
               {workflowName}
             </span>
           </a>
@@ -114,13 +123,13 @@ export function WorkflowNavBar({
         </nav>
 
         {/* Primary CTA, Language Switcher & Mobile Toggle */}
-        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <LocaleSwitcher />
 
           {hasAccess || isAuthenticated ? (
             <Link
               href={`/${locale}/workflows/${slug}/console`}
-              className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-xs transition-all flex items-center gap-1.5"
+              className="hidden sm:inline-flex px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-xs transition-all items-center gap-1.5"
             >
               <span>{t("navOpenConsole")}</span>
               <ArrowRight className="w-3.5 h-3.5 rtl:-scale-x-100" />
@@ -128,7 +137,7 @@ export function WorkflowNavBar({
           ) : (
             <Link
               href={`/${locale}/sign-in?callbackUrl=/${locale}/workflows/${slug}/console`}
-              className="px-3.5 py-1.5 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-white text-xs font-semibold shadow-xs transition-all flex items-center gap-1.5"
+              className="hidden sm:inline-flex px-3.5 py-1.5 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-white text-xs font-semibold shadow-xs transition-all items-center gap-1.5"
             >
               <span>{t("navStartFree")}</span>
               <ArrowRight className="w-3.5 h-3.5 rtl:-scale-x-100" />
@@ -139,7 +148,7 @@ export function WorkflowNavBar({
             type="button"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             aria-label={t("navMenu")}
-            className="lg:hidden inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface-2)]/80 text-[var(--text)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+            className="lg:hidden inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface-2)]/80 text-[var(--text)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors focus:outline-hidden focus:ring-2 focus:ring-[var(--accent)]"
           >
             {isMobileMenuOpen ? (
               <X className="h-5 w-5" />

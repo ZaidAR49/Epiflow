@@ -193,7 +193,10 @@ export async function createMockSubscription(
 /**
  * Cancels a subscription and revokes workflow entitlements via DB RPC.
  */
-export async function cancelSubscription(subscriptionId: string): Promise<boolean> {
+export async function cancelSubscription(
+  subscriptionId: string,
+  userId?: string
+): Promise<boolean> {
   const result = await db.execute<{ updated: boolean }>(sql`
     UPDATE public.subscriptions
     SET status = 'canceled',
@@ -208,6 +211,19 @@ export async function cancelSubscription(subscriptionId: string): Promise<boolea
   await db.execute(sql`
     SELECT public.revoke_subscription_access(${subscriptionId}::uuid);
   `);
+
+  if (userId) {
+    await db.execute(sql`
+      UPDATE public.subscriptions
+      SET status = 'canceled',
+          canceled_at = now(),
+          updated_at = now()
+      WHERE user_id = ${userId}::uuid
+        AND id != ${subscriptionId}::uuid
+        AND status IN ('active', 'trialing')
+        AND provider != 'system';
+    `);
+  }
 
   return true;
 }

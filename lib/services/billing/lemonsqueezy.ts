@@ -223,3 +223,55 @@ export function verifyLemonSqueezyWebhookSignature(
     return false;
   }
 }
+
+/**
+ * Cancels a subscription in Lemon Squeezy via API.
+ */
+export async function cancelLemonSqueezySubscription(
+  subscriptionId: string
+): Promise<boolean> {
+  const env = getServerEnv();
+  const apiKey = env.LEMONSQUEEZY_API_KEY?.trim();
+
+  if (!apiKey) {
+    logger.warn("[LemonSqueezy] Missing API key for subscription cancellation");
+    return false;
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+
+    const res = await fetch(
+      `${LEMON_SQUEEZY_API_BASE}/subscriptions/${subscriptionId}`,
+      {
+        method: "DELETE",
+        headers: {
+          Accept: "application/vnd.api+json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        signal: controller.signal,
+      }
+    );
+
+    clearTimeout(timeout);
+
+    if (!res.ok) {
+      const errText = await res.text();
+      logger.error(
+        { status: res.status, errText, subscriptionId },
+        "[LemonSqueezy] Failed to cancel subscription via API"
+      );
+      return false;
+    }
+
+    logger.info({ subscriptionId }, "[LemonSqueezy] Successfully cancelled subscription via API");
+    return true;
+  } catch (error) {
+    logger.error(
+      { err: error, subscriptionId },
+      "[LemonSqueezy] Exception cancelling subscription via API"
+    );
+    return false;
+  }
+}
