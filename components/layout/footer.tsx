@@ -64,22 +64,6 @@ export function Footer() {
                   </span>
                 </Link>
               </li>
-              <li>
-                <span className="inline-flex items-center gap-1.5 text-[var(--text-muted)]/60 cursor-not-allowed">
-                  <span>Prospect X-Ray</span>
-                  <span className="rounded bg-[var(--surface-2)] px-1 py-0.2 text-[9px] font-medium text-[var(--text-muted)] border border-[var(--border)]">
-                    {t("roadmap")}
-                  </span>
-                </span>
-              </li>
-              <li>
-                <span className="inline-flex items-center gap-1.5 text-[var(--text-muted)]/60 cursor-not-allowed">
-                  <span>Resume Match</span>
-                  <span className="rounded bg-[var(--surface-2)] px-1 py-0.2 text-[9px] font-medium text-[var(--text-muted)] border border-[var(--border)]">
-                    {t("roadmap")}
-                  </span>
-                </span>
-              </li>
             </ul>
           </div>
 

@@ -15,24 +15,6 @@ export function WorkflowCatalog({
 }: WorkflowCatalogProps) {
   const t = useTranslations("landing");
 
-  // Planned workflows that illustrate the extensible platform vision
-  const upcomingWorkflows: WorkflowSummary[] = [
-    {
-      id: "upcoming-1",
-      slug: "prospect-xray",
-      name: t("workflows.prospectXray.name"),
-      imageUrl: null,
-      isActive: false,
-    },
-    {
-      id: "upcoming-2",
-      slug: "cv-match",
-      name: t("workflows.cvMatch.name"),
-      imageUrl: null,
-      isActive: false,
-    },
-  ];
-
   return (
     <section id="workflows" className="relative py-16 sm:py-24 border-t border-[var(--border)]/70">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -51,7 +33,13 @@ export function WorkflowCatalog({
         </div>
 
         {/* Dynamic Workflow Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div
+          className={
+            workflows.length === 1
+              ? "max-w-2xl mx-auto"
+              : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          }
+        >
           {/* Active Workflows from the Database */}
           {workflows.map((wf) => (
             <WorkflowCard
@@ -59,15 +47,6 @@ export function WorkflowCatalog({
               workflow={wf}
               isFlagship={wf.slug === "job-xray"}
               isSubscribed={subscribedSlugs.includes(wf.slug)}
-            />
-          ))}
-
-          {/* Upcoming Roadmap Workflows */}
-          {upcomingWorkflows.map((upcomingWf) => (
-            <WorkflowCard
-              key={upcomingWf.id}
-              workflow={upcomingWf}
-              isFlagship={false}
             />
           ))}
         </div>

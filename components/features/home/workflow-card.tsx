@@ -33,26 +33,6 @@ export function WorkflowCard({
             t("workflows.jobXray.tag4"),
           ],
         };
-      case "prospect-xray":
-        return {
-          category: t("workflows.prospectXray.category"),
-          description: t("workflows.prospectXray.description"),
-          tags: [
-            t("workflows.prospectXray.tag1"),
-            t("workflows.prospectXray.tag2"),
-            t("workflows.prospectXray.tag3"),
-          ],
-        };
-      case "cv-match":
-        return {
-          category: t("workflows.cvMatch.category"),
-          description: t("workflows.cvMatch.description"),
-          tags: [
-            t("workflows.cvMatch.tag1"),
-            t("workflows.cvMatch.tag2"),
-            t("workflows.cvMatch.tag3"),
-          ],
-        };
       default:
         return {
           category: "Automated Intelligence",

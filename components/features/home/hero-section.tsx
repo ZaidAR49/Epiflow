@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { useTranslations, useLocale } from "next-intl";
-import { ArrowRight, Sparkles, Layers, Zap, ShieldCheck, Globe } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { EpiFlowLogo } from "@/components/ui/epiflow-logo";
 
 interface HeroSectionProps {
@@ -58,29 +58,6 @@ export function HeroSection({ isSignedIn = false }: HeroSectionProps) {
           >
             <span>{isSignedIn ? t("openConsole") : t("signIn")}</span>
           </Link>
-        </div>
-
-        {/* Platform Stat Strip */}
-        <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto pt-8 border-t border-[var(--border)]/70">
-          <div className="flex flex-col items-center p-3 rounded-lg bg-[var(--surface)]/40 border border-[var(--border)]/40">
-            <Layers className="h-5 w-5 text-teal-400 mb-1" />
-            <span className="text-xs font-semibold text-[var(--text)]">{t("statWorkflows")}</span>
-          </div>
-
-          <div className="flex flex-col items-center p-3 rounded-lg bg-[var(--surface)]/40 border border-[var(--border)]/40">
-            <Zap className="h-5 w-5 text-sky-400 mb-1" />
-            <span className="text-xs font-semibold text-[var(--text)]">{t("statExecution")}</span>
-          </div>
-
-          <div className="flex flex-col items-center p-3 rounded-lg bg-[var(--surface)]/40 border border-[var(--border)]/40">
-            <ShieldCheck className="h-5 w-5 text-emerald-400 mb-1" />
-            <span className="text-xs font-semibold text-[var(--text)]">{t("statAccuracy")}</span>
-          </div>
-
-          <div className="flex flex-col items-center p-3 rounded-lg bg-[var(--surface)]/40 border border-[var(--border)]/40">
-            <Globe className="h-5 w-5 text-purple-400 mb-1" />
-            <span className="text-xs font-semibold text-[var(--text)]">{t("statLanguages")}</span>
-          </div>
         </div>
       </div>
     </section>

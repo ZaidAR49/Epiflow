@@ -147,23 +147,18 @@
     "heroEyebrow": "EpiFlow Autonomous AI Workflow Platform",
     "heroTitle": "Specialized AI Workflows for High-Friction Tasks.",
     "heroSubtitle": "EpiFlow orchestrates deterministic, end-to-end intelligence pipelines. Browse active workflows, inspect real-time outputs, and automate critical operations with verified accuracy.",
-    "exploreWorkflows": "Explore Active Workflows",
+    "exploreWorkflows": "Explore Workflow",
     "openConsole": "Open Platform Console",
     "signIn": "Sign In to EpiFlow",
-    "statWorkflows": "Specialized Workflows",
-    "statExecution": "Sub-Second Dispatch",
-    "statAccuracy": "Zero Hallucinations",
-    "statLanguages": "Bilingual EN / AR",
-    "catalogBadge": "Workflow Catalog",
-    "catalogTitle": "Active & Ready-to-Use Workflows",
-    "catalogSubtitle": "Each workflow runs a dedicated, multi-stage intelligence pipeline. Select a workflow below to view its dedicated landing page, explore features, and launch analyses.",
+    "catalogBadge": "Active Workflow",
+    "catalogTitle": "Production-Ready Autonomous Workflow",
+    "catalogSubtitle": "Each workflow runs a dedicated, multi-stage intelligence pipeline. Explore our flagship workflow below to view details and launch real-time analyses.",
     "seeLandingPage": "See Landing Page",
     "openWorkflow": "Launch Analysis",
     "statusActive": "Active & Operational",
     "statusComingSoon": "Roadmap / In Development",
     "badgeFlagship": "Flagship Launch",
     "badgeSubscribed": "Subscribed",
-    "badgeUpcoming": "Coming Soon",
     "featuresBadge": "Platform Architecture",
     "featuresTitle": "Engineered for Precision, Speed, and Reliability",
     "featuresSubtitle": "Why specialized workflows running on EpiFlow outperform generic AI prompts and brittle automation tools.",
@@ -177,7 +172,7 @@
     "pillar4Desc": "Engineered RTL-first with modern, authentic SaaS copywriting and Cairo typography designed specifically for the MENA market.",
     "ctaTitle": "Ready to Deploy Intelligent Automation?",
     "ctaSubtitle": "Start with our active flagship workflow or get in touch for custom enterprise workflow integrations.",
-    "ctaExplore": "Explore Workflows",
+    "ctaExplore": "Explore Workflow",
     "ctaStartFree": "Get Started Free",
     "workflows": {
       "jobXray": {
@@ -187,22 +182,6 @@
         "tag2": "Verified Email Guard",
         "tag3": "1-Click Gmail Draft",
         "tag4": "Bilingual EN/AR"
-      },
-      "prospectXray": {
-        "name": "Prospect X-Ray",
-        "category": "B2B Sales Intelligence",
-        "description": "Enriches corporate websites and executive profiles to compile high-signal outbound intelligence dossiers for sales teams.",
-        "tag1": "Company Intelligence",
-        "tag2": "Executive Profiles",
-        "tag3": "Outreach Ready"
-      },
-      "cvMatch": {
-        "name": "Resume Match & Gap Analysis",
-        "category": "Career Optimization",
-        "description": "Analyzes candidate resumes against target job specifications, providing ATS compatibility scores and missing keyword roadmaps.",
-        "tag1": "ATS Scoring",
-        "tag2": "Keyword Gap Analysis",
-        "tag3": "Interview Prep"
       }
     }
   },
