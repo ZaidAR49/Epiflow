@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   CheckCircle2,
@@ -12,8 +12,11 @@ import {
   XCircle,
   Trash2,
   Send,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import type { AdminUserItem } from "@/lib/db/queries/admin";
+import { UserExpandedDetails } from "./user-expanded-details";
 
 import type { AdminCallerRole } from "./admin-shell";
 
@@ -42,18 +45,33 @@ export function UserTableRow({
   onOpenQuota,
 }: UserTableRowProps) {
   const t = useTranslations("admin.users");
+  const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <tr className="hover:bg-[var(--surface-2)]/30 transition-colors">
-      <td className="py-3">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--surface-2)] font-semibold text-[var(--text)] border border-[var(--border)]">
-            {u.fullName.slice(0, 1).toUpperCase()}
-          </div>
-          <div>
-            <p className="font-medium text-[var(--text)]">
-              {u.fullName} {isSelf && <span className="text-[10px] text-[var(--accent)]">(You)</span>}
-            </p>
+    <>
+      <tr className="hover:bg-[var(--surface-2)]/30 transition-colors">
+        <td className="py-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              type="button"
+              onClick={() => setIsExpanded((prev) => !prev)}
+              className="p-1 rounded-md text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors cursor-pointer shrink-0"
+              title={isExpanded ? t("collapseDetails") : t("expandDetails")}
+              aria-expanded={isExpanded}
+            >
+              {isExpanded ? (
+                <ChevronDown className="h-4 w-4 text-[var(--accent)]" />
+              ) : (
+                <ChevronRight className="h-4 w-4 rtl:-scale-x-100" />
+              )}
+            </button>
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--surface-2)] font-semibold text-[var(--text)] border border-[var(--border)]">
+              {u.fullName.slice(0, 1).toUpperCase()}
+            </div>
+            <div>
+              <p className="font-medium text-[var(--text)]">
+                {u.fullName} {isSelf && <span className="text-[10px] text-[var(--accent)]">(You)</span>}
+              </p>
             <div className="flex items-center gap-2 text-[11px] text-[var(--text-muted)] flex-wrap">
               <span>{u.email ?? "No email"}</span>
               {u.telegramId && (
@@ -213,5 +231,13 @@ export function UserTableRow({
         </div>
       </td>
     </tr>
+    {isExpanded && (
+      <tr className="bg-[var(--surface-2)]/10">
+        <td colSpan={5} className="pb-3 pt-0 px-3">
+          <UserExpandedDetails user={u} />
+        </td>
+      </tr>
+    )}
+  </>
   );
 }

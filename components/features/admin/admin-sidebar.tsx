@@ -17,6 +17,7 @@ import {
   ArrowLeft,
   LogOut,
   Loader2,
+  Bell,
 } from "lucide-react";
 
 export type AdminTab =
@@ -26,7 +27,8 @@ export type AdminTab =
   | "subscriptions"
   | "payments"
   | "usageMeters"
-  | "users";
+  | "users"
+  | "notifications";
 
 interface AdminSidebarProps {
   activeTab: AdminTab;
@@ -90,6 +92,13 @@ const TAB_CONFIG: {
     activeBg: "bg-indigo-500/10",
     activeBorder: "border-indigo-500/40",
   },
+  {
+    id: "notifications",
+    icon: Bell,
+    color: "text-violet-400",
+    activeBg: "bg-violet-500/10",
+    activeBorder: "border-violet-500/40",
+  },
 ];
 
 const TAB_LABEL_KEYS: Record<AdminTab, string> = {
@@ -100,6 +109,7 @@ const TAB_LABEL_KEYS: Record<AdminTab, string> = {
   payments: "paymentsTab",
   usageMeters: "usageMetersTab",
   users: "usersTab",
+  notifications: "notificationsTab",
 };
 
 export function AdminSidebar({

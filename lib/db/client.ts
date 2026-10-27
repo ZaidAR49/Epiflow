@@ -15,9 +15,11 @@ const globalForDb = globalThis as unknown as {
 const sql =
   globalForDb.sqlClient ??
   postgres(connectionString ?? "postgresql://localhost:5432/postgres", {
-    max: 10,
-    idle_timeout: 20,
-    connect_timeout: 10,
+    max: 20,
+    idle_timeout: 30,
+    connect_timeout: 30,
+    max_lifetime: 60 * 10,
+    keep_alive: 30,
     prepare: false,
   });
 

@@ -37,6 +37,9 @@ export interface AdminUserItem {
   usageLimit: number | null;
   expiresAt: Date | null;
   createdAt: Date;
+  updatedAt: Date;
+  reasonForAccess: string | null;
+  preferredLanguage: string | null;
 }
 
 export async function getAdminStats(): Promise<AdminStats> {
@@ -146,6 +149,9 @@ export async function getAdminUsers(): Promise<AdminUserItem[]> {
     usage_limit: string | null;
     expires_at: string | null;
     created_at: string;
+    updated_at: string;
+    reason_for_access: string | null;
+    preferred_language: string | null;
   }>(sql`
     SELECT 
       u.id,
@@ -159,7 +165,10 @@ export async function getAdminUsers(): Promise<AdminUserItem[]> {
       COALESCE(au.used, 0)::text AS usage_count,
       au.limit_value::text AS usage_limit,
       uwa.expires_at,
-      u.created_at
+      u.created_at,
+      u.updated_at,
+      u.reason_for_access,
+      u.preferred_language
     FROM public.users u
     LEFT JOIN public.user_identities ui ON ui.user_id = u.id AND ui.provider = 'telegram'
     LEFT JOIN public.workflows w ON w.slug = 'job-xray'
@@ -182,6 +191,9 @@ export async function getAdminUsers(): Promise<AdminUserItem[]> {
     usageLimit: row.usage_limit !== null ? Number(row.usage_limit) : null,
     expiresAt: row.expires_at ? new Date(row.expires_at) : null,
     createdAt: new Date(row.created_at),
+    updatedAt: new Date(row.updated_at),
+    reasonForAccess: row.reason_for_access,
+    preferredLanguage: row.preferred_language,
   }));
 }
 

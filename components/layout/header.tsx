@@ -10,6 +10,8 @@ import { LocaleSwitcher } from "./locale-switcher";
 import { UserNav } from "@/components/features/auth/user-nav";
 import { MobileNav } from "./mobile-nav";
 import { EpiFlowLogo } from "@/components/ui/epiflow-logo";
+import { NotificationBell } from "@/components/features/notifications";
+import { SystemAnnouncementBanner } from "./system-announcement-banner";
 
 interface HeaderProps {
   userRole?: string;
@@ -70,6 +72,7 @@ export function Header({
 
   return (
     <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--surface)]/85 backdrop-blur-md transition-colors">
+      <SystemAnnouncementBanner isSignedIn={isSignedIn} />
       <div className="mx-auto flex max-w-7xl h-16 items-center justify-between px-4 sm:px-6 lg:px-8 gap-4">
         {/* Brand & Breadcrumb Architecture (Apify / Vercel style) */}
         <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
@@ -172,6 +175,7 @@ export function Header({
               <span>{backLink.label}</span>
             </Link>
           )}
+          <NotificationBell isSignedIn={isSignedIn} />
           <UserNav
             isSignedIn={isSignedIn}
             userName={userName}
@@ -187,6 +191,7 @@ export function Header({
 
         {/* Mobile & Small Screens: Compact Locale + Burger Menu */}
         <div className="flex md:hidden items-center gap-2 shrink-0">
+          <NotificationBell isSignedIn={isSignedIn} />
           <LocaleSwitcher />
           <MobileNav
             userRole={userRole}

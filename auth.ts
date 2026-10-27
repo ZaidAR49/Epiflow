@@ -112,21 +112,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (typeof token.picture === "string" && session.user) {
         session.user.image = token.picture;
       }
-      if (session.user && typeof token.userId === "string") {
-        try {
-          const sub = await getUserSubscription(token.userId);
-          const isPaid = Boolean(
-            sub &&
-              (sub.status === "active" || sub.status === "trialing") &&
-              sub.planPriceMinor > 0 &&
-              sub.planCode !== "free"
-          );
-          session.user.isSubscribed = isPaid;
-          session.user.planCode = isPaid && sub ? sub.planCode : undefined;
-        } catch {
-          session.user.isSubscribed = false;
-          session.user.planCode = undefined;
-        }
+      if (session.user) {
+        session.user.isSubscribed = Boolean(token.isSubscribed);
+        session.user.planCode = typeof token.planCode === "string" ? token.planCode : undefined;
       }
       if (
         session.user &&

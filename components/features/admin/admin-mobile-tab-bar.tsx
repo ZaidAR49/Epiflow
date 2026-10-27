@@ -11,6 +11,7 @@ import {
   Gauge,
   ShieldCheck,
   ArrowLeft,
+  Bell,
 } from "lucide-react";
 import type { AdminTab } from "./admin-sidebar";
 
@@ -26,6 +27,7 @@ const TAB_CONFIG: {
   { id: "payments", icon: Receipt, color: "text-amber-400" },
   { id: "usageMeters", icon: Gauge, color: "text-rose-400" },
   { id: "users", icon: Users, color: "text-indigo-400" },
+  { id: "notifications", icon: Bell, color: "text-violet-400" },
 ];
 
 const TAB_LABEL_KEYS: Record<AdminTab, string> = {
@@ -36,6 +38,7 @@ const TAB_LABEL_KEYS: Record<AdminTab, string> = {
   payments: "paymentsTab",
   usageMeters: "usageMetersTab",
   users: "usersTab",
+  notifications: "notificationsTab",
 };
 
 interface AdminMobileTabBarProps {

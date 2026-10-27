@@ -1,340 +1,368 @@
 -- =====================================================================
--- Z-flow — full database schema (public schema + storage bucket)
--- Generated 2026-10-24.
+-- Z-flow : full database schema (Supabase project mfikrhuzewundqlzwcad)
+-- Generated from the LIVE cloud database on 2026-10-27.
+-- Postgres 17. Order: extensions > types > tables > constraints >
+-- indexes > functions > triggers > RLS/grants > comments > seed > storage.
 --
--- STATUS: this is the TARGET schema =
---     your live database
---   + migration_usage_and_billing.sql   (usage meters, plans, subscriptions, payments)
---   + migration_hardening.sql           (security + performance)
---   + migration_simplify_and_align.sql  (roles, generic job_runs, index audit, aligned functions)
--- None of the three migrations has been applied to the live Supabase project yet, so the
--- live database does not contain what is below that those files add.
---
--- A plan grants SPECIFIC workflows only (plans.entitlements); a subscription
--- never gives access to everything.
---
--- SECURITY MODEL: every table has RLS enabled and NO policies, and the browser
--- roles (anon, authenticated) hold no privileges on any table or function.
--- Only the backend (service_role key, or a direct Postgres connection) can read
--- or write. If you later build a browser client that talks to Supabase directly,
--- add narrow policies + GRANTs for exactly the tables it needs.
---
--- Order: extensions, default privileges, enums, tables, constraints, indexes,
---        functions, triggers, RLS, privileges, seed data, storage.
--- Not included: user data.
+-- ACCESS MODEL (important for any AI agent / developer):
+--   * Every table has RLS enabled with NO policies, and only `service_role`
+--     has grants. anon / authenticated can read and write nothing.
+--   * All access goes through the backend using the service key.
+--   * This project does NOT use Supabase Auth (auth.users is empty);
+--     public.users is the app's own user table.
+--   * Free plan: keep it light. No pg_cron, no edge functions.
 -- =====================================================================
 
--- ---------------------------------------------------------------------
--- 1. EXTENSIONS (normally pre-enabled on Supabase)
--- ---------------------------------------------------------------------
-create extension if not exists pgcrypto with schema extensions;
-create extension if not exists "uuid-ossp" with schema extensions;
-create extension if not exists pg_stat_statements with schema extensions;
-create extension if not exists supabase_vault;
+SET search_path = public;
 
 -- ---------------------------------------------------------------------
--- 2. DEFAULT PRIVILEGES
---    Supabase hands anon/authenticated every new table and function by default.
---    Turn that off, so a table or function added later is never exposed by accident.
+-- 1. EXTENSIONS
 -- ---------------------------------------------------------------------
-ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON TABLES    FROM anon, authenticated;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON SEQUENCES FROM anon, authenticated;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC, anon, authenticated;
+CREATE EXTENSION IF NOT EXISTS pg_stat_statements WITH SCHEMA extensions;
+CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
+CREATE EXTENSION IF NOT EXISTS supabase_vault WITH SCHEMA vault;
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA extensions;
 
 -- ---------------------------------------------------------------------
--- 3. ENUM TYPES
+-- 2. ENUM TYPES
 -- ---------------------------------------------------------------------
-CREATE TYPE public.access_grant_source   AS ENUM ('admin', 'payment', 'promo');
+CREATE TYPE public.access_grant_source AS ENUM ('admin', 'payment', 'promo');
 CREATE TYPE public.access_request_status AS ENUM ('pending', 'approved', 'rejected');
-CREATE TYPE public.access_status         AS ENUM ('pending', 'approved', 'rejected', 'locked');
-CREATE TYPE public.credential_auth_type  AS ENUM ('api_key', 'oauth_refresh_token', 'oauth_client', 'basic_auth');
-CREATE TYPE public.credential_status     AS ENUM ('active', 'expired', 'revoked', 'needs_reauth');
-CREATE TYPE public.run_status            AS ENUM ('pending', 'running', 'completed', 'failed', 'canceled');
-CREATE TYPE public.user_role             AS ENUM ('admin', 'editor', 'viewer', 'user', 'guest');
+CREATE TYPE public.access_status AS ENUM ('pending', 'approved', 'rejected', 'locked');
+CREATE TYPE public.credential_auth_type AS ENUM ('api_key', 'oauth_refresh_token', 'oauth_client', 'basic_auth');
+CREATE TYPE public.credential_status AS ENUM ('active', 'expired', 'revoked', 'needs_reauth');
+CREATE TYPE public.run_status AS ENUM ('pending', 'running', 'completed', 'failed', 'canceled');
+CREATE TYPE public.user_role AS ENUM ('admin', 'editor', 'viewer', 'user', 'guest');
 
 -- ---------------------------------------------------------------------
--- 4. TABLES
+-- 3. TABLES
 -- ---------------------------------------------------------------------
--- users: people who can use the platform (Telegram and/or email)
 CREATE TABLE public.users (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  full_name text NOT NULL,
-  reason_for_access text,
-  role user_role NOT NULL DEFAULT 'user'::user_role,
-  status access_status NOT NULL DEFAULT 'pending'::access_status,
-  created_at timestamp with time zone NOT NULL DEFAULT now(),
-  updated_at timestamp with time zone NOT NULL DEFAULT now(),
-  preferred_language text DEFAULT 'ar'::text,
-  email text,
-  email_verified boolean NOT NULL DEFAULT false
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    full_name text NOT NULL,
+    reason_for_access text,
+    role user_role DEFAULT 'user'::user_role NOT NULL,
+    status access_status DEFAULT 'pending'::access_status NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    preferred_language text DEFAULT 'ar'::text,
+    email text,
+    email_verified boolean DEFAULT false NOT NULL
 );
 
--- user_identities: login identities per user (telegram, ...)
 CREATE TABLE public.user_identities (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL,
-  provider text NOT NULL,
-  provider_user_id text NOT NULL,
-  handle text,
-  created_at timestamp with time zone NOT NULL DEFAULT now()
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    provider text NOT NULL,
+    provider_user_id text NOT NULL,
+    handle text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
--- workflows: the workflows you offer
 CREATE TABLE public.workflows (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  slug text NOT NULL,
-  name text NOT NULL,
-  is_active boolean NOT NULL DEFAULT true,
-  created_at timestamp with time zone NOT NULL DEFAULT now(),
-  updated_at timestamp with time zone NOT NULL DEFAULT now(),
-  requirements jsonb NOT NULL DEFAULT '{}'::jsonb,
-  image_url text
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    slug text NOT NULL,
+    name text NOT NULL,
+    is_active boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    requirements jsonb DEFAULT '{}'::jsonb NOT NULL,
+    image_url text
 );
 
--- workflow_channels: where each workflow is reachable (telegram bot, web, ...)
 CREATE TABLE public.workflow_channels (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  workflow_id uuid NOT NULL,
-  channel text NOT NULL,
-  handle text NOT NULL,
-  url text,
-  is_active boolean NOT NULL DEFAULT true,
-  created_at timestamp with time zone NOT NULL DEFAULT now()
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    workflow_id uuid NOT NULL,
+    channel text NOT NULL,
+    handle text NOT NULL,
+    url text,
+    is_active boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
--- user_workflow_access: which user may use which workflow (one row per pair)
-CREATE TABLE public.user_workflow_access (
-  user_id uuid NOT NULL,
-  workflow_id uuid NOT NULL,
-  last_used_at timestamp with time zone,
-  granted_at timestamp with time zone NOT NULL DEFAULT now(),
-  expires_at timestamp with time zone,
-  metadata jsonb DEFAULT '{}'::jsonb,
-  granted_via access_grant_source NOT NULL DEFAULT 'admin'::access_grant_source,
-  subscription_id uuid
-);
-ALTER TABLE public.user_workflow_access SET (fillfactor = 85);   -- updated on every consumed run: leave room for in-page (HOT) updates
-
--- workflow_access_requests: users asking for access to a workflow
-CREATE TABLE public.workflow_access_requests (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL,
-  workflow_id uuid NOT NULL,
-  reason text NOT NULL,
-  status access_request_status NOT NULL DEFAULT 'pending'::access_request_status,
-  reviewed_by uuid,
-  reviewed_at timestamp with time zone,
-  created_at timestamp with time zone NOT NULL DEFAULT now(),
-  updated_at timestamp with time zone NOT NULL DEFAULT now()
-);
-
--- workflow_credentials: per-user provider credentials (secret lives in vault)
-CREATE TABLE public.workflow_credentials (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL,
-  workflow_id uuid NOT NULL,
-  provider text NOT NULL,
-  auth_type credential_auth_type NOT NULL,
-  secret_id uuid NOT NULL,
-  scopes text[] NOT NULL DEFAULT '{}'::text[],
-  public_info jsonb NOT NULL DEFAULT '{}'::jsonb,
-  status credential_status NOT NULL DEFAULT 'active'::credential_status,
-  expires_at timestamp with time zone,
-  last_refreshed_at timestamp with time zone,
-  last_used_at timestamp with time zone,
-  created_at timestamp with time zone NOT NULL DEFAULT now(),
-  updated_at timestamp with time zone NOT NULL DEFAULT now()
-);
-
--- job_runs: one row per workflow run; 'usage' holds what that run consumed
-CREATE TABLE public.job_runs (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL,
-  channel text NOT NULL DEFAULT 'web'::text,
-  status run_status NOT NULL DEFAULT 'pending'::run_status,
-  error_code text,
-  error_message text,
-  usage_consumed_at timestamp with time zone,
-  created_at timestamp with time zone NOT NULL DEFAULT now(),
-  updated_at timestamp with time zone NOT NULL DEFAULT now(),
-  usage jsonb,
-  workflow_id uuid NOT NULL,
-  input jsonb NOT NULL DEFAULT '{}'::jsonb,
-  output jsonb
-);
-
--- usage_meters: catalog of countable things: runs, ai_tokens, ...
-CREATE TABLE public.usage_meters (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  key text NOT NULL,
-  name text NOT NULL,
-  unit text NOT NULL,
-  created_at timestamp with time zone NOT NULL DEFAULT now()
-);
-
--- access_usage: used + limit per user, workflow and meter (replaces usage_count/usage_limit)
-CREATE TABLE public.access_usage (
-  user_id uuid NOT NULL,
-  workflow_id uuid NOT NULL,
-  meter_id uuid NOT NULL,
-  used bigint NOT NULL DEFAULT 0,
-  limit_value bigint,
-  period text NOT NULL DEFAULT 'lifetime'::text,
-  period_start timestamp with time zone NOT NULL DEFAULT now(),
-  created_at timestamp with time zone NOT NULL DEFAULT now(),
-  updated_at timestamp with time zone NOT NULL DEFAULT now()
-);
-ALTER TABLE public.access_usage SET (fillfactor = 85);   -- updated on every consumed run: leave room for in-page (HOT) updates
-
--- plans: what you sell; 'entitlements' lists the SPECIFIC workflows and limits a plan grants
 CREATE TABLE public.plans (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  code text NOT NULL,
-  name text NOT NULL,
-  price_minor integer NOT NULL,
-  currency character(3) NOT NULL DEFAULT 'USD'::bpchar,
-  billing_interval text NOT NULL,
-  trial_days integer NOT NULL DEFAULT 0,
-  provider text,
-  provider_price_id text,
-  entitlements jsonb NOT NULL DEFAULT '{}'::jsonb,
-  is_active boolean NOT NULL DEFAULT true,
-  created_at timestamp with time zone NOT NULL DEFAULT now(),
-  updated_at timestamp with time zone NOT NULL DEFAULT now()
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    code text NOT NULL,
+    name text NOT NULL,
+    price_minor integer NOT NULL,
+    currency character(3) DEFAULT 'USD'::bpchar NOT NULL,
+    billing_interval text NOT NULL,
+    trial_days integer DEFAULT 0 NOT NULL,
+    provider text,
+    provider_price_id text,
+    entitlements jsonb DEFAULT '{}'::jsonb NOT NULL,
+    is_active boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
--- subscriptions: a user's subscription to a plan (state mirrored from the payment provider)
 CREATE TABLE public.subscriptions (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL,
-  plan_id uuid NOT NULL,
-  status text NOT NULL,
-  current_period_start timestamp with time zone,
-  current_period_end timestamp with time zone,
-  cancel_at_period_end boolean NOT NULL DEFAULT false,
-  canceled_at timestamp with time zone,
-  provider text NOT NULL,
-  provider_subscription_id text NOT NULL,
-  created_at timestamp with time zone NOT NULL DEFAULT now(),
-  updated_at timestamp with time zone NOT NULL DEFAULT now()
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    plan_id uuid NOT NULL,
+    status text NOT NULL,
+    current_period_start timestamp with time zone,
+    current_period_end timestamp with time zone,
+    cancel_at_period_end boolean DEFAULT false NOT NULL,
+    canceled_at timestamp with time zone,
+    provider text NOT NULL,
+    provider_subscription_id text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
--- payments: money ledger: one row per provider payment; rows are never deleted or re-priced
 CREATE TABLE public.payments (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL,
-  plan_id uuid,
-  subscription_id uuid,
-  provider text NOT NULL,
-  provider_payment_id text NOT NULL,
-  amount_minor integer NOT NULL,
-  currency character(3) NOT NULL,
-  status text NOT NULL,
-  refunded_minor integer NOT NULL DEFAULT 0,
-  failure_code text,
-  failure_message text,
-  receipt_url text,
-  paid_at timestamp with time zone,
-  created_at timestamp with time zone NOT NULL DEFAULT now()
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    plan_id uuid,
+    subscription_id uuid,
+    provider text NOT NULL,
+    provider_payment_id text NOT NULL,
+    amount_minor integer NOT NULL,
+    currency character(3) NOT NULL,
+    status text NOT NULL,
+    refunded_minor integer DEFAULT 0 NOT NULL,
+    failure_code text,
+    failure_message text,
+    receipt_url text,
+    paid_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE TABLE public.user_workflow_access (
+    user_id uuid NOT NULL,
+    workflow_id uuid NOT NULL,
+    last_used_at timestamp with time zone,
+    granted_at timestamp with time zone DEFAULT now() NOT NULL,
+    expires_at timestamp with time zone,
+    metadata jsonb DEFAULT '{}'::jsonb,
+    granted_via access_grant_source DEFAULT 'admin'::access_grant_source NOT NULL,
+    subscription_id uuid
+);
+
+CREATE TABLE public.workflow_access_requests (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    workflow_id uuid NOT NULL,
+    reason text NOT NULL,
+    status access_request_status DEFAULT 'pending'::access_request_status NOT NULL,
+    reviewed_by uuid,
+    reviewed_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE TABLE public.workflow_credentials (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    workflow_id uuid NOT NULL,
+    provider text NOT NULL,
+    auth_type credential_auth_type NOT NULL,
+    secret_id uuid NOT NULL,
+    scopes text[] DEFAULT '{}'::text[] NOT NULL,
+    public_info jsonb DEFAULT '{}'::jsonb NOT NULL,
+    status credential_status DEFAULT 'active'::credential_status NOT NULL,
+    expires_at timestamp with time zone,
+    last_refreshed_at timestamp with time zone,
+    last_used_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE TABLE public.usage_meters (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    key text NOT NULL,
+    name text NOT NULL,
+    unit text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE TABLE public.access_usage (
+    user_id uuid NOT NULL,
+    workflow_id uuid NOT NULL,
+    meter_id uuid NOT NULL,
+    used bigint DEFAULT 0 NOT NULL,
+    limit_value bigint,
+    period text DEFAULT 'lifetime'::text NOT NULL,
+    period_start timestamp with time zone DEFAULT now() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE TABLE public.job_runs (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    channel text DEFAULT 'web'::text NOT NULL,
+    status run_status DEFAULT 'pending'::run_status NOT NULL,
+    error_code text,
+    error_message text,
+    usage_consumed_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    usage jsonb,
+    workflow_id uuid NOT NULL,
+    input jsonb DEFAULT '{}'::jsonb NOT NULL,
+    output jsonb
+);
+
+CREATE TABLE public.user_notifications (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    type text NOT NULL,
+    title text NOT NULL,
+    body text,
+    link text,
+    read_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE TABLE public.system_announcements (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    type text NOT NULL,
+    title_ar text,
+    title_en text,
+    body_ar text,
+    body_en text,
+    severity text DEFAULT 'info'::text NOT NULL,
+    is_active boolean DEFAULT true NOT NULL,
+    starts_at timestamp with time zone DEFAULT now() NOT NULL,
+    ends_at timestamp with time zone,
+    created_by uuid,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE TABLE public.system_announcement_reads (
+    announcement_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    read_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 -- ---------------------------------------------------------------------
--- 5. CONSTRAINTS (primary keys, unique, checks, then foreign keys)
+-- 4. CONSTRAINTS  (primary keys / unique first, then checks, then FKs)
 -- ---------------------------------------------------------------------
-ALTER TABLE public.users ADD CONSTRAINT users_pkey PRIMARY KEY (id);
-ALTER TABLE public.user_identities ADD CONSTRAINT user_identities_pkey PRIMARY KEY (id);
-ALTER TABLE public.workflows ADD CONSTRAINT workflows_pkey PRIMARY KEY (id);
-ALTER TABLE public.workflow_channels ADD CONSTRAINT workflow_channels_pkey PRIMARY KEY (id);
-ALTER TABLE public.user_workflow_access ADD CONSTRAINT user_workflow_access_pkey PRIMARY KEY (user_id, workflow_id);
-ALTER TABLE public.workflow_access_requests ADD CONSTRAINT workflow_access_requests_pkey PRIMARY KEY (id);
-ALTER TABLE public.workflow_credentials ADD CONSTRAINT workflow_credentials_pkey PRIMARY KEY (id);
-ALTER TABLE public.job_runs ADD CONSTRAINT job_runs_pkey PRIMARY KEY (id);
-ALTER TABLE public.usage_meters ADD CONSTRAINT usage_meters_pkey PRIMARY KEY (id);
-ALTER TABLE public.access_usage ADD CONSTRAINT access_usage_pkey PRIMARY KEY (user_id, workflow_id, meter_id);
-ALTER TABLE public.plans ADD CONSTRAINT plans_pkey PRIMARY KEY (id);
-ALTER TABLE public.subscriptions ADD CONSTRAINT subscriptions_pkey PRIMARY KEY (id);
-ALTER TABLE public.payments ADD CONSTRAINT payments_pkey PRIMARY KEY (id);
+-- Primary keys and unique constraints
+ALTER TABLE ONLY public.users ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.users ADD CONSTRAINT users_email_key UNIQUE (email);
+ALTER TABLE ONLY public.user_identities ADD CONSTRAINT user_identities_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.user_identities ADD CONSTRAINT uq_identity_provider_account UNIQUE (provider, provider_user_id);
+ALTER TABLE ONLY public.user_identities ADD CONSTRAINT uq_identity_user_provider UNIQUE (user_id, provider);
+ALTER TABLE ONLY public.workflows ADD CONSTRAINT workflows_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.workflows ADD CONSTRAINT workflows_slug_key UNIQUE (slug);
+ALTER TABLE ONLY public.workflow_channels ADD CONSTRAINT workflow_channels_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.workflow_channels ADD CONSTRAINT uq_workflow_channel UNIQUE (workflow_id, channel);
+ALTER TABLE ONLY public.plans ADD CONSTRAINT plans_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.plans ADD CONSTRAINT plans_code_key UNIQUE (code);
+ALTER TABLE ONLY public.subscriptions ADD CONSTRAINT subscriptions_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.subscriptions ADD CONSTRAINT subscriptions_provider_provider_subscription_id_key UNIQUE (provider, provider_subscription_id);
+ALTER TABLE ONLY public.payments ADD CONSTRAINT payments_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.payments ADD CONSTRAINT payments_provider_provider_payment_id_key UNIQUE (provider, provider_payment_id);
+ALTER TABLE ONLY public.user_workflow_access ADD CONSTRAINT user_workflow_access_pkey PRIMARY KEY (user_id, workflow_id);
+ALTER TABLE ONLY public.workflow_access_requests ADD CONSTRAINT workflow_access_requests_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.workflow_credentials ADD CONSTRAINT workflow_credentials_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.workflow_credentials ADD CONSTRAINT workflow_credentials_secret_id_key UNIQUE (secret_id);
+ALTER TABLE ONLY public.workflow_credentials ADD CONSTRAINT workflow_credentials_unique UNIQUE (user_id, workflow_id, provider);
+ALTER TABLE ONLY public.usage_meters ADD CONSTRAINT usage_meters_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.usage_meters ADD CONSTRAINT usage_meters_key_key UNIQUE (key);
+ALTER TABLE ONLY public.access_usage ADD CONSTRAINT access_usage_pkey PRIMARY KEY (user_id, workflow_id, meter_id);
+ALTER TABLE ONLY public.job_runs ADD CONSTRAINT job_runs_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.user_notifications ADD CONSTRAINT user_notifications_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.system_announcements ADD CONSTRAINT system_announcements_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.system_announcement_reads ADD CONSTRAINT system_announcement_reads_pkey PRIMARY KEY (announcement_id, user_id);
 
-ALTER TABLE public.users ADD CONSTRAINT users_email_key UNIQUE (email);
-ALTER TABLE public.user_identities ADD CONSTRAINT uq_identity_provider_account UNIQUE (provider, provider_user_id);
-ALTER TABLE public.user_identities ADD CONSTRAINT uq_identity_user_provider UNIQUE (user_id, provider);
-ALTER TABLE public.workflows ADD CONSTRAINT workflows_slug_key UNIQUE (slug);
-ALTER TABLE public.workflow_channels ADD CONSTRAINT uq_workflow_channel UNIQUE (workflow_id, channel);
-ALTER TABLE public.workflow_credentials ADD CONSTRAINT workflow_credentials_secret_id_key UNIQUE (secret_id);
-ALTER TABLE public.workflow_credentials ADD CONSTRAINT workflow_credentials_unique UNIQUE (user_id, workflow_id, provider);
-ALTER TABLE public.usage_meters ADD CONSTRAINT usage_meters_key_key UNIQUE (key);
-ALTER TABLE public.plans ADD CONSTRAINT plans_code_key UNIQUE (code);
-ALTER TABLE public.subscriptions ADD CONSTRAINT subscriptions_provider_provider_subscription_id_key UNIQUE (provider, provider_subscription_id);
-ALTER TABLE public.payments ADD CONSTRAINT payments_provider_provider_payment_id_key UNIQUE (provider, provider_payment_id);
+-- Check constraints
+ALTER TABLE ONLY public.workflow_channels ADD CONSTRAINT workflow_channels_handle_check CHECK ((length(btrim(handle)) > 0));
+ALTER TABLE ONLY public.plans ADD CONSTRAINT plans_billing_interval_check CHECK ((billing_interval = ANY (ARRAY['month'::text, 'year'::text, 'one_time'::text])));
+ALTER TABLE ONLY public.plans ADD CONSTRAINT plans_currency_check CHECK ((currency ~ '^[A-Z]{3}$'::text));
+ALTER TABLE ONLY public.plans ADD CONSTRAINT plans_entitlements_check CHECK ((jsonb_typeof(entitlements) = 'object'::text));
+ALTER TABLE ONLY public.plans ADD CONSTRAINT plans_price_minor_check CHECK ((price_minor >= 0));
+ALTER TABLE ONLY public.plans ADD CONSTRAINT plans_provider_price_check CHECK (((provider_price_id IS NULL) OR (provider IS NOT NULL)));
+ALTER TABLE ONLY public.plans ADD CONSTRAINT plans_trial_days_check CHECK ((trial_days >= 0));
+ALTER TABLE ONLY public.subscriptions ADD CONSTRAINT subscriptions_period_check CHECK (((current_period_end IS NULL) OR (current_period_start IS NULL) OR (current_period_end >= current_period_start)));
+ALTER TABLE ONLY public.subscriptions ADD CONSTRAINT subscriptions_status_check CHECK ((status = ANY (ARRAY['trialing'::text, 'active'::text, 'past_due'::text, 'canceled'::text, 'expired'::text, 'paused'::text])));
+ALTER TABLE ONLY public.payments ADD CONSTRAINT payments_amount_minor_check CHECK ((amount_minor >= 0));
+ALTER TABLE ONLY public.payments ADD CONSTRAINT payments_check CHECK (((refunded_minor >= 0) AND (refunded_minor <= amount_minor)));
+ALTER TABLE ONLY public.payments ADD CONSTRAINT payments_currency_check CHECK ((currency ~ '^[A-Z]{3}$'::text));
+ALTER TABLE ONLY public.payments ADD CONSTRAINT payments_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'succeeded'::text, 'failed'::text, 'refunded'::text, 'partially_refunded'::text, 'disputed'::text])));
+ALTER TABLE ONLY public.workflow_access_requests ADD CONSTRAINT workflow_access_requests_reason_check CHECK ((length(btrim(reason)) > 0));
+ALTER TABLE ONLY public.usage_meters ADD CONSTRAINT usage_meters_key_check CHECK ((key ~ '^[a-z][a-z0-9_:-]*$'::text));
+ALTER TABLE ONLY public.access_usage ADD CONSTRAINT access_usage_limit_value_check CHECK (((limit_value IS NULL) OR (limit_value >= 0)));
+ALTER TABLE ONLY public.access_usage ADD CONSTRAINT access_usage_period_check CHECK ((period = ANY (ARRAY['lifetime'::text, 'monthly'::text])));
+ALTER TABLE ONLY public.access_usage ADD CONSTRAINT access_usage_used_check CHECK ((used >= 0));
+ALTER TABLE ONLY public.job_runs ADD CONSTRAINT job_runs_input_check CHECK ((jsonb_typeof(input) = 'object'::text));
+ALTER TABLE ONLY public.user_notifications ADD CONSTRAINT user_notifications_link_check CHECK (((link IS NULL) OR (link ~ '^(/|https://)'::text)));
+ALTER TABLE ONLY public.system_announcements ADD CONSTRAINT system_announcements_type_check CHECK ((type = ANY (ARRAY['update'::text, 'maintenance'::text, 'message'::text, 'changelog'::text])));
+ALTER TABLE ONLY public.system_announcements ADD CONSTRAINT system_announcements_severity_check CHECK ((severity = ANY (ARRAY['info'::text, 'warning'::text, 'critical'::text])));
+ALTER TABLE ONLY public.system_announcements ADD CONSTRAINT system_announcements_valid_window CHECK (((ends_at IS NULL) OR (ends_at > starts_at)));
+ALTER TABLE ONLY public.system_announcements ADD CONSTRAINT system_announcements_has_title CHECK (((NULLIF(btrim(title_ar), ''::text) IS NOT NULL) OR (NULLIF(btrim(title_en), ''::text) IS NOT NULL)));
 
-ALTER TABLE public.workflow_channels ADD CONSTRAINT workflow_channels_handle_check CHECK ((length(btrim(handle)) > 0));
-ALTER TABLE public.workflow_access_requests ADD CONSTRAINT workflow_access_requests_reason_check CHECK ((length(btrim(reason)) > 0));
-ALTER TABLE public.job_runs ADD CONSTRAINT job_runs_input_check CHECK ((jsonb_typeof(input) = 'object'::text));
-ALTER TABLE public.usage_meters ADD CONSTRAINT usage_meters_key_check CHECK ((key ~ '^[a-z][a-z0-9_:-]*$'::text));
-ALTER TABLE public.access_usage ADD CONSTRAINT access_usage_limit_value_check CHECK (((limit_value IS NULL) OR (limit_value >= 0)));
-ALTER TABLE public.access_usage ADD CONSTRAINT access_usage_period_check CHECK ((period = ANY (ARRAY['lifetime'::text, 'monthly'::text])));
-ALTER TABLE public.access_usage ADD CONSTRAINT access_usage_used_check CHECK ((used >= 0));
-ALTER TABLE public.plans ADD CONSTRAINT plans_billing_interval_check CHECK ((billing_interval = ANY (ARRAY['month'::text, 'year'::text, 'one_time'::text])));
-ALTER TABLE public.plans ADD CONSTRAINT plans_currency_check CHECK ((currency ~ '^[A-Z]{3}$'::text));
-ALTER TABLE public.plans ADD CONSTRAINT plans_entitlements_check CHECK ((jsonb_typeof(entitlements) = 'object'::text));
-ALTER TABLE public.plans ADD CONSTRAINT plans_price_minor_check CHECK ((price_minor >= 0));
-ALTER TABLE public.plans ADD CONSTRAINT plans_provider_price_check CHECK (((provider_price_id IS NULL) OR (provider IS NOT NULL)));
-ALTER TABLE public.plans ADD CONSTRAINT plans_trial_days_check CHECK ((trial_days >= 0));
-ALTER TABLE public.subscriptions ADD CONSTRAINT subscriptions_period_check CHECK (((current_period_end IS NULL) OR (current_period_start IS NULL) OR (current_period_end >= current_period_start)));
-ALTER TABLE public.subscriptions ADD CONSTRAINT subscriptions_status_check CHECK ((status = ANY (ARRAY['trialing'::text, 'active'::text, 'past_due'::text, 'canceled'::text, 'expired'::text, 'paused'::text])));
-ALTER TABLE public.payments ADD CONSTRAINT payments_amount_minor_check CHECK ((amount_minor >= 0));
-ALTER TABLE public.payments ADD CONSTRAINT payments_check CHECK (((refunded_minor >= 0) AND (refunded_minor <= amount_minor)));
-ALTER TABLE public.payments ADD CONSTRAINT payments_currency_check CHECK ((currency ~ '^[A-Z]{3}$'::text));
-ALTER TABLE public.payments ADD CONSTRAINT payments_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'succeeded'::text, 'failed'::text, 'refunded'::text, 'partially_refunded'::text, 'disputed'::text])));
-
-ALTER TABLE public.user_identities ADD CONSTRAINT user_identities_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
-ALTER TABLE public.workflow_channels ADD CONSTRAINT workflow_channels_workflow_id_fkey FOREIGN KEY (workflow_id) REFERENCES workflows(id) ON DELETE CASCADE;
-ALTER TABLE public.user_workflow_access ADD CONSTRAINT user_workflow_access_subscription_id_fkey FOREIGN KEY (subscription_id) REFERENCES subscriptions(id) ON DELETE SET NULL;
-ALTER TABLE public.user_workflow_access ADD CONSTRAINT user_workflow_access_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
-ALTER TABLE public.user_workflow_access ADD CONSTRAINT user_workflow_access_workflow_id_fkey FOREIGN KEY (workflow_id) REFERENCES workflows(id) ON DELETE CASCADE;
-ALTER TABLE public.workflow_access_requests ADD CONSTRAINT workflow_access_requests_reviewed_by_fkey FOREIGN KEY (reviewed_by) REFERENCES users(id) ON DELETE SET NULL;
-ALTER TABLE public.workflow_access_requests ADD CONSTRAINT workflow_access_requests_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
-ALTER TABLE public.workflow_access_requests ADD CONSTRAINT workflow_access_requests_workflow_id_fkey FOREIGN KEY (workflow_id) REFERENCES workflows(id) ON DELETE CASCADE;
-ALTER TABLE public.workflow_credentials ADD CONSTRAINT workflow_credentials_access_fkey FOREIGN KEY (user_id, workflow_id) REFERENCES user_workflow_access(user_id, workflow_id) ON DELETE CASCADE;
-ALTER TABLE public.job_runs ADD CONSTRAINT job_runs_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
-ALTER TABLE public.job_runs ADD CONSTRAINT job_runs_workflow_id_fkey FOREIGN KEY (workflow_id) REFERENCES workflows(id) ON DELETE RESTRICT;
-ALTER TABLE public.access_usage ADD CONSTRAINT access_usage_meter_id_fkey FOREIGN KEY (meter_id) REFERENCES usage_meters(id);
-ALTER TABLE public.access_usage ADD CONSTRAINT access_usage_user_id_workflow_id_fkey FOREIGN KEY (user_id, workflow_id) REFERENCES user_workflow_access(user_id, workflow_id) ON DELETE CASCADE;
-ALTER TABLE public.subscriptions ADD CONSTRAINT subscriptions_plan_id_fkey FOREIGN KEY (plan_id) REFERENCES plans(id);
-ALTER TABLE public.subscriptions ADD CONSTRAINT subscriptions_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id);
-ALTER TABLE public.payments ADD CONSTRAINT payments_plan_id_fkey FOREIGN KEY (plan_id) REFERENCES plans(id);
-ALTER TABLE public.payments ADD CONSTRAINT payments_subscription_id_fkey FOREIGN KEY (subscription_id) REFERENCES subscriptions(id);
-ALTER TABLE public.payments ADD CONSTRAINT payments_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id);
+-- Foreign keys
+ALTER TABLE ONLY public.user_identities ADD CONSTRAINT user_identities_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.workflow_channels ADD CONSTRAINT workflow_channels_workflow_id_fkey FOREIGN KEY (workflow_id) REFERENCES public.workflows(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.subscriptions ADD CONSTRAINT subscriptions_plan_id_fkey FOREIGN KEY (plan_id) REFERENCES public.plans(id);
+ALTER TABLE ONLY public.subscriptions ADD CONSTRAINT subscriptions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+ALTER TABLE ONLY public.payments ADD CONSTRAINT payments_plan_id_fkey FOREIGN KEY (plan_id) REFERENCES public.plans(id);
+ALTER TABLE ONLY public.payments ADD CONSTRAINT payments_subscription_id_fkey FOREIGN KEY (subscription_id) REFERENCES public.subscriptions(id);
+ALTER TABLE ONLY public.payments ADD CONSTRAINT payments_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+ALTER TABLE ONLY public.user_workflow_access ADD CONSTRAINT user_workflow_access_subscription_id_fkey FOREIGN KEY (subscription_id) REFERENCES public.subscriptions(id) ON DELETE SET NULL;
+ALTER TABLE ONLY public.user_workflow_access ADD CONSTRAINT user_workflow_access_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.user_workflow_access ADD CONSTRAINT user_workflow_access_workflow_id_fkey FOREIGN KEY (workflow_id) REFERENCES public.workflows(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.workflow_access_requests ADD CONSTRAINT workflow_access_requests_reviewed_by_fkey FOREIGN KEY (reviewed_by) REFERENCES public.users(id) ON DELETE SET NULL;
+ALTER TABLE ONLY public.workflow_access_requests ADD CONSTRAINT workflow_access_requests_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.workflow_access_requests ADD CONSTRAINT workflow_access_requests_workflow_id_fkey FOREIGN KEY (workflow_id) REFERENCES public.workflows(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.workflow_credentials ADD CONSTRAINT workflow_credentials_access_fkey FOREIGN KEY (user_id, workflow_id) REFERENCES public.user_workflow_access(user_id, workflow_id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.access_usage ADD CONSTRAINT access_usage_meter_id_fkey FOREIGN KEY (meter_id) REFERENCES public.usage_meters(id);
+ALTER TABLE ONLY public.access_usage ADD CONSTRAINT access_usage_user_id_workflow_id_fkey FOREIGN KEY (user_id, workflow_id) REFERENCES public.user_workflow_access(user_id, workflow_id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.job_runs ADD CONSTRAINT job_runs_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.job_runs ADD CONSTRAINT job_runs_workflow_id_fkey FOREIGN KEY (workflow_id) REFERENCES public.workflows(id) ON DELETE RESTRICT;
+ALTER TABLE ONLY public.user_notifications ADD CONSTRAINT user_notifications_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.system_announcements ADD CONSTRAINT system_announcements_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.users(id) ON DELETE SET NULL;
+ALTER TABLE ONLY public.system_announcement_reads ADD CONSTRAINT system_announcement_reads_announcement_id_fkey FOREIGN KEY (announcement_id) REFERENCES public.system_announcements(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.system_announcement_reads ADD CONSTRAINT system_announcement_reads_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 -- ---------------------------------------------------------------------
--- 6. INDEXES (those not already created by a constraint above)
+-- 5. INDEXES  (primary key / unique-constraint indexes are created above)
 -- ---------------------------------------------------------------------
 CREATE INDEX idx_users_pending ON public.users USING btree (created_at) WHERE (status = 'pending'::access_status);
+
 CREATE INDEX idx_user_workflow_access_expires_at ON public.user_workflow_access USING btree (expires_at) WHERE (expires_at IS NOT NULL);
 CREATE INDEX idx_user_workflow_access_subscription_id ON public.user_workflow_access USING btree (subscription_id) WHERE (subscription_id IS NOT NULL);
 CREATE INDEX idx_user_workflow_access_workflow_id ON public.user_workflow_access USING btree (workflow_id);
+
 CREATE INDEX idx_access_requests_pending ON public.workflow_access_requests USING btree (created_at) WHERE (status = 'pending'::access_request_status);
 CREATE INDEX idx_access_requests_reviewed_by ON public.workflow_access_requests USING btree (reviewed_by) WHERE (reviewed_by IS NOT NULL);
 CREATE INDEX idx_access_requests_user_id ON public.workflow_access_requests USING btree (user_id);
 CREATE INDEX idx_access_requests_workflow_id ON public.workflow_access_requests USING btree (workflow_id);
 CREATE UNIQUE INDEX uq_access_requests_one_pending ON public.workflow_access_requests USING btree (user_id, workflow_id) WHERE (status = 'pending'::access_request_status);
+
+CREATE INDEX idx_access_usage_meter_id ON public.access_usage USING btree (meter_id);
+
 CREATE INDEX idx_job_runs_active ON public.job_runs USING btree (created_at) WHERE (status = ANY (ARRAY['pending'::run_status, 'running'::run_status]));
 CREATE INDEX idx_job_runs_created_at ON public.job_runs USING btree (created_at);
 CREATE INDEX idx_job_runs_user_created ON public.job_runs USING btree (user_id, created_at DESC);
 CREATE INDEX idx_job_runs_workflow_created ON public.job_runs USING btree (workflow_id, created_at DESC);
-CREATE INDEX idx_access_usage_meter_id ON public.access_usage USING btree (meter_id);
+
 CREATE UNIQUE INDEX uq_plans_provider_price ON public.plans USING btree (provider, provider_price_id) WHERE (provider_price_id IS NOT NULL);
+
 CREATE INDEX idx_subscriptions_period_end ON public.subscriptions USING btree (current_period_end) WHERE (status = ANY (ARRAY['active'::text, 'trialing'::text, 'past_due'::text]));
 CREATE INDEX idx_subscriptions_plan_id ON public.subscriptions USING btree (plan_id);
 CREATE INDEX idx_subscriptions_user_status ON public.subscriptions USING btree (user_id, status);
+
 CREATE INDEX idx_payments_plan_id ON public.payments USING btree (plan_id) WHERE (plan_id IS NOT NULL);
 CREATE INDEX idx_payments_subscription_id ON public.payments USING btree (subscription_id) WHERE (subscription_id IS NOT NULL);
 CREATE INDEX idx_payments_user_created ON public.payments USING btree (user_id, created_at DESC);
 
+CREATE INDEX idx_user_notifications_user_created ON public.user_notifications USING btree (user_id, created_at DESC);
+CREATE INDEX idx_user_notifications_unread ON public.user_notifications USING btree (user_id, read_at) WHERE (read_at IS NULL);
+CREATE INDEX idx_system_announcements_active ON public.system_announcements USING btree (is_active, starts_at, ends_at);
+CREATE INDEX idx_system_announcements_created ON public.system_announcements USING btree (created_at DESC);
+CREATE INDEX idx_announcement_reads_announcement_id ON public.system_announcement_reads USING btree (announcement_id);
+
 -- ---------------------------------------------------------------------
--- 7. FUNCTIONS
+-- 6. FUNCTIONS
 -- ---------------------------------------------------------------------
--- handle_updated_at: generic updated_at trigger
+
+-- Generic trigger: keeps updated_at current.
 CREATE OR REPLACE FUNCTION public.handle_updated_at()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -346,7 +374,53 @@ BEGIN
 END;
 $function$;
 
--- validate_plan_entitlements: trigger: rejects plans that reference unknown workflows/meters or bad limits
+-- Trigger: payments is an append-only ledger.
+CREATE OR REPLACE FUNCTION public.protect_payment_ledger()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO ''
+AS $function$
+BEGIN
+    IF TG_OP = 'DELETE' THEN
+        RAISE EXCEPTION 'payments is a ledger: rows cannot be deleted';
+    END IF;
+    IF NEW.id IS DISTINCT FROM OLD.id
+       OR NEW.user_id IS DISTINCT FROM OLD.user_id
+       OR NEW.provider IS DISTINCT FROM OLD.provider
+       OR NEW.provider_payment_id IS DISTINCT FROM OLD.provider_payment_id
+       OR NEW.amount_minor IS DISTINCT FROM OLD.amount_minor
+       OR NEW.currency IS DISTINCT FROM OLD.currency
+       OR NEW.created_at IS DISTINCT FROM OLD.created_at THEN
+        RAISE EXCEPTION 'payments is a ledger: amount, currency, user and provider ids cannot be changed';
+    END IF;
+    RETURN NEW;
+END;
+$function$;
+
+-- Trigger: the plan with code 'free' cannot be deleted or renamed.
+-- NOTE: no search_path set and EXECUTE is still granted to PUBLIC
+-- (Supabase advisor warning function_search_path_mutable).
+CREATE OR REPLACE FUNCTION public.protect_system_plans()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+    BEGIN
+        IF TG_OP = 'DELETE' THEN
+            IF OLD.code = 'free' THEN
+                RAISE EXCEPTION 'System plan "%" cannot be deleted.', OLD.code;
+            END IF;
+            RETURN OLD;
+        ELSIF TG_OP = 'UPDATE' THEN
+            IF OLD.code = 'free' AND NEW.code <> 'free' THEN
+                RAISE EXCEPTION 'Cannot change the code of system plan "%".', OLD.code;
+            END IF;
+            RETURN NEW;
+        END IF;
+        RETURN NEW;
+    END;
+    $function$;
+
+-- Trigger: validates plans.entitlements against real workflows and meters.
 CREATE OR REPLACE FUNCTION public.validate_plan_entitlements()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -379,58 +453,23 @@ BEGIN
 END;
 $function$;
 
--- protect_payment_ledger: trigger: payments rows cannot be deleted, and amount/currency/ids/owner cannot change
-CREATE OR REPLACE FUNCTION public.protect_payment_ledger()
+-- Trigger: deletes the Vault secret when a credential row is deleted.
+CREATE OR REPLACE FUNCTION public.delete_credential_secret()
  RETURNS trigger
  LANGUAGE plpgsql
+ SECURITY DEFINER
  SET search_path TO ''
 AS $function$
-BEGIN
-    IF TG_OP = 'DELETE' THEN
-        RAISE EXCEPTION 'payments is a ledger: rows cannot be deleted';
-    END IF;
-    IF NEW.id IS DISTINCT FROM OLD.id
-       OR NEW.user_id IS DISTINCT FROM OLD.user_id
-       OR NEW.provider IS DISTINCT FROM OLD.provider
-       OR NEW.provider_payment_id IS DISTINCT FROM OLD.provider_payment_id
-       OR NEW.amount_minor IS DISTINCT FROM OLD.amount_minor
-       OR NEW.currency IS DISTINCT FROM OLD.currency
-       OR NEW.created_at IS DISTINCT FROM OLD.created_at THEN
-        RAISE EXCEPTION 'payments is a ledger: amount, currency, user and provider ids cannot be changed';
-    END IF;
-    RETURN NEW;
-END;
-$function$;
+begin
+  delete from vault.secrets where id = old.secret_id;
+  return old;
+end $function$;
 
--- protect_system_plans: trigger: default system 'free' plan cannot be deleted or have its code altered
-CREATE OR REPLACE FUNCTION public.protect_system_plans()
- RETURNS trigger
- LANGUAGE plpgsql
- SET search_path TO ''
-AS $function$
-BEGIN
-    IF TG_OP = 'DELETE' THEN
-        IF OLD.code = 'free' THEN
-            RAISE EXCEPTION 'System plan "%" cannot be deleted.', OLD.code;
-        END IF;
-        RETURN OLD;
-    ELSIF TG_OP = 'UPDATE' THEN
-        IF OLD.code = 'free' AND NEW.code <> 'free' THEN
-            RAISE EXCEPTION 'Cannot change the code of system plan "%".', OLD.code;
-        END IF;
-        RETURN NEW;
-    END IF;
-    RETURN NEW;
-END;
-$function$;
-
--- authenticate_gatekeeper: bot/web entry check: identity (user_id or telegram_id), account status, workflow access, expiry, quota (any exhausted meter => 429)
-CREATE OR REPLACE FUNCTION public.authenticate_gatekeeper(
-    p_user_id uuid DEFAULT NULL::uuid,
-    p_telegram_id bigint DEFAULT NULL::bigint,
-    p_workflow_slug text DEFAULT ''::text,
-    p_username text DEFAULT NULL::text
-)
+-- Gatekeeper: decides whether a user may run a workflow.
+-- Identify by p_user_id (web) OR p_telegram_id (bot). Does NOT consume usage.
+-- Returns HTTP-style codes: 200 ok, 401 unregistered, 403 pending/rejected/
+-- forbidden/expired, 423 locked, 429 quota exceeded, 503 workflow disabled.
+CREATE OR REPLACE FUNCTION public.authenticate_gatekeeper(p_user_id uuid DEFAULT NULL::uuid, p_telegram_id bigint DEFAULT NULL::bigint, p_workflow_slug text DEFAULT ''::text, p_username text DEFAULT NULL::text)
  RETURNS TABLE(is_authorized boolean, status_code integer, error_code text, user_id uuid, workflow_id uuid, first_name text, user_role user_role, remaining_quota integer)
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -560,21 +599,18 @@ BEGIN
 END;
 $function$;
 
--- authenticate_gatekeeper: backward-compatible 3-arg overload for Telegram bot
-CREATE OR REPLACE FUNCTION public.authenticate_gatekeeper(
-    p_telegram_id bigint,
-    p_workflow_slug text,
-    p_username text DEFAULT NULL::text
-)
+-- Gatekeeper shortcut for the Telegram bot.
+CREATE OR REPLACE FUNCTION public.authenticate_gatekeeper(p_telegram_id bigint, p_workflow_slug text, p_username text DEFAULT NULL::text)
  RETURNS TABLE(is_authorized boolean, status_code integer, error_code text, user_id uuid, workflow_id uuid, first_name text, user_role user_role, remaining_quota integer)
  LANGUAGE sql
  SECURITY DEFINER
  SET search_path TO 'public'
-AS $$
+AS $function$
     SELECT * FROM public.authenticate_gatekeeper(NULL::uuid, p_telegram_id, p_workflow_slug, p_username);
-$$;
+$function$;
 
--- consume_usage: atomic usage consumption for any meter; allow_overshoot for AI tokens; a run is counted once per job
+-- Consumes usage on one meter after a successful run. Enforces limits atomically.
+-- Returns (consumed, remaining); remaining NULL = unlimited.
 CREATE OR REPLACE FUNCTION public.consume_usage(p_user_id uuid, p_workflow_slug text, p_meter_key text DEFAULT 'runs'::text, p_quantity bigint DEFAULT 1, p_job_run_id uuid DEFAULT NULL::uuid, p_allow_overshoot boolean DEFAULT false)
  RETURNS TABLE(consumed boolean, remaining bigint)
  LANGUAGE plpgsql
@@ -670,7 +706,7 @@ BEGIN
 END;
 $function$;
 
--- consume_workflow_usage: backward-compatible wrapper: one 'runs' unit
+-- Shortcut: consume 1 'runs' (no job_run link).
 CREATE OR REPLACE FUNCTION public.consume_workflow_usage(p_user_id uuid, p_workflow_slug text)
  RETURNS TABLE(consumed boolean, remaining_quota integer)
  LANGUAGE plpgsql
@@ -684,7 +720,8 @@ BEGIN
 END;
 $function$;
 
--- apply_plan_entitlements: payment webhook: grants ONLY the plan's workflows; validates subscription, status and expiry; ends dropped workflows
+-- Turns a plan (+ optional subscription) into access rows and quotas.
+-- Returns the number of workflows granted.
 CREATE OR REPLACE FUNCTION public.apply_plan_entitlements(p_user_id uuid, p_plan_id uuid, p_subscription_id uuid DEFAULT NULL::uuid, p_expires_at timestamp with time zone DEFAULT NULL::timestamp with time zone)
  RETURNS integer
  LANGUAGE plpgsql
@@ -790,7 +827,7 @@ BEGIN
 END;
 $function$;
 
--- revoke_subscription_access: payment webhook: ends every workflow a canceled/refunded subscription granted
+-- Expires every access grant tied to a subscription. Returns rows changed.
 CREATE OR REPLACE FUNCTION public.revoke_subscription_access(p_subscription_id uuid)
  RETURNS integer
  LANGUAGE plpgsql
@@ -809,47 +846,7 @@ BEGIN
 END;
 $function$;
 
--- purge_expired_locked_users: retention procedure to clean up soft-deleted/locked accounts older than retention period
-CREATE OR REPLACE FUNCTION public.purge_expired_locked_users(p_older_than interval DEFAULT interval '90 days')
- RETURNS integer
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
-DECLARE
-    v_purged_count integer := 0;
-    v_user RECORD;
-BEGIN
-    FOR v_user IN
-        SELECT id FROM public.users
-        WHERE status = 'locked' AND updated_at < now() - p_older_than
-    LOOP
-        -- Privacy & GDPR compliance: if payments exist, retain ledger but anonymize PII
-        IF EXISTS (SELECT 1 FROM public.payments WHERE user_id = v_user.id) THEN
-            UPDATE public.users
-               SET full_name = 'Deleted User',
-                   email = NULL,
-                   reason_for_access = NULL,
-                   updated_at = now()
-             WHERE id = v_user.id;
-
-            DELETE FROM public.user_identities WHERE user_id = v_user.id;
-            DELETE FROM public.user_workflow_access WHERE user_id = v_user.id;
-            DELETE FROM public.workflow_access_requests WHERE user_id = v_user.id;
-            DELETE FROM public.job_runs WHERE user_id = v_user.id;
-        ELSE
-            -- Hard delete cascades to identities, access, job_runs
-            DELETE FROM public.users WHERE id = v_user.id;
-        END IF;
-
-        v_purged_count := v_purged_count + 1;
-    END LOOP;
-
-    RETURN v_purged_count;
-END;
-$function$;
-
--- register_telegram_user: creates user + telegram identity (race-safe)
+-- Creates a user + Telegram identity (race-safe). Returns (out_user_id, is_new).
 CREATE OR REPLACE FUNCTION public.register_telegram_user(p_telegram_id bigint, p_full_name text, p_username text DEFAULT NULL::text, p_preferred_language text DEFAULT 'ar'::text)
  RETURNS TABLE(out_user_id uuid, is_new boolean)
  LANGUAGE plpgsql
@@ -892,7 +889,7 @@ BEGIN
 END;
 $function$;
 
--- set_credential: stores/updates a credential secret in vault
+-- Credentials (secrets live in Vault, never in plain tables).
 CREATE OR REPLACE FUNCTION public.set_credential(p_user_id uuid, p_workflow_id uuid, p_provider text, p_auth_type credential_auth_type, p_payload jsonb, p_scopes text[] DEFAULT '{}'::text[], p_public_info jsonb DEFAULT '{}'::jsonb, p_expires_at timestamp with time zone DEFAULT NULL::timestamp with time zone)
  RETURNS uuid
  LANGUAGE plpgsql
@@ -923,7 +920,6 @@ begin
   return v_id;
 end $function$;
 
--- get_credential: reads a credential secret from vault
 CREATE OR REPLACE FUNCTION public.get_credential(p_user_id uuid, p_workflow_id uuid, p_provider text)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -948,100 +944,179 @@ begin
     'expires_at', r.expires_at, 'payload', r.decrypted_secret::jsonb);
 end $function$;
 
--- delete_credential_secret: trigger: removes the vault secret when a credential row is deleted
-CREATE OR REPLACE FUNCTION public.delete_credential_secret()
- RETURNS trigger
+-- Removes (or anonymizes, if payments exist) users locked longer than p_older_than.
+-- NOTE: does NOT yet delete user_notifications in the anonymize branch.
+CREATE OR REPLACE FUNCTION public.purge_expired_locked_users(p_older_than interval DEFAULT '90 days'::interval)
+ RETURNS integer
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO ''
+ SET search_path TO 'public'
 AS $function$
-begin
-  delete from vault.secrets where id = old.secret_id;
-  return old;
-end $function$;
+DECLARE
+    v_purged_count integer := 0;
+    v_user RECORD;
+BEGIN
+    FOR v_user IN
+        SELECT id FROM public.users
+        WHERE status = 'locked' AND updated_at < now() - p_older_than
+    LOOP
+        -- Privacy & GDPR compliance: if payments exist, retain ledger but anonymize PII
+        IF EXISTS (SELECT 1 FROM public.payments WHERE user_id = v_user.id) THEN
+            UPDATE public.users
+               SET full_name = 'Deleted User',
+                   email = NULL,
+                   reason_for_access = NULL,
+                   updated_at = now()
+             WHERE id = v_user.id;
+
+            DELETE FROM public.user_identities WHERE user_id = v_user.id;
+            DELETE FROM public.user_workflow_access WHERE user_id = v_user.id;
+            DELETE FROM public.workflow_access_requests WHERE user_id = v_user.id;
+            DELETE FROM public.job_runs WHERE user_id = v_user.id;
+        ELSE
+            -- Hard delete cascades to identities, access, job_runs
+            DELETE FROM public.users WHERE id = v_user.id;
+        END IF;
+
+        v_purged_count := v_purged_count + 1;
+    END LOOP;
+
+    RETURN v_purged_count;
+END;
+$function$;
+
+-- Function privileges: callable by service_role only (except protect_system_plans,
+-- which still has the default PUBLIC execute in the live database).
+REVOKE ALL ON FUNCTION public.handle_updated_at() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.protect_payment_ledger() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.validate_plan_entitlements() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.delete_credential_secret() FROM PUBLIC, anon, authenticated;
+
+REVOKE ALL ON FUNCTION public.authenticate_gatekeeper(uuid, bigint, text, text) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.authenticate_gatekeeper(bigint, text, text) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.consume_usage(uuid, text, text, bigint, uuid, boolean) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.consume_workflow_usage(uuid, text) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.apply_plan_entitlements(uuid, uuid, uuid, timestamptz) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.revoke_subscription_access(uuid) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.register_telegram_user(bigint, text, text, text) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.set_credential(uuid, uuid, text, credential_auth_type, jsonb, text[], jsonb, timestamptz) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.get_credential(uuid, uuid, text) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.purge_expired_locked_users(interval) FROM PUBLIC, anon, authenticated;
+
+GRANT EXECUTE ON FUNCTION public.authenticate_gatekeeper(uuid, bigint, text, text) TO service_role;
+GRANT EXECUTE ON FUNCTION public.authenticate_gatekeeper(bigint, text, text) TO service_role;
+GRANT EXECUTE ON FUNCTION public.consume_usage(uuid, text, text, bigint, uuid, boolean) TO service_role;
+GRANT EXECUTE ON FUNCTION public.consume_workflow_usage(uuid, text) TO service_role;
+GRANT EXECUTE ON FUNCTION public.apply_plan_entitlements(uuid, uuid, uuid, timestamptz) TO service_role;
+GRANT EXECUTE ON FUNCTION public.revoke_subscription_access(uuid) TO service_role;
+GRANT EXECUTE ON FUNCTION public.register_telegram_user(bigint, text, text, text) TO service_role;
+GRANT EXECUTE ON FUNCTION public.set_credential(uuid, uuid, text, credential_auth_type, jsonb, text[], jsonb, timestamptz) TO service_role;
+GRANT EXECUTE ON FUNCTION public.get_credential(uuid, uuid, text) TO service_role;
+GRANT EXECUTE ON FUNCTION public.purge_expired_locked_users(interval) TO service_role;
+GRANT EXECUTE ON FUNCTION public.protect_system_plans() TO service_role;
 
 -- ---------------------------------------------------------------------
--- 8. TRIGGERS
+-- 7. TRIGGERS
 -- ---------------------------------------------------------------------
 CREATE TRIGGER set_users_updated_at BEFORE UPDATE ON public.users FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER set_workflows_updated_at BEFORE UPDATE ON public.workflows FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
-CREATE TRIGGER set_access_requests_updated_at BEFORE UPDATE ON public.workflow_access_requests FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
-CREATE TRIGGER set_workflow_credentials_updated_at BEFORE UPDATE ON public.workflow_credentials FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
-CREATE TRIGGER trg_delete_credential_secret AFTER DELETE ON public.workflow_credentials FOR EACH ROW EXECUTE FUNCTION delete_credential_secret();
-CREATE TRIGGER set_job_runs_updated_at BEFORE UPDATE ON public.job_runs FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
-CREATE TRIGGER set_access_usage_updated_at BEFORE UPDATE ON public.access_usage FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER set_plans_updated_at BEFORE UPDATE ON public.plans FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
+CREATE TRIGGER trg_protect_system_plans BEFORE DELETE OR UPDATE ON public.plans FOR EACH ROW EXECUTE FUNCTION protect_system_plans();
 CREATE TRIGGER validate_plan_entitlements BEFORE INSERT OR UPDATE OF entitlements ON public.plans FOR EACH ROW EXECUTE FUNCTION validate_plan_entitlements();
 CREATE TRIGGER set_subscriptions_updated_at BEFORE UPDATE ON public.subscriptions FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER protect_payments_ledger BEFORE DELETE OR UPDATE ON public.payments FOR EACH ROW EXECUTE FUNCTION protect_payment_ledger();
-CREATE TRIGGER protect_system_plans BEFORE DELETE OR UPDATE ON public.plans FOR EACH ROW EXECUTE FUNCTION protect_system_plans();
+CREATE TRIGGER set_access_requests_updated_at BEFORE UPDATE ON public.workflow_access_requests FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
+CREATE TRIGGER set_workflow_credentials_updated_at BEFORE UPDATE ON public.workflow_credentials FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
+CREATE TRIGGER trg_delete_credential_secret AFTER DELETE ON public.workflow_credentials FOR EACH ROW EXECUTE FUNCTION delete_credential_secret();
+CREATE TRIGGER set_access_usage_updated_at BEFORE UPDATE ON public.access_usage FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
+CREATE TRIGGER set_job_runs_updated_at BEFORE UPDATE ON public.job_runs FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
+CREATE TRIGGER set_system_announcements_updated_at BEFORE UPDATE ON public.system_announcements FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 
 -- ---------------------------------------------------------------------
--- 9. ROW LEVEL SECURITY (no policies = service_role / backend only)
+-- 8. ROW LEVEL SECURITY + TABLE GRANTS  (backend / service_role only)
 -- ---------------------------------------------------------------------
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_identities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.workflows ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.workflow_channels ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.user_workflow_access ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.workflow_access_requests ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.workflow_credentials ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.job_runs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.usage_meters ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.access_usage ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.plans ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_workflow_access ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.workflow_access_requests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.workflow_credentials ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.usage_meters ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.access_usage ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.job_runs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.system_announcements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.system_announcement_reads ENABLE ROW LEVEL SECURITY;
+-- (no policies on purpose: anon/authenticated get nothing)
+
+REVOKE ALL ON
+    public.users, public.user_identities, public.workflows, public.workflow_channels,
+    public.plans, public.subscriptions, public.payments, public.user_workflow_access,
+    public.workflow_access_requests, public.workflow_credentials, public.usage_meters,
+    public.access_usage, public.job_runs, public.user_notifications, public.system_announcements,
+    public.system_announcement_reads
+FROM anon, authenticated;
+
+GRANT ALL ON
+    public.users, public.user_identities, public.workflows, public.workflow_channels,
+    public.plans, public.subscriptions, public.payments, public.user_workflow_access,
+    public.workflow_access_requests, public.workflow_credentials, public.usage_meters,
+    public.access_usage, public.job_runs, public.user_notifications, public.system_announcements,
+    public.system_announcement_reads
+TO service_role;
 
 -- ---------------------------------------------------------------------
--- 9b. COLUMN COMMENTS (shown in Supabase Studio)
+-- 9. COMMENTS  (documentation for developers and AI agents)
 -- ---------------------------------------------------------------------
+COMMENT ON COLUMN public.users.role IS 'admin: everything. editor: manage workflows, access and requests. viewer: read-only admin panel. user: normal user. guest: limited user. Enforced by the app.';
+COMMENT ON COLUMN public.user_identities.provider_user_id IS 'The provider''s permanent id for the person (for Telegram: the numeric Telegram user id). Never changes.';
+COMMENT ON COLUMN public.user_identities.handle IS 'The human-readable public name on that provider (for Telegram: the @username, without the @). It can change or be missing, so it is for display only; always identify people by provider_user_id.';
+COMMENT ON COLUMN public.plans.entitlements IS 'The specific workflows a plan grants and the limit per meter (null = unlimited): {"job-xray": {"runs": 50, "ai_tokens": 200000}}';
 COMMENT ON COLUMN public.access_usage.limit_value IS 'NULL = unlimited.';
 COMMENT ON COLUMN public.job_runs.usage IS 'What this run consumed, per meter, e.g. {"runs":1,"ai_tokens":1840}.';
 COMMENT ON COLUMN public.job_runs.input IS 'What the workflow was asked to do. Free-form JSON object, shape defined by each workflow.';
 COMMENT ON COLUMN public.job_runs.output IS 'What the workflow produced. Free-form JSON, shape defined by each workflow. NULL until finished.';
-COMMENT ON COLUMN public.plans.entitlements IS 'The specific workflows a plan grants and the limit per meter (null = unlimited): {"job-xray": {"runs": 50, "ai_tokens": 200000}}';
-COMMENT ON COLUMN public.user_identities.provider_user_id IS 'The provider''s permanent id for the person (for Telegram: the numeric Telegram user id). Never changes.';
-COMMENT ON COLUMN public.user_identities.handle IS 'The human-readable public name on that provider (for Telegram: the @username, without the @). It can change or be missing, so it is for display only; always identify people by provider_user_id.';
-COMMENT ON COLUMN public.user_workflow_access.metadata IS 'Workflow-specific preferences only (e.g. {"cv": "https://...", "sendEmail": true}). Generic profile attributes live in public.users.';
-COMMENT ON COLUMN public.users.role IS 'admin: everything. editor: manage workflows, access and requests. viewer: read-only admin panel. user: normal user. guest: limited user. Enforced by the app.';
+
+COMMENT ON TABLE public.user_notifications IS 'Personal in-app inbox shown in the web app. One row = one message to one user. Created by the backend (service_role) in the user''s preferred_language. High-risk emails are sent by the backend and are NOT stored here.';
+COMMENT ON COLUMN public.user_notifications.id IS 'Primary key.';
+COMMENT ON COLUMN public.user_notifications.user_id IS 'Recipient (public.users.id). Rows are deleted automatically when the user is deleted.';
+COMMENT ON COLUMN public.user_notifications.type IS 'Machine-readable event key in lowercase snake_case, e.g. access_approved, quota_low, access_expiring. Used for icons and filtering, never shown to the user.';
+COMMENT ON COLUMN public.user_notifications.title IS 'Short headline shown to the user, already written in the recipient''s preferred_language at creation time.';
+COMMENT ON COLUMN public.user_notifications.body IS 'Optional longer text, same language as title. NULL = title only.';
+COMMENT ON COLUMN public.user_notifications.link IS 'Optional in-app path ("/workflows/xyz") or absolute https URL opened when clicked. Must start with / or https://. NULL = not clickable.';
+COMMENT ON COLUMN public.user_notifications.read_at IS 'When the user read it. NULL = unread. Unread count = rows where read_at IS NULL. Set back to NULL to mark as unread.';
+COMMENT ON COLUMN public.user_notifications.created_at IS 'When the notification was created. Inbox is ordered by this, newest first.';
+
+COMMENT ON TABLE public.system_announcements IS 'Banners/changelog shown to ALL users in the web app. One row = one announcement, with Arabic and English text side by side. Has no per-user state (no read tracking); dismissal is remembered in the browser only. Currently visible when: is_active AND starts_at <= now() AND (ends_at IS NULL OR ends_at > now()).';
+COMMENT ON COLUMN public.system_announcements.id IS 'Primary key.';
+COMMENT ON COLUMN public.system_announcements.type IS 'Kind of announcement: update, maintenance, message or changelog. Controls how the web app displays it.';
+COMMENT ON COLUMN public.system_announcements.title_ar IS 'Arabic headline. May be NULL if only English was written; at least one of title_ar / title_en must be filled.';
+COMMENT ON COLUMN public.system_announcements.title_en IS 'English headline. May be NULL if only Arabic was written; at least one of title_ar / title_en must be filled.';
+COMMENT ON COLUMN public.system_announcements.body_ar IS 'Optional Arabic text. NULL = headline only.';
+COMMENT ON COLUMN public.system_announcements.body_en IS 'Optional English text. NULL = headline only.';
+COMMENT ON COLUMN public.system_announcements.severity IS 'info, warning or critical. Controls banner color/prominence.';
+COMMENT ON COLUMN public.system_announcements.is_active IS 'Manual on/off switch. false hides the announcement regardless of dates.';
+COMMENT ON COLUMN public.system_announcements.starts_at IS 'Announcement becomes visible at this time. Defaults to creation time.';
+COMMENT ON COLUMN public.system_announcements.ends_at IS 'Announcement stops being visible at this time. NULL = no end (stays until deactivated).';
+COMMENT ON COLUMN public.system_announcements.created_by IS 'Admin who wrote it (public.users.id). Set to NULL if that user is deleted.';
+COMMENT ON COLUMN public.system_announcements.created_at IS 'When the row was created.';
+COMMENT ON COLUMN public.system_announcements.updated_at IS 'Last edit time. Maintained automatically by trigger.';
 
 -- ---------------------------------------------------------------------
--- 10. PRIVILEGES
+-- 10. REFERENCE DATA (seed)
 -- ---------------------------------------------------------------------
-REVOKE ALL ON ALL TABLES    IN SCHEMA public FROM anon, authenticated;
-REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM anon, authenticated;
-REVOKE ALL ON ALL FUNCTIONS IN SCHEMA public FROM PUBLIC, anon, authenticated;
-
--- RPCs the backend calls: service_role only
-GRANT EXECUTE ON FUNCTION public.authenticate_gatekeeper(uuid, bigint, text, text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.authenticate_gatekeeper(bigint, text, text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.consume_usage(uuid, text, text, bigint, uuid, boolean) TO service_role;
-GRANT EXECUTE ON FUNCTION public.consume_workflow_usage(uuid, text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.apply_plan_entitlements(uuid, uuid, uuid, timestamp with time zone) TO service_role;
-GRANT EXECUTE ON FUNCTION public.revoke_subscription_access(uuid) TO service_role;
-GRANT EXECUTE ON FUNCTION public.purge_expired_locked_users(interval) TO service_role;
-GRANT EXECUTE ON FUNCTION public.register_telegram_user(bigint, text, text, text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.set_credential(uuid, uuid, text, credential_auth_type, jsonb, text[], jsonb, timestamp with time zone) TO service_role;
-GRANT EXECUTE ON FUNCTION public.get_credential(uuid, uuid, text) TO service_role;
-
--- Trigger functions: not callable by anyone (triggers still fire)
-REVOKE ALL ON FUNCTION public.handle_updated_at() FROM service_role;
-REVOKE ALL ON FUNCTION public.validate_plan_entitlements() FROM service_role;
-REVOKE ALL ON FUNCTION public.protect_payment_ledger() FROM service_role;
-REVOKE ALL ON FUNCTION public.delete_credential_secret() FROM service_role;
+INSERT INTO public.usage_meters (key, name, unit) VALUES ('runs', 'Workflow runs', 'run') ON CONFLICT (key) DO NOTHING;
+INSERT INTO public.usage_meters (key, name, unit) VALUES ('ai_tokens', 'AI tokens', 'token') ON CONFLICT (key) DO NOTHING;
 
 -- ---------------------------------------------------------------------
--- 11. SEED DATA (reference data the functions rely on)
+-- 11. STORAGE
 -- ---------------------------------------------------------------------
-INSERT INTO public.usage_meters (key, name, unit) VALUES
-  ('runs',      'Workflow runs', 'run'),
-  ('ai_tokens', 'AI tokens',     'token')
-ON CONFLICT (key) DO NOTHING;
-
--- ---------------------------------------------------------------------
--- 12. STORAGE
--- ---------------------------------------------------------------------
+-- Public bucket for workflow cover images (10 MB, png/jpeg/webp only).
+-- No custom storage policies exist: uploads go through the backend (service_role).
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES ('workflow-images', 'workflow-images', true, 10485760, ARRAY['image/png','image/jpeg','image/webp'])
+VALUES ('workflow-images', 'workflow-images', true, 10485760, ARRAY['image/png', 'image/jpeg', 'image/webp'])
 ON CONFLICT (id) DO NOTHING;

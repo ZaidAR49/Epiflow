@@ -9,6 +9,7 @@ import type { PlanWithSubscriberCount } from "@/lib/db/queries/plans";
 import type { SubscriptionWithDetails } from "@/lib/db/queries/subscriptions";
 import type { PaymentWithDetails, PaymentStats } from "@/lib/db/queries/payments";
 import type { UsageMeterWithDetails } from "@/lib/db/queries/usage-meters";
+import type { SystemAnnouncement } from "@/lib/db/schema/system-announcements";
 
 import { AdminSidebar, type AdminTab } from "./admin-sidebar";
 import { AdminMobileTabBar } from "./admin-mobile-tab-bar";
@@ -19,6 +20,7 @@ import { SubscriptionManagementCard } from "./subscription-management-card";
 import { PaymentLedgerCard } from "./payment-ledger-card";
 import { UsageMetersCard } from "./usage-meters-card";
 import { UserManagementTable } from "./user-management-table";
+import { NotificationManagementCard } from "./notification-management-card";
 
 export type AdminCallerRole = "admin" | "editor" | "viewer";
 
@@ -32,6 +34,7 @@ interface AdminShellProps {
   payments: PaymentWithDetails[];
   paymentStats: PaymentStats;
   usageMeters: UsageMeterWithDetails[];
+  announcements: SystemAnnouncement[];
   currentUserId: string;
   callerRole: AdminCallerRole;
 }
@@ -46,6 +49,7 @@ export function AdminShell({
   payments,
   paymentStats,
   usageMeters,
+  announcements,
   currentUserId,
   callerRole,
 }: AdminShellProps) {
@@ -144,6 +148,16 @@ export function AdminShell({
             <div className="space-y-6">
               <SectionHeader title={t("usersTab")} count={pendingUsers > 0 ? pendingUsers : undefined} />
               <UserManagementTable users={users} currentUserId={currentUserId} callerRole={callerRole} />
+            </div>
+          )}
+
+          {activeTab === "notifications" && (
+            <div className="space-y-6">
+              <SectionHeader title={t("notificationsTab")} />
+              <NotificationManagementCard
+                initialAnnouncements={announcements}
+                callerRole={callerRole}
+              />
             </div>
           )}
         </main>

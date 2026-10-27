@@ -50,14 +50,14 @@ export function WorkflowExplorer({
     if (!autoStep || stackedMode) return;
     const interval = setInterval(() => {
       setProgress((prev) => {
-        const next = prev + 2.2;
+        const next = prev + 4.8;
         if (next >= 100) {
           setCurrentStage((curr) => (curr < 5 ? curr + 1 : 1));
           return 0;
         }
         return next;
       });
-    }, 115);
+    }, 250);
     return () => clearInterval(interval);
   }, [autoStep, stackedMode]);
 

@@ -43,12 +43,10 @@ export async function getAllPlans(): Promise<PlanWithSubscriberCount[]> {
       p.is_active,
       p.created_at,
       p.updated_at,
-      (
-        SELECT COUNT(*)::text
-        FROM public.subscriptions s
-        WHERE s.plan_id = p.id AND s.status IN ('active', 'trialing')
-      ) AS subscribers_count
+      COUNT(s.id) FILTER (WHERE s.status IN ('active', 'trialing'))::text AS subscribers_count
     FROM public.plans p
+    LEFT JOIN public.subscriptions s ON s.plan_id = p.id
+    GROUP BY p.id
     ORDER BY p.price_minor ASC, p.created_at ASC;
   `);
 
