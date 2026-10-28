@@ -22,7 +22,7 @@ export function TelegramManualForm({ onSuccess }: TelegramManualFormProps) {
 
     const parsedId = Number(telegramIdInput.trim());
     if (!telegramIdInput.trim() || isNaN(parsedId) || parsedId <= 0) {
-      setErrorMessage("Please enter a valid positive numeric Telegram ID");
+      setErrorMessage(t("invalidTelegramIdError"));
       return;
     }
 
@@ -43,7 +43,7 @@ export function TelegramManualForm({ onSuccess }: TelegramManualFormProps) {
         }
       }
     } catch {
-      setErrorMessage("Failed to link Telegram ID. Please try again.");
+      setErrorMessage(t("manualLinkError"));
     } finally {
       setIsSubmitting(false);
     }
@@ -67,7 +67,7 @@ export function TelegramManualForm({ onSuccess }: TelegramManualFormProps) {
           type="text"
           value={telegramIdInput}
           onChange={(e) => setTelegramIdInput(e.target.value)}
-          placeholder="e.g. 2076665816"
+          placeholder={t("manualIdPlaceholder")}
           dir="ltr"
           className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text)] placeholder-[var(--text-muted)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden"
           required
@@ -83,7 +83,7 @@ export function TelegramManualForm({ onSuccess }: TelegramManualFormProps) {
           type="text"
           value={usernameInput}
           onChange={(e) => setUsernameInput(e.target.value)}
-          placeholder="@username"
+          placeholder={t("manualUsernamePlaceholder")}
           dir="ltr"
           className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text)] placeholder-[var(--text-muted)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden"
         />

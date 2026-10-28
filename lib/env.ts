@@ -12,7 +12,14 @@ const serverEnvSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   GOOGLE_REFRESH_TOKEN: z.string().optional(),
-  AUTH_SECRET: z.string().optional(),
+  AUTH_SECRET: z
+    .string()
+    .min(16, "AUTH_SECRET is required and must be at least 16 characters")
+    .default(
+      process.env.NODE_ENV === "test"
+        ? "test-secret-at-least-32-chars-long-1234"
+        : (process.env.AUTH_SECRET || "")
+    ),
   AUTH_URL: z.string().url().optional(),
   TOKEN_ENCRYPTION_KEY: z
     .string()

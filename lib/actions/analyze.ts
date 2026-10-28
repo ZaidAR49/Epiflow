@@ -5,8 +5,9 @@ import { auth } from "@/auth";
 import { inngest } from "@/lib/jobs/client";
 import { linkedinUrlSchema } from "@/lib/validation/url";
 import { createJobRun, deleteJobRun } from "@/lib/db/queries/job-runs";
-import { getPrimaryWorkflow } from "@/lib/db/queries/workflows";
 import { ErrorCodes } from "@/lib/errors";
+import { authenticateWebGatekeeper } from "@/lib/services/gatekeeper";
+import { isErr } from "@/lib/result";
 
 const analyzeInputSchema = z.object({
   url: linkedinUrlSchema,
@@ -51,19 +52,22 @@ export async function analyzePostAction(
   const { url, language } = parsed.data;
 
   try {
-    const workflow = await getPrimaryWorkflow();
-    if (!workflow) {
+    // Enforce gatekeeper authorization before queueing any paid background work
+    const gatekeeperResult = await authenticateWebGatekeeper(userId, "job-xray");
+    if (isErr(gatekeeperResult)) {
       return {
         success: false,
-        errorCode: ErrorCodes.INTERNAL_ERROR,
-        message: "Workflow not found",
+        errorCode: gatekeeperResult.error.code,
+        message: gatekeeperResult.error.safeMessage,
       };
     }
+
+    const { workflow } = gatekeeperResult.data;
 
     // 1. Create initial job run record
     const run = await createJobRun({
       userId,
-      workflowId: workflow.id,
+      workflowId: workflow.workflowId,
       channel: "web",
       input: { url, normalizedUrl: url, language },
       status: "pending",

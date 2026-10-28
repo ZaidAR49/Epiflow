@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import { Play, RotateCcw, Activity, CheckCircle2, Terminal, Sparkles } from "lucide-react";
 
 export const TEST_BENCH_PRESETS = [
@@ -45,6 +46,8 @@ export function TestBenchControls({
   viewMode,
   onViewModeChange,
 }: TestBenchControlsProps) {
+  const t = useTranslations("testBench");
+
   return (
     <div className="space-y-4">
       {/* Action Bar */}
@@ -146,10 +149,12 @@ export function TestBenchControls({
 
         <div className="flex gap-2">
           <input
+            id="test-bench-url-input"
+            aria-label={t("pasteUrlPlaceholder")}
             type="url"
             value={url}
             onChange={(e) => onUrlChange(e.target.value)}
-            placeholder="Paste LinkedIn post or job URL (e.g. https://www.linkedin.com/posts/...)"
+            placeholder={t("pasteUrlPlaceholder")}
             className="flex-1 rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3.5 py-2 text-xs text-[var(--text)] focus:border-[var(--accent)] focus:outline-none"
           />
         </div>

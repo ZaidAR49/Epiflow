@@ -18,7 +18,6 @@ const ALLOWED_MIME_TYPES = [
   "image/png",
   "image/webp",
   "image/gif",
-  "image/svg+xml",
 ];
 
 export function WorkflowImageUploader({
@@ -48,7 +47,7 @@ export function WorkflowImageUploader({
     // Client-side validation: MIME format check
     if (!ALLOWED_MIME_TYPES.includes(file.type)) {
       setStatusMessage({
-        text: "Only popular image formats are supported (PNG, JPG, WebP, GIF, SVG)",
+        text: "Only popular image formats are supported (PNG, JPG, WebP, GIF)",
         isError: true,
       });
       return;
@@ -109,26 +108,40 @@ export function WorkflowImageUploader({
 
   return (
     <div className="space-y-2">
-      <label className="block text-xs font-medium text-[var(--text-muted)]">
+      <label
+        htmlFor={`workflow-image-input-${workflowId}`}
+        className="block text-xs font-medium text-[var(--text-muted)] cursor-pointer"
+      >
         {t("uploadPicture")}
       </label>
 
-      {/* Hidden native input */}
+      {/* Accessible native input */}
       <input
+        id={`workflow-image-input-${workflowId}`}
         ref={fileInputRef}
         type="file"
         accept={ALLOWED_MIME_TYPES.join(",")}
         onChange={handleFileChange}
-        className="hidden"
+        className="sr-only"
+        aria-label={t("uploadPicture")}
       />
 
       {/* Dropzone Container */}
       <div
+        role="button"
+        tabIndex={0}
+        aria-label={t("uploadPicture")}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            if (!isPending) fileInputRef.current?.click();
+          }
+        }}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onClick={() => !isPending && fileInputRef.current?.click()}
-        className={`group relative flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-4 transition-all ${
+        className={`group relative flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-4 transition-all focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
           isDragging
             ? "border-[var(--accent)] bg-[var(--accent)]/10"
             : "border-[var(--border)] bg-[var(--surface-2)]/40 hover:border-[var(--accent)]/50 hover:bg-[var(--surface-2)]"

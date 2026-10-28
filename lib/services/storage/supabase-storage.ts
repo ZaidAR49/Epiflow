@@ -11,7 +11,6 @@ export const ALLOWED_IMAGE_MIME_TYPES = [
   "image/png",
   "image/webp",
   "image/gif",
-  "image/svg+xml",
 ] as const;
 
 export type AllowedImageMimeType = (typeof ALLOWED_IMAGE_MIME_TYPES)[number];
@@ -29,11 +28,64 @@ export interface UploadImageResult {
 }
 
 /**
+ * Validates buffer magic bytes against declared MIME type to prevent spoofed uploads.
+ */
+export function verifyImageMagicBytes(
+  buffer: Buffer,
+  contentType: string
+): boolean {
+  if (!buffer || buffer.length < 12) return false;
+
+  // PNG: 89 50 4E 47
+  if (
+    contentType === "image/png" &&
+    buffer[0] === 0x89 &&
+    buffer[1] === 0x50 &&
+    buffer[2] === 0x4e &&
+    buffer[3] === 0x47
+  ) {
+    return true;
+  }
+
+  // JPEG: FF D8 FF
+  if (
+    contentType === "image/jpeg" &&
+    buffer[0] === 0xff &&
+    buffer[1] === 0xd8 &&
+    buffer[2] === 0xff
+  ) {
+    return true;
+  }
+
+  // GIF: 47 49 46
+  if (
+    contentType === "image/gif" &&
+    buffer[0] === 0x47 &&
+    buffer[1] === 0x49 &&
+    buffer[2] === 0x46
+  ) {
+    return true;
+  }
+
+  // WebP: RIFF .... WEBP
+  if (
+    contentType === "image/webp" &&
+    buffer.subarray(0, 4).toString("ascii") === "RIFF" &&
+    buffer.subarray(8, 12).toString("ascii") === "WEBP"
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
  * Validates file size (max 10MB) and MIME type for image uploads.
  */
 export function validateImageFile(file: {
   size: number;
   type: string;
+  buffer?: Buffer;
 }): Result<true, AppError> {
   if (file.size > MAX_IMAGE_FILE_SIZE) {
     return err(
@@ -50,7 +102,17 @@ export function validateImageFile(file: {
       new AppError(
         ErrorCodes.INTERNAL_ERROR,
         400,
-        `Unsupported image format (${file.type}). Allowed formats: PNG, JPG, WebP, GIF, SVG`
+        `Unsupported image format (${file.type}). Allowed formats: PNG, JPG, WebP, GIF`
+      )
+    );
+  }
+
+  if (file.buffer && !verifyImageMagicBytes(file.buffer, file.type)) {
+    return err(
+      new AppError(
+        ErrorCodes.INTERNAL_ERROR,
+        400,
+        "File signature does not match declared image type (corrupt or spoofed file)"
       )
     );
   }
@@ -65,6 +127,15 @@ export function validateImageFile(file: {
 export async function uploadPublicImage(
   options: UploadImageOptions
 ): Promise<Result<UploadImageResult, AppError>> {
+  const validation = validateImageFile({
+    size: options.buffer.length,
+    type: options.contentType,
+    buffer: options.buffer,
+  });
+  if (!validation.success) {
+    return validation;
+  }
+
   const env = getServerEnv();
 
   // Resolve Supabase URL from env or fallback to project ref in DATABASE_URL

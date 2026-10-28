@@ -80,7 +80,7 @@ export function UserQuotaModal({
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div>
             <label htmlFor="quota-limit-input" className="block text-xs font-medium text-[var(--text-muted)]">
-              Scan Limit ({t("unlimited")} if blank)
+              {t("scanLimitLabel", { unlimited: t("unlimited") })}
             </label>
             <input
               id="quota-limit-input"
@@ -88,7 +88,7 @@ export function UserQuotaModal({
               min="0"
               value={newLimit}
               onChange={(e) => setNewLimit(e.target.value)}
-              placeholder="Leave blank for Unlimited"
+              placeholder={t("quotaPlaceholder")}
               className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden"
             />
           </div>
@@ -102,7 +102,7 @@ export function UserQuotaModal({
               className="rounded border-[var(--border)] accent-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
             />
             <label htmlFor="resetCounterModal" className="text-xs text-[var(--text)] cursor-pointer">
-              {t("resetQuota")} (resets used count to 0)
+              {t("resetQuotaDesc")}
             </label>
           </div>
 
@@ -121,7 +121,7 @@ export function UserQuotaModal({
               className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-[var(--accent)]/90 focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden disabled:opacity-50"
             >
               <Save className="h-3.5 w-3.5" />
-              <span>{isPending ? "Saving..." : t("saveQuota")}</span>
+              <span>{isPending ? t("savingQuota") : t("saveQuota")}</span>
             </button>
           </div>
         </form>

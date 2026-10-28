@@ -3,11 +3,10 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { ErrorCodes } from "@/lib/errors";
 import { createJobRun } from "@/lib/db/queries/job-runs";
-import { getUserWorkflowDetails } from "@/lib/db/queries/access";
 import { executePipeline } from "@/lib/services/pipeline/orchestrator";
 import { linkedinUrlSchema } from "@/lib/validation/url";
 import { isErr } from "@/lib/result";
-import { getUserById } from "@/lib/db/queries/users";
+import { authenticateWebGatekeeper } from "@/lib/services/gatekeeper";
 
 const analyzeStreamSchema = z.object({
   url: linkedinUrlSchema,
@@ -39,44 +38,20 @@ export async function POST(req: NextRequest) {
 
     const { url, language } = parsed.data;
 
-    // Verify user status and workflow quota
-    const [user, workflow] = await Promise.all([
-      getUserById(userId),
-      getUserWorkflowDetails(userId, "job-xray"),
-    ]);
-
-    if (!user || user.status === "locked" || user.status === "rejected") {
+    // Verify user status and workflow quota via Gatekeeper
+    const gatekeeperResult = await authenticateWebGatekeeper(userId, "job-xray");
+    if (isErr(gatekeeperResult)) {
+      const err = gatekeeperResult.error;
       return new Response(
         JSON.stringify({
-          error: "Account is locked or not permitted",
-          code: ErrorCodes.ACCOUNT_LOCKED,
+          error: err.safeMessage,
+          code: err.code,
         }),
-        { status: 403, headers: { "Content-Type": "application/json" } }
+        { status: err.httpStatus, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    if (!workflow) {
-      return new Response(
-        JSON.stringify({
-          error: "Workflow access not granted",
-          code: ErrorCodes.WORKFLOW_FORBIDDEN,
-        }),
-        { status: 403, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    if (
-      workflow.usageLimit !== null &&
-      workflow.usageCount >= workflow.usageLimit
-    ) {
-      return new Response(
-        JSON.stringify({
-          error: "Quota exceeded for this period",
-          code: ErrorCodes.QUOTA_EXCEEDED,
-        }),
-        { status: 403, headers: { "Content-Type": "application/json" } }
-      );
-    }
+    const { workflow } = gatekeeperResult.data;
 
     // Create initial pending job run record
     const run = await createJobRun({

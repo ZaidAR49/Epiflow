@@ -103,7 +103,8 @@ export async function generateTelegramLinkTokenAction(
 }
 
 /**
- * Manually links a user to a Telegram ID (for power users or direct entry).
+ * Manually links a user to a Telegram ID (restricted to administrators for support/debugging).
+ * Regular users must link securely via 1-click deep link or the single-use /connect cryptographic token.
  */
 export async function linkTelegramManuallyAction(
   rawInput: ManualTelegramLinkInput
@@ -114,6 +115,16 @@ export async function linkTelegramManuallyAction(
       success: false,
       errorCode: ErrorCodes.UNAUTHORIZED,
       message: "You must be signed in to perform this action",
+    };
+  }
+
+  const caller = await getUserById(session.user.id);
+  if (!caller || caller.role !== "admin") {
+    return {
+      success: false,
+      errorCode: "FORBIDDEN",
+      message:
+        "Direct manual linking is restricted to administrators. Please connect securely using the 1-click button or /connect command.",
     };
   }
 

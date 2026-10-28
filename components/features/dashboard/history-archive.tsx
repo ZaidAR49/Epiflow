@@ -218,18 +218,18 @@ export function HistoryArchive({
                     {hasEmail && (
                       <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-300 border border-emerald-500/30">
                         <Mail className="h-3 w-3" />
-                        <span>Email Found</span>
+                        <span>{t("emailFound")}</span>
                       </span>
                     )}
                     {run.status === "completed" ? (
                       <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-400">
                         <CheckCircle2 className="h-3 w-3" />
-                        <span>Done</span>
+                        <span>{t("done")}</span>
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-rose-400">
                         <XCircle className="h-3 w-3" />
-                        <span>Failed</span>
+                        <span>{t("failed")}</span>
                       </span>
                     )}
                   </div>

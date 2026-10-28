@@ -44,16 +44,21 @@ export async function handleTelegramMessage(message: TelegramMessage): Promise<v
 
   // 2. Authenticate Gatekeeper (Read-only access check)
   const auth = await authenticateGatekeeper(telegramId, "job-xray", username);
-  const lang: "ar" | "en" = "ar"; // default to Arabic for Telegram bot
+  const lang: "ar" | "en" = auth.preferredLanguage === "en" ? "en" : "ar";
   const isRtl = lang === "ar";
 
   if (!auth.isAuthorized || !auth.userId) {
-    const errorMsg =
-      auth.errorCode === "QUOTA_EXCEEDED"
-        ? "⚠️ لقد استنفدت الحد المسموح به من الفحوصات لهذه الفترة."
-        : auth.errorCode === "UNREGISTERED"
-          ? "⚠️ حسابك غير مسجل في الخدمة. يرجى التواصل مع المسؤول للحصول على إذن الوصول."
-          : `⚠️ لا يمكن تنفيذ الطلب: (${auth.errorCode})`;
+    const errorMsg = isRtl
+      ? (auth.errorCode === "QUOTA_EXCEEDED"
+          ? "⚠️ لقد استنفدت الحد المسموح به من الفحوصات لهذه الفترة."
+          : auth.errorCode === "UNREGISTERED"
+            ? "⚠️ حسابك غير مسجل في الخدمة. يرجى التواصل مع المسؤول للحصول على إذن الوصول."
+            : `⚠️ لا يمكن تنفيذ الطلب: (${auth.errorCode})`)
+      : (auth.errorCode === "QUOTA_EXCEEDED"
+          ? "⚠️ You have exceeded your scan quota limit for this period."
+          : auth.errorCode === "UNREGISTERED"
+            ? "⚠️ Your account is not registered. Please contact an administrator to request access."
+            : `⚠️ Request could not be processed: (${auth.errorCode})`);
 
     await sendTelegramMessage(chatId, errorMsg, { isRtl });
     return;
@@ -101,7 +106,11 @@ export async function handleTelegramMessage(message: TelegramMessage): Promise<v
     // Step A: Expand short URL
     const expandResult = await expandLinkedInUrl(rawUrl);
     if (isErr(expandResult)) {
-      await updateStatus("⚠️ الرابط المدخل غير صالح أو تعذر الوصول إليه.");
+      await updateStatus(
+        isRtl
+          ? "⚠️ الرابط المدخل غير صالح أو تعذر الوصول إليه."
+          : "⚠️ The entered URL is invalid or unreachable."
+      );
       await markJobRunFailed(run.id, expandResult.error.code, expandResult.error.safeMessage);
       return;
     }

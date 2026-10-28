@@ -179,11 +179,13 @@ export function UserManagementTable({ users, currentUserId, callerRole }: UserMa
         <div className="relative w-full sm:w-64">
           <Search className="absolute start-3 top-2.5 h-4 w-4 text-[var(--text-muted)]" />
           <input
+            id="admin-user-search"
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("searchPlaceholder")}
-            className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] ps-9 pe-3 py-1.5 text-xs text-[var(--text)] focus:border-[var(--accent)] focus:outline-none"
+            aria-label={t("searchPlaceholder")}
+            className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] ps-9 pe-3 py-1.5 text-xs text-[var(--text)] focus:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus:outline-hidden"
           />
         </div>
       </div>

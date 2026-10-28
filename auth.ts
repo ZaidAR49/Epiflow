@@ -9,7 +9,7 @@ import { ensureUserFreeSubscription } from "@/lib/db/queries/free-plan";
 const env = getServerEnv();
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  secret: env.AUTH_SECRET || "ee78a13c1a26c1f2e9698b8ce98fa714377b1051fc1d7829b5c06508275e7277",
+  secret: env.AUTH_SECRET,
   // Required: trust incoming host header so PKCE cookies round-trip correctly
   // in development and behind reverse proxies in production.
   trustHost: true,

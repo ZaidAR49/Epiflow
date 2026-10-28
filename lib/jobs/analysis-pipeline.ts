@@ -4,6 +4,7 @@ import { expandLinkedInUrl } from "@/lib/services/scraper/url-expander";
 import { scrapePost, scrapeAuthor, scrapeCompany } from "@/lib/services/scraper/apify";
 import { normalizeScrapedData, isCompanyAuthor } from "@/lib/services/scraper/normalize";
 import { generateReport } from "@/lib/services/ai/report-agent";
+import { authenticateWebGatekeeper } from "@/lib/services/gatekeeper";
 import {
   updateJobRunStatus,
   updateJobRunProgress,
@@ -25,6 +26,15 @@ export const analyzeJobPost = inngest.createFunction(
   async ({ event, step }) => {
     const data = event.data as JobAnalyzeEventData;
     const { runId, userId, url, language, workflowSlug = "job-xray" } = data;
+
+    // Step 0: Gatekeeper validation (Defense-in-depth before paid work)
+    await step.run("authenticate-gatekeeper", async () => {
+      const authResult = await authenticateWebGatekeeper(userId, workflowSlug);
+      if (isErr(authResult)) {
+        await markJobRunFailed(runId, authResult.error.code, authResult.error.safeMessage);
+        throw new Error(authResult.error.safeMessage);
+      }
+    });
 
     // Step 1: Validate and expand URL (SSRF-protected)
     const normalizedUrl = await step.run("expand-url", async () => {

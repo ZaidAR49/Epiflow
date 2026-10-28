@@ -119,17 +119,18 @@ export function SendNotificationForm({
       {/* Direct User ID input for scalability */}
       {recipientMode === "single" && (
         <div>
-          <label className="block text-xs font-semibold text-[var(--text-muted)] mb-1">
+          <label htmlFor="send-notif-target-user-id" className="block text-xs font-semibold text-[var(--text-muted)] mb-1">
             {t("targetUserId")}
           </label>
           <div className="relative">
             <Fingerprint className="absolute start-2.5 top-2.5 h-3.5 w-3.5 text-[var(--text-muted)]" />
             <input
+              id="send-notif-target-user-id"
               type="text"
               value={targetUserId}
               onChange={(e) => setTargetUserId(e.target.value)}
               required
-              placeholder="e.g. 550e8400-e29b-41d4-a716-446655440000"
+              placeholder={t("targetUserIdPlaceholder")}
               className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] ps-8 pe-3 py-2 text-xs font-mono text-[var(--text)] focus:border-[var(--accent)] focus:outline-hidden"
             />
           </div>
@@ -142,30 +143,32 @@ export function SendNotificationForm({
       {/* Event type & Link */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-semibold text-[var(--text-muted)] mb-1">
+          <label htmlFor="send-notif-type" className="block text-xs font-semibold text-[var(--text-muted)] mb-1">
             {t("notificationTypeLabel")}
           </label>
           <select
+            id="send-notif-type"
             value={type}
             onChange={(e) => setType(e.target.value)}
             className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text)] focus:border-[var(--accent)] focus:outline-hidden"
           >
-            <option value="update">Update / Feature</option>
-            <option value="system">System Notice</option>
-            <option value="access_approved">Access Approved</option>
-            <option value="quota_low">Quota Alert</option>
-            <option value="maintenance">Maintenance</option>
-            <option value="general">General</option>
+            <option value="update">{t("optUpdate")}</option>
+            <option value="system">{t("optSystem")}</option>
+            <option value="access_approved">{t("optAccessApproved")}</option>
+            <option value="quota_low">{t("optQuotaLow")}</option>
+            <option value="maintenance">{t("optMaintenance")}</option>
+            <option value="general">{t("optGeneral")}</option>
           </select>
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-[var(--text-muted)] mb-1">
+          <label htmlFor="send-notif-link" className="block text-xs font-semibold text-[var(--text-muted)] mb-1">
             {t("notificationLinkLabel")}
           </label>
           <div className="relative">
             <LinkIcon className="absolute start-2.5 top-2.5 h-3.5 w-3.5 text-[var(--text-muted)]" />
             <input
+              id="send-notif-link"
               type="text"
               value={link}
               onChange={(e) => setLink(e.target.value)}
@@ -178,31 +181,33 @@ export function SendNotificationForm({
 
       {/* Headline */}
       <div>
-        <label className="block text-xs font-semibold text-[var(--text-muted)] mb-1">
+        <label htmlFor="send-notif-title" className="block text-xs font-semibold text-[var(--text-muted)] mb-1">
           {t("notificationTitleLabel")}
         </label>
         <input
+          id="send-notif-title"
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           required
           maxLength={200}
-          placeholder="e.g. Your monthly analysis quota has been recharged"
+          placeholder={t("titlePlaceholder")}
           className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text)] focus:border-[var(--accent)] focus:outline-hidden"
         />
       </div>
 
       {/* Message body */}
       <div>
-        <label className="block text-xs font-semibold text-[var(--text-muted)] mb-1">
+        <label htmlFor="send-notif-body" className="block text-xs font-semibold text-[var(--text-muted)] mb-1">
           {t("notificationBodyLabel")}
         </label>
         <textarea
+          id="send-notif-body"
           rows={3}
           value={body}
           onChange={(e) => setBody(e.target.value)}
           maxLength={2000}
-          placeholder="Optional detailed explanation or next steps for the user..."
+          placeholder={t("bodyPlaceholder")}
           className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text)] focus:border-[var(--accent)] focus:outline-hidden resize-none"
         />
       </div>

@@ -68,12 +68,28 @@ describe("Supabase Storage Helper & Validation", () => {
     expect(isErr(exeResult)).toBe(true);
   });
 
+  it("rejects files when buffer magic bytes do not match declared MIME type", () => {
+    const fakePng = validateImageFile({
+      size: 100,
+      type: "image/png",
+      buffer: Buffer.from("plain text claiming to be png"),
+    });
+    expect(isErr(fakePng)).toBe(true);
+    if (isErr(fakePng)) {
+      expect(fakePng.error.safeMessage).toContain("File signature does not match");
+    }
+  });
+
   it("fails fast with clear error when SUPABASE_SERVICE_ROLE_KEY is missing", async () => {
     delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    // Valid PNG signature header
+    const validPngBuffer = Buffer.from([
+      0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d,
+    ]);
     const res = await uploadPublicImage({
       bucket: "workflow-images",
       path: "test.png",
-      buffer: Buffer.from("fake-image"),
+      buffer: validPngBuffer,
       contentType: "image/png",
     });
 

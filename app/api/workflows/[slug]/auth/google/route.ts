@@ -23,6 +23,8 @@ export async function GET(
   }
 
   const origin = req.nextUrl.origin;
+  const requestedLocale = req.nextUrl.searchParams.get("locale");
+  const locale = requestedLocale === "ar" || requestedLocale === "en" ? requestedLocale : "en";
   const redirectUri =
     env.GOOGLE_WORKFLOW_REDIRECT_URI?.trim() ||
     `${origin}/api/workflows/${slug}/auth/google/callback`;
@@ -30,6 +32,7 @@ export async function GET(
     JSON.stringify({
       userId: session.user.id,
       slug,
+      locale,
       t: Date.now(),
     })
   ).toString("base64url");

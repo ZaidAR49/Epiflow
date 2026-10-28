@@ -68,7 +68,7 @@ export function WorkflowSettingsForm({ initialMetadata }: WorkflowSettingsFormPr
             type="text"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
-            placeholder="e.g. Sarah Jenkins"
+            placeholder={t("applicantNamePlaceholder")}
             className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3.5 py-2.5 text-sm text-[var(--text)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)] transition-colors"
           />
           <p className="mt-1 text-xs text-[var(--text-muted)]">{t("applicantNameHelp")}</p>

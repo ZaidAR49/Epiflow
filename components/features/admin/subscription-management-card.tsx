@@ -61,8 +61,10 @@ export function SubscriptionManagementCard({
           <div className="relative">
             <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[var(--text-muted)]" />
             <input
+              id="admin-subscription-search"
+              aria-label={t("searchPlaceholder")}
               type="text"
-              placeholder="Search subscriptions..."
+              placeholder={t("searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-48 sm:w-64 rounded-lg border border-[var(--border)] bg-[var(--surface-2)] ps-8 pe-3 py-1.5 text-xs text-[var(--text)] placeholder:text-[var(--text-muted)] focus:outline-hidden focus:border-[var(--accent)]"

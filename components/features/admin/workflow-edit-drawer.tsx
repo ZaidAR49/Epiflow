@@ -115,7 +115,7 @@ export function WorkflowEditDrawer({
           className="inline-flex items-center gap-1 rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden cursor-pointer"
         >
           <X className="h-3.5 w-3.5" />
-          <span>Cancel</span>
+          <span>{t("cancel")}</span>
         </button>
         <button
           type="button"

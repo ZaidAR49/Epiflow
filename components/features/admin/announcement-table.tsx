@@ -142,11 +142,11 @@ export function AnnouncementTable({
         <table className="w-full text-start text-xs">
           <thead className="bg-[var(--surface-2)]/70 text-[var(--text-muted)] border-b border-[var(--border)] uppercase text-[10px] tracking-wider font-semibold">
             <tr>
-              <th className="px-4 py-3 text-start">Kind</th>
-              <th className="px-4 py-3 text-start">Arabic Title</th>
-              <th className="px-4 py-3 text-start">English Title</th>
-              <th className="px-4 py-3 text-start">Status</th>
-              <th className="px-4 py-3 text-end">Actions</th>
+              <th className="px-4 py-3 text-start">{t("thKind")}</th>
+              <th className="px-4 py-3 text-start">{t("thTitleAr")}</th>
+              <th className="px-4 py-3 text-start">{t("thTitleEn")}</th>
+              <th className="px-4 py-3 text-start">{t("thStatus")}</th>
+              <th className="px-4 py-3 text-end">{t("thActions")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--border)] bg-[var(--surface)] text-[var(--text)]">

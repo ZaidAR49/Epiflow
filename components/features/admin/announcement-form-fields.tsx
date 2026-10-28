@@ -56,10 +56,11 @@ export function AnnouncementFormFields({
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-semibold text-[var(--text-muted)] mb-1">
+          <label htmlFor="announcement-type" className="block text-xs font-semibold text-[var(--text-muted)] mb-1">
             {t("typeLabel")}
           </label>
           <select
+            id="announcement-type"
             value={type}
             onChange={(e) => setType(e.target.value as AnnouncementType)}
             className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text)] focus:border-[var(--accent)] focus:outline-hidden"
@@ -72,10 +73,11 @@ export function AnnouncementFormFields({
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-[var(--text-muted)] mb-1">
+          <label htmlFor="announcement-severity" className="block text-xs font-semibold text-[var(--text-muted)] mb-1">
             {t("severityLabel")}
           </label>
           <select
+            id="announcement-severity"
             value={severity}
             onChange={(e) => setSeverity(e.target.value as AnnouncementSeverity)}
             className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text)] focus:border-[var(--accent)] focus:outline-hidden"
@@ -89,29 +91,31 @@ export function AnnouncementFormFields({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-semibold text-[var(--text-muted)] mb-1">
+          <label htmlFor="announcement-title-ar" className="block text-xs font-semibold text-[var(--text-muted)] mb-1">
             {t("titleArLabel")}
           </label>
           <input
+            id="announcement-title-ar"
             type="text"
             dir="rtl"
             value={titleAr}
             onChange={(e) => setTitleAr(e.target.value)}
-            placeholder="عنوان الإعلان بالعربية..."
+            placeholder={t("titleArPlaceholder")}
             className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text)] focus:border-[var(--accent)] focus:outline-hidden"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-[var(--text-muted)] mb-1">
+          <label htmlFor="announcement-title-en" className="block text-xs font-semibold text-[var(--text-muted)] mb-1">
             {t("titleEnLabel")}
           </label>
           <input
+            id="announcement-title-en"
             type="text"
             dir="ltr"
             value={titleEn}
             onChange={(e) => setTitleEn(e.target.value)}
-            placeholder="English headline..."
+            placeholder={t("titleEnPlaceholder")}
             className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text)] focus:border-[var(--accent)] focus:outline-hidden"
           />
         </div>
@@ -119,29 +123,31 @@ export function AnnouncementFormFields({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-semibold text-[var(--text-muted)] mb-1">
+          <label htmlFor="announcement-body-ar" className="block text-xs font-semibold text-[var(--text-muted)] mb-1">
             {t("bodyArLabel")}
           </label>
           <textarea
+            id="announcement-body-ar"
             rows={2}
             dir="rtl"
             value={bodyAr}
             onChange={(e) => setBodyAr(e.target.value)}
-            placeholder="تفاصيل إضافية بالعربية..."
+            placeholder={t("bodyArPlaceholder")}
             className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text)] focus:border-[var(--accent)] focus:outline-hidden resize-none"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-[var(--text-muted)] mb-1">
+          <label htmlFor="announcement-body-en" className="block text-xs font-semibold text-[var(--text-muted)] mb-1">
             {t("bodyEnLabel")}
           </label>
           <textarea
+            id="announcement-body-en"
             rows={2}
             dir="ltr"
             value={bodyEn}
             onChange={(e) => setBodyEn(e.target.value)}
-            placeholder="Optional details in English..."
+            placeholder={t("bodyEnPlaceholder")}
             className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text)] focus:border-[var(--accent)] focus:outline-hidden resize-none"
           />
         </div>
@@ -149,11 +155,12 @@ export function AnnouncementFormFields({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-semibold text-[var(--text-muted)] mb-1">
+          <label htmlFor="announcement-starts-at" className="block text-xs font-semibold text-[var(--text-muted)] mb-1">
             {t("startsAtLabel")}
           </label>
           <div className="relative">
             <input
+              id="announcement-starts-at"
               type="datetime-local"
               value={startsAt}
               onChange={(e) => setStartsAt(e.target.value)}
@@ -164,11 +171,12 @@ export function AnnouncementFormFields({
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-[var(--text-muted)] mb-1">
+          <label htmlFor="announcement-ends-at" className="block text-xs font-semibold text-[var(--text-muted)] mb-1">
             {t("endsAtLabel")}
           </label>
           <div className="relative">
             <input
+              id="announcement-ends-at"
               type="datetime-local"
               value={endsAt}
               onChange={(e) => setEndsAt(e.target.value)}

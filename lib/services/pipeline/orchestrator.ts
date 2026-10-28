@@ -8,6 +8,7 @@ import { scrapePost, scrapeAuthor, scrapeCompany } from "../scraper/apify";
 import { normalizeScrapedData, isCompanyProfileUrl } from "../scraper/normalize";
 import { generateReport } from "../ai/report-agent";
 import type { AnalysisReportOutput } from "@/lib/validation/report";
+import { authenticateWebGatekeeper } from "../gatekeeper";
 import {
   updateJobRunProgress,
   markJobRunFailed,
@@ -51,6 +52,16 @@ export async function executePipeline(
   logger.info({ runId, userId }, "Starting pipeline execution");
 
   try {
+    // Gatekeeper validation: verify account status and quota
+    const gatekeeperResult = await authenticateWebGatekeeper(userId, workflowSlug);
+    if (isErr(gatekeeperResult)) {
+      return await failRun(
+        runId,
+        gatekeeperResult.error.code,
+        gatekeeperResult.error.safeMessage
+      );
+    }
+
     // Step 1: Validate URL & Expand Short URLs (SSRF-protected)
     await reportProgress(runId, "validating", onProgress);
     const parsedUrl = linkedinUrlSchema.safeParse(rawUrl);

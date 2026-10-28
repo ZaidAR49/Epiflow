@@ -26,13 +26,45 @@ export function WorkflowModals({
   toastMessage,
 }: WorkflowModalsProps) {
   const t = useTranslations("workflowLanding");
+  const modalRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     if (!isGmailModalOpen && !isCuratorModalOpen) return;
+
+    // Focus the first actionable element inside the modal
+    const current = modalRef.current;
+    if (current) {
+      const focusables = current.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusables.length > 0) {
+        focusables[0]?.focus();
+      }
+    }
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         if (isGmailModalOpen) onCloseGmailModal();
         if (isCuratorModalOpen) onCloseCuratorModal();
+      } else if (e.key === "Tab" && current) {
+        const focusables = current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusables.length === 0) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last?.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first?.focus();
+          }
+        }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -52,6 +84,7 @@ export function WorkflowModals({
       {/* Gmail Draft Preview Modal */}
       {isGmailModalOpen && (
         <div
+          ref={modalRef}
           role="dialog"
           aria-modal="true"
           aria-label={t("modalGmailHeader")}
@@ -100,7 +133,7 @@ export function WorkflowModals({
                   type="button"
                   onClick={() => {
                     onCloseGmailModal();
-                    onSelectPaidPlan("Gmail Sync Add-on");
+                    onSelectPaidPlan(t("gmailSyncAddon"));
                   }}
                   className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-medium flex items-center justify-center gap-2"
                 >
@@ -118,6 +151,7 @@ export function WorkflowModals({
       {/* Community Curator Channel Post Preview Modal */}
       {isCuratorModalOpen && (
         <div
+          ref={modalRef}
           role="dialog"
           aria-modal="true"
           aria-label={t("modalCuratorHeader")}

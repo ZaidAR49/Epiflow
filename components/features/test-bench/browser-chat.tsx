@@ -2,6 +2,7 @@
 
 import React, { useRef, useEffect, useState } from "react";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import type { ChatMessage, ChatButton } from "@/types/test-bench";
 import { Send, Bot, User, Trash2, Loader2, Smartphone, Maximize2, Minimize2 } from "lucide-react";
 import { ChatMarkdown } from "./chat-markdown";
@@ -37,6 +38,7 @@ export function BrowserChat({
   title,
   avatarUrl,
 }: BrowserChatProps) {
+  const t = useTranslations("testBench");
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isZoomed, setIsZoomed] = useState(false);
 
@@ -86,7 +88,7 @@ export function BrowserChat({
             </div>
             <div>
               <h3 className="text-xs font-bold text-[var(--text)]">{title || "JobPost X-Ray Bot"}</h3>
-              <span className="text-[10px] text-emerald-400 font-medium">Online & Ready</span>
+              <span className="text-[10px] text-emerald-400 font-medium">{t("onlineReady")}</span>
             </div>
           </div>
 
@@ -99,7 +101,7 @@ export function BrowserChat({
                 className="rounded border-[var(--border)] text-[var(--accent)] focus:ring-0"
               />
               <Smartphone className="h-3 w-3" />
-              <span className="hidden sm:inline">Telegram Sync</span>
+              <span className="hidden sm:inline">{t("telegramSync")}</span>
             </label>
 
             {allowZoom && (
@@ -117,7 +119,7 @@ export function BrowserChat({
               onClick={onClear}
               type="button"
               className="rounded p-1 text-[var(--text-muted)] hover:bg-[var(--surface)] hover:text-[var(--text)] transition-colors"
-              title="Clear Messages"
+              title={t("clearMessages")}
             >
               <Trash2 className="h-3.5 w-3.5" />
             </button>
@@ -205,7 +207,7 @@ export function BrowserChat({
         {isRunning && (
           <div className="flex items-center gap-2 text-[var(--text-muted)] italic text-[11px] ps-8">
             <Loader2 className="h-3 w-3 animate-spin text-[var(--accent)]" />
-            <span>Bot is executing workflow nodes...</span>
+            <span>{t("botExecuting")}</span>
           </div>
         )}
       </div>
@@ -214,11 +216,13 @@ export function BrowserChat({
       <div className="border-t border-[var(--border)] bg-[var(--surface-2)]/40 p-3">
         <div className="flex gap-2">
           <input
+            id="browser-chat-url-input"
+            aria-label={t("pasteUrlPlaceholder")}
             type="text"
             value={inputUrl}
             onChange={(e) => onInputChange(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Paste LinkedIn URL (e.g. https://www.linkedin.com/posts/...)"
+            placeholder={t("pasteUrlPlaceholder")}
             disabled={isRunning}
             className="flex-1 rounded-xl border border-[var(--border)] bg-[var(--bg)] px-3.5 py-2 text-xs text-[var(--text)] focus:border-[var(--accent)] focus:outline-none disabled:opacity-50"
           />
@@ -226,6 +230,7 @@ export function BrowserChat({
             onClick={() => onSendMessage()}
             disabled={isRunning || !inputUrl.trim()}
             type="button"
+            aria-label="Send"
             className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)] transition-colors disabled:opacity-50 shadow-sm shrink-0"
           >
             <Send className="h-4 w-4" />

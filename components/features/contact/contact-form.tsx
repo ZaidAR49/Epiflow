@@ -196,11 +196,11 @@ export function ContactForm() {
               disabled={isPending}
               className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-3.5 py-2.5 text-sm text-[var(--text)] focus:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden transition-colors disabled:opacity-50 cursor-pointer"
             >
-              <option value="general" className="bg-[#0F172A] text-white">{t("catGeneral")}</option>
-              <option value="support" className="bg-[#0F172A] text-white">{t("catSupport")}</option>
-              <option value="partnership" className="bg-[#0F172A] text-white">{t("catPartnership")}</option>
-              <option value="feedback" className="bg-[#0F172A] text-white">{t("catFeedback")}</option>
-              <option value="billing" className="bg-[#0F172A] text-white">{t("catBilling")}</option>
+              <option value="general" className="bg-[var(--surface)] text-[var(--text)]">{t("catGeneral")}</option>
+              <option value="support" className="bg-[var(--surface)] text-[var(--text)]">{t("catSupport")}</option>
+              <option value="partnership" className="bg-[var(--surface)] text-[var(--text)]">{t("catPartnership")}</option>
+              <option value="feedback" className="bg-[var(--surface)] text-[var(--text)]">{t("catFeedback")}</option>
+              <option value="billing" className="bg-[var(--surface)] text-[var(--text)]">{t("catBilling")}</option>
             </select>
           </div>
 

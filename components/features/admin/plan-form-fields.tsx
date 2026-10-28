@@ -163,7 +163,7 @@ export function PlanFormFields({
             type="text"
             value={provider}
             onChange={(e) => setProvider(e.target.value)}
-            placeholder="lemonsqueezy"
+            placeholder={t("providerPlaceholder")}
             className="w-full rounded-md border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:outline-hidden"
           />
         </div>

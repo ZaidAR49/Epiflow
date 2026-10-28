@@ -35,9 +35,21 @@ export async function GET(
       ? "job-xray"
       : slug;
 
+  let targetLocale = "en";
+  try {
+    if (state) {
+      const decoded = JSON.parse(Buffer.from(state, "base64url").toString("utf-8")) as { locale?: string };
+      if (decoded.locale === "ar" || decoded.locale === "en") {
+        targetLocale = decoded.locale;
+      }
+    }
+  } catch {
+    targetLocale = "en";
+  }
+
   if (!code || !state || state !== cookieState) {
     return NextResponse.redirect(
-      new URL(`/en/workflows/${effectiveSlug}?error=invalid_state`, origin)
+      new URL(`/${targetLocale}/workflows/${effectiveSlug}?error=invalid_state`, origin)
     );
   }
 
@@ -61,7 +73,7 @@ export async function GET(
 
     if (!tokenRes.ok) {
       return NextResponse.redirect(
-        new URL(`/en/workflows/${effectiveSlug}?error=token_exchange_failed`, origin)
+        new URL(`/${targetLocale}/workflows/${effectiveSlug}?error=token_exchange_failed`, origin)
       );
     }
 
@@ -70,7 +82,7 @@ export async function GET(
 
     if (!parsedTokens.success) {
       return NextResponse.redirect(
-        new URL(`/en/workflows/${effectiveSlug}?error=invalid_token_payload`, origin)
+        new URL(`/${targetLocale}/workflows/${effectiveSlug}?error=invalid_token_payload`, origin)
       );
     }
 
@@ -103,13 +115,13 @@ export async function GET(
     }
 
     const successResponse = NextResponse.redirect(
-      new URL(`/en/workflows/${effectiveSlug}/console?credential_status=connected`, origin)
+      new URL(`/${targetLocale}/workflows/${effectiveSlug}/console?credential_status=connected`, origin)
     );
     successResponse.cookies.delete("wf_oauth_state");
     return successResponse;
   } catch {
     return NextResponse.redirect(
-      new URL(`/en/workflows/${effectiveSlug}/console?error=credential_save_failed`, origin)
+      new URL(`/${targetLocale}/workflows/${effectiveSlug}/console?error=credential_save_failed`, origin)
     );
   }
 }
