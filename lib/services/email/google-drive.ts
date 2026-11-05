@@ -51,18 +51,45 @@ export async function downloadCvFromGoogleDrive(
 
   logger.info({ fileId, hasToken: !!accessToken }, "Downloading CV from Google Drive");
 
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB limit
+
   // 1. If accessToken provided, download via official Google Drive v3 API
   if (accessToken) {
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
       const apiUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
       const response = await fetch(apiUrl, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
+        signal: controller.signal,
       });
+      clearTimeout(timeout);
 
       if (response.ok) {
+        const contentLength = Number(response.headers.get("content-length") || 0);
+        if (contentLength > MAX_FILE_SIZE) {
+          return err(
+            new AppError(
+              ErrorCodes.INTERNAL_ERROR,
+              413,
+              "CV file exceeds maximum permitted size of 10MB"
+            )
+          );
+        }
+
         const arrayBuffer = await response.arrayBuffer();
+        if (arrayBuffer.byteLength > MAX_FILE_SIZE) {
+          return err(
+            new AppError(
+              ErrorCodes.INTERNAL_ERROR,
+              413,
+              "CV file exceeds maximum permitted size of 10MB"
+            )
+          );
+        }
+
         const buffer = Buffer.from(arrayBuffer);
         const mimeType = response.headers.get("content-type") || "application/pdf";
         return ok({
@@ -84,11 +111,15 @@ export async function downloadCvFromGoogleDrive(
   const downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
 
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
     const response = await fetch(downloadUrl, {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
       },
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
 
     if (!response.ok) {
       return err(
@@ -100,7 +131,28 @@ export async function downloadCvFromGoogleDrive(
       );
     }
 
+    const contentLength = Number(response.headers.get("content-length") || 0);
+    if (contentLength > MAX_FILE_SIZE) {
+      return err(
+        new AppError(
+          ErrorCodes.INTERNAL_ERROR,
+          413,
+          "CV file exceeds maximum permitted size of 10MB"
+        )
+      );
+    }
+
     const arrayBuffer = await response.arrayBuffer();
+    if (arrayBuffer.byteLength > MAX_FILE_SIZE) {
+      return err(
+        new AppError(
+          ErrorCodes.INTERNAL_ERROR,
+          413,
+          "CV file exceeds maximum permitted size of 10MB"
+        )
+      );
+    }
+
     const buffer = Buffer.from(arrayBuffer);
 
     // Determine filename & MIME

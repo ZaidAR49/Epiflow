@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import type { AdminWorkflowItem } from "@/lib/db/queries/admin";
 import type { WorkflowChannelItem } from "@/lib/db/queries/workflow-channels";
-import { updateWorkflowAction } from "@/lib/actions/admin";
+import { updateWorkflowAction } from "@/lib/actions/admin-workflows";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { WorkflowEditDrawer } from "./workflow-edit-drawer";

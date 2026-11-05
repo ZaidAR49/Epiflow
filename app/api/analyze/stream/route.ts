@@ -7,6 +7,7 @@ import { executePipeline } from "@/lib/services/pipeline/orchestrator";
 import { linkedinUrlSchema } from "@/lib/validation/url";
 import { isErr } from "@/lib/result";
 import { authenticateWebGatekeeper } from "@/lib/services/gatekeeper";
+import { logger } from "@/lib/logger";
 
 const analyzeStreamSchema = z.object({
   url: linkedinUrlSchema,
@@ -101,10 +102,11 @@ export async function POST(req: NextRequest) {
           });
         }
       } catch (err) {
+        logger.error({ err, runId: run.id }, "Unhandled error during pipeline stream execution");
         await sendEvent({
           type: "error",
           errorCode: ErrorCodes.INTERNAL_ERROR,
-          message: err instanceof Error ? err.message : "Pipeline failed",
+          message: "An unexpected error occurred while analyzing the post.",
         });
       } finally {
         await writer.close();
@@ -119,9 +121,10 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (err) {
+    logger.error({ err }, "Unhandled error in analyze stream route dispatcher");
     return new Response(
       JSON.stringify({
-        error: err instanceof Error ? err.message : "Server error",
+        error: "An unexpected server error occurred",
         code: ErrorCodes.INTERNAL_ERROR,
       }),
       { status: 500, headers: { "Content-Type": "application/json" } }

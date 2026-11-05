@@ -4,7 +4,7 @@ import { useState, useRef, useTransition, type DragEvent, type ChangeEvent } fro
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 import { UploadCloud, Loader2, CheckCircle, AlertCircle } from "lucide-react";
-import { uploadWorkflowImageAction } from "@/lib/actions/admin";
+import { uploadWorkflowImageAction } from "@/lib/actions/admin-workflows";
 
 interface WorkflowImageUploaderProps {
   workflowId: string;

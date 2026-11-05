@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { getServerEnv } from "@/lib/env";
-import { saveWorkflowGoogleCredential } from "@/lib/db/queries/credentials";
+import {
+  saveWorkflowGoogleCredential,
+  getWorkflowDecryptedRefreshToken,
+} from "@/lib/db/queries/credentials";
 import { z } from "zod";
 
 const googleTokenResponseSchema = z.object({
@@ -36,18 +39,28 @@ export async function GET(
       : slug;
 
   let targetLocale = "en";
+  let stateUserId: string | null = null;
   try {
     if (state) {
-      const decoded = JSON.parse(Buffer.from(state, "base64url").toString("utf-8")) as { locale?: string };
+      const decoded = JSON.parse(Buffer.from(state, "base64url").toString("utf-8")) as {
+        locale?: string;
+        userId?: string;
+      };
       if (decoded.locale === "ar" || decoded.locale === "en") {
         targetLocale = decoded.locale;
       }
+      stateUserId = decoded.userId || null;
     }
   } catch {
     targetLocale = "en";
   }
 
-  if (!code || !state || state !== cookieState) {
+  if (
+    !code ||
+    !state ||
+    state !== cookieState ||
+    (stateUserId && stateUserId !== session.user.id)
+  ) {
     return NextResponse.redirect(
       new URL(`/${targetLocale}/workflows/${effectiveSlug}?error=invalid_state`, origin)
     );
@@ -112,6 +125,20 @@ export async function GET(
         accountEmail,
         scopes: scope ? scope.split(" ") : undefined,
       });
+    } else {
+      const existingToken = await getWorkflowDecryptedRefreshToken(
+        session.user.id,
+        effectiveSlug,
+        "google"
+      );
+      if (!existingToken) {
+        return NextResponse.redirect(
+          new URL(
+            `/${targetLocale}/workflows/${effectiveSlug}/console?error=missing_refresh_token`,
+            origin
+          )
+        );
+      }
     }
 
     const successResponse = NextResponse.redirect(

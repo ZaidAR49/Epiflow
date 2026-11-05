@@ -174,7 +174,9 @@ export async function handleTelegramMessage(message: TelegramMessage): Promise<v
     await sendTelegramMessage(chatId, reportOutput.telegramReport, { isRtl });
 
     // Mark completed & consume quota atomically
-    await markJobRunCompleted(run.id, reportOutput.report, reportOutput.telegramReport);
+    await markJobRunCompleted(run.id, reportOutput.report, reportOutput.telegramReport, {
+      metadata: reportOutput.metadata,
+    });
     await consumeWorkflowUsage(userId, "job-xray");
     await markUsageConsumed(run.id);
 
@@ -184,25 +186,17 @@ export async function handleTelegramMessage(message: TelegramMessage): Promise<v
     // Step F: Send Email branch matching job-xray.json
     if (auth.sendEmail) {
       if (reportOutput.metadata.hrEmail) {
-        const metadataJson = JSON.stringify({
-          role: reportOutput.metadata.role,
-          company: reportOutput.metadata.company,
-          hr_name: reportOutput.metadata.hrName,
-          hr_email: reportOutput.metadata.hrEmail,
-        });
-
         const promptText = isRtl
-          ? `هل ترغب في أن نجهز لك مسودة بريد إلكتروني للتقديم؟<a href="https://hidden.data/?meta=${encodeURIComponent(metadataJson)}">&#8203;</a>`
-          : `Do you want us to prepare an email draft for your application?<a href="https://hidden.data/?meta=${encodeURIComponent(metadataJson)}">&#8203;</a>`;
+          ? "هل ترغب في أن نجهز لك مسودة بريد إلكتروني للتقديم؟"
+          : "Do you want us to prepare an email draft for your application?";
 
         await sendTelegramMessage(chatId, promptText, {
-          parseMode: "HTML",
           isRtl,
           replyMarkup: {
             inline_keyboard: [
               [
-                { text: isRtl ? "نعم ✅" : "Yes ✅", callback_data: "yes" },
-                { text: isRtl ? "لا ❌" : "No ❌", callback_data: "no" },
+                { text: isRtl ? "نعم ✅" : "Yes ✅", callback_data: `draft_yes:${run.id}` },
+                { text: isRtl ? "لا ❌" : "No ❌", callback_data: `draft_no:${run.id}` },
               ],
             ],
           },

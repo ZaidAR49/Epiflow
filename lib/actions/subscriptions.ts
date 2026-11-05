@@ -178,6 +178,13 @@ export async function createCheckoutSessionAction(planId: string, locale?: strin
 
     // 3. Mock provider (Only allowed for plans explicitly configured with provider='mock' for local tests)
     if (plan.provider === "mock") {
+      if (process.env.NODE_ENV === "production") {
+        return {
+          success: false,
+          error: "Mock payment subscriptions are disabled in production.",
+        };
+      }
+
       const mockResult = await createMockSubscription(session.user.id, planId, 30);
       revalidatePath(`/${loc}/profile`);
       revalidatePath(`/${loc}/admin`);

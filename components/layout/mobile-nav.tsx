@@ -88,7 +88,7 @@ export function MobileNav({
         </button>
       </SheetTrigger>
 
-      <SheetContent side="end" className="flex flex-col justify-between overflow-y-auto">
+      <SheetContent side="end" closeLabel={t("close")} className="flex flex-col justify-between overflow-y-auto">
         <div className="space-y-6">
           <SheetHeader>
             <SheetTitle className="flex items-center gap-3">

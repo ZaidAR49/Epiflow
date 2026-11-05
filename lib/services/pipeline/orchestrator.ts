@@ -141,7 +141,8 @@ export async function executePipeline(
     await markJobRunCompleted(
       runId,
       reportOutput.report,
-      reportOutput.telegramReport
+      reportOutput.telegramReport,
+      { metadata: reportOutput.metadata }
     );
 
     // Step 7: Delivery Complete

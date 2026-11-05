@@ -1,6 +1,7 @@
 import "server-only";
 import { logger } from "@/lib/logger";
 import { authenticateGatekeeper } from "@/lib/db/queries/access";
+import { getJobRunById } from "@/lib/db/queries/job-runs";
 import {
   getWorkflowDecryptedRefreshToken,
   touchWorkflowCredential,
@@ -19,15 +20,15 @@ export async function handleTelegramCallbackQuery(
 ): Promise<void> {
   const telegramId = callback.from.id;
   const username = callback.from.username ?? null;
-  const data = callback.data; // "yes" or "no"
+  const data = callback.data || "";
   const message = callback.message;
   const chatId = message?.chat.id ?? telegramId;
   const messageId = message?.message_id;
 
   logger.info({ telegramId, data }, "Handling Telegram callback query");
 
-  // If user declined email drafting ("no")
-  if (data === "no") {
+  // If user declined email drafting ("no" or "draft_no")
+  if (data === "no" || data.startsWith("draft_no")) {
     if (messageId) {
       await editTelegramMessage(
         chatId,
@@ -38,7 +39,8 @@ export async function handleTelegramCallbackQuery(
     return;
   }
 
-  if (data !== "yes") return;
+  const isDraftYes = data === "yes" || data.startsWith("draft_yes");
+  if (!isDraftYes) return;
 
   // 1. Authenticate Gatekeeper (Rule 6.2: user at quota may still draft email)
   const auth = await authenticateGatekeeper(telegramId, "job-xray", username);
@@ -61,7 +63,7 @@ export async function handleTelegramCallbackQuery(
     return;
   }
 
-  // 2. Extract metadata from message entities or stringified payload
+  // 2. Extract metadata: prefer server-side job_runs record, fallback to legacy hidden.data
   let metadata: {
     role?: string;
     company?: string;
@@ -69,27 +71,59 @@ export async function handleTelegramCallbackQuery(
     hr_email?: string;
   } | null = null;
 
-  // Check text_link entity
-  const linkEntity = message?.entities?.find(
-    (e) => e.type === "text_link" && (e.url?.includes("hidden.data") ?? false)
-  );
-  const targetUrl = linkEntity?.url;
+  if (data.startsWith("draft_yes:") && auth.userId) {
+    const runId = data.slice("draft_yes:".length).trim();
+    if (runId) {
+      try {
+        const run = await getJobRunById(runId, auth.userId);
+        const output = run?.output as Record<string, unknown> | null;
+        const meta = (output?.metadata ?? (output?.report as Record<string, unknown> | null)?.metadata) as {
+          role?: string;
+          company?: string;
+          hrName?: string;
+          hrEmail?: string;
+          hr_name?: string;
+          hr_email?: string;
+        } | null;
 
-  // Check full stringified payload as fallback
-  const rawString = JSON.stringify(callback);
-  const metaMatch = targetUrl
-    ? targetUrl.match(/meta=([^"\s}\]]+)/)
-    : rawString.match(/https:\\\/\\\/hidden\\.data\\\/\\\?meta=([^"\\s}\]]+)|https:\/\/hidden\.data\/\?meta=([^"\s}\]]+)/);
+        if (meta) {
+          metadata = {
+            role: meta.role,
+            company: meta.company,
+            hr_name: meta.hr_name || meta.hrName,
+            hr_email: meta.hr_email || meta.hrEmail,
+          };
+        }
+      } catch (err) {
+        logger.warn({ err, runId }, "Failed to load job run metadata from database");
+      }
+    }
+  }
 
-  const encodedJson = targetUrl
-    ? metaMatch?.[1]
-    : metaMatch?.[1] || metaMatch?.[2];
+  // Legacy fallback if metadata wasn't loaded from DB
+  if (!metadata) {
+    // Check text_link entity
+    const linkEntity = message?.entities?.find(
+      (e) => e.type === "text_link" && (e.url?.includes("hidden.data") ?? false)
+    );
+    const targetUrl = linkEntity?.url;
 
-  if (encodedJson) {
-    try {
-      metadata = JSON.parse(decodeURIComponent(encodedJson));
-    } catch {
-      // Fallback
+    // Check full stringified payload as fallback
+    const rawString = JSON.stringify(callback);
+    const metaMatch = targetUrl
+      ? targetUrl.match(/meta=([^"\s}\]]+)/)
+      : rawString.match(/https:\\\/\\\/hidden\\.data\\\/\\\?meta=([^"\\s}\]]+)|https:\/\/hidden\.data\/\?meta=([^"\s}\]]+)/);
+
+    const encodedJson = targetUrl
+      ? metaMatch?.[1]
+      : metaMatch?.[1] || metaMatch?.[2];
+
+    if (encodedJson) {
+      try {
+        metadata = JSON.parse(decodeURIComponent(encodedJson));
+      } catch {
+        // Fallback
+      }
     }
   }
 

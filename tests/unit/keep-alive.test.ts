@@ -7,6 +7,20 @@ vi.mock("@/lib/db/queries/keep-alive", () => ({
   pingDatabase: vi.fn(),
 }));
 
+/** Minimal valid KeepAliveResult for test mocks */
+const makeResult = (overrides: Partial<keepAliveQuery.KeepAliveResult> = {}): keepAliveQuery.KeepAliveResult => ({
+  ok: true,
+  pings: [
+    { request: "upsert", status: 201, ok: true },
+    { request: "select", status: 200, ok: true },
+    { request: "count", status: 200, ok: true },
+  ],
+  pingsSent: 3,
+  lastPing: "2026-10-26T12:00:00.000Z",
+  durationMs: 42,
+  ...overrides,
+});
+
 describe("Supabase Keep-Alive Cron Endpoint (/api/cron/keep-alive)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -14,11 +28,7 @@ describe("Supabase Keep-Alive Cron Endpoint (/api/cron/keep-alive)", () => {
   });
 
   it("successfully responds when no CRON_SECRET is configured", async () => {
-    vi.mocked(keepAliveQuery.pingDatabase).mockResolvedValueOnce({
-      ok: true,
-      databaseTime: "2026-10-26T12:00:00.000Z",
-      durationMs: 42,
-    });
+    vi.mocked(keepAliveQuery.pingDatabase).mockResolvedValueOnce(makeResult());
 
     const request = new NextRequest("http://localhost:3000/api/cron/keep-alive");
     const response = await GET(request);
@@ -26,7 +36,8 @@ describe("Supabase Keep-Alive Cron Endpoint (/api/cron/keep-alive)", () => {
 
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
-    expect(data.databaseTime).toBe("2026-10-26T12:00:00.000Z");
+    expect(data.pingsSent).toBe(3);
+    expect(data.lastPing).toBe("2026-10-26T12:00:00.000Z");
     expect(data.durationMs).toBe(42);
     expect(keepAliveQuery.pingDatabase).toHaveBeenCalledTimes(1);
   });
@@ -62,11 +73,9 @@ describe("Supabase Keep-Alive Cron Endpoint (/api/cron/keep-alive)", () => {
   it("authorizes request when Bearer token matches CRON_SECRET", async () => {
     process.env.CRON_SECRET = "super-secret-token";
 
-    vi.mocked(keepAliveQuery.pingDatabase).mockResolvedValueOnce({
-      ok: true,
-      databaseTime: "2026-10-26T12:00:00.000Z",
-      durationMs: 15,
-    });
+    vi.mocked(keepAliveQuery.pingDatabase).mockResolvedValueOnce(
+      makeResult({ durationMs: 15 })
+    );
 
     const request = new NextRequest("http://localhost:3000/api/cron/keep-alive", {
       headers: {
@@ -78,12 +87,13 @@ describe("Supabase Keep-Alive Cron Endpoint (/api/cron/keep-alive)", () => {
 
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
+    expect(data.pingsSent).toBe(3);
     expect(keepAliveQuery.pingDatabase).toHaveBeenCalledTimes(1);
   });
 
   it("returns 500 when database ping fails", async () => {
     vi.mocked(keepAliveQuery.pingDatabase).mockRejectedValueOnce(
-      new Error("Database connection pool exhausted")
+      new Error("Supabase REST API unreachable")
     );
 
     const request = new NextRequest("http://localhost:3000/api/cron/keep-alive");

@@ -18,11 +18,22 @@ import {
 } from "@/lib/db/queries/admin";
 import { getUserById } from "@/lib/db/queries/users";
 import type { User } from "@/lib/db/schema/users";
-
-export {
-  updateWorkflowAction,
-  uploadWorkflowImageAction,
+import {
+  updateWorkflowAction as _updateWorkflowAction,
+  uploadWorkflowImageAction as _uploadWorkflowImageAction,
 } from "./admin-workflows";
+
+export async function updateWorkflowAction(
+  ...args: Parameters<typeof _updateWorkflowAction>
+) {
+  return _updateWorkflowAction(...args);
+}
+
+export async function uploadWorkflowImageAction(
+  ...args: Parameters<typeof _uploadWorkflowImageAction>
+) {
+  return _uploadWorkflowImageAction(...args);
+}
 
 // ---------------------------------------------------------------------------
 // Auth helpers — shared across all admin actions

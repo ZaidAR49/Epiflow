@@ -1,6 +1,7 @@
 import "server-only";
 import { executeDraftCreation } from "../email/compose-draft";
 import { authenticateGatekeeper } from "@/lib/db/queries/access";
+import { getUserTelegramIdentity } from "@/lib/db/queries/users";
 import {
   getWorkflowDecryptedRefreshToken,
   touchWorkflowCredential,
@@ -28,7 +29,14 @@ export interface DraftBranchResult {
 export async function executeTestBenchDraftBranch(
   params: ExecuteDraftBranchParams
 ): Promise<DraftBranchResult> {
-  const telegramId = params.telegramId ?? 2076665816;
+  let telegramId = params.telegramId;
+  if (!telegramId && params.userId) {
+    const identity = await getUserTelegramIdentity(params.userId);
+    if (identity) {
+      telegramId = identity.telegramId;
+    }
+  }
+  telegramId = telegramId ?? Number(process.env.TEST_TELEGRAM_ID || 0);
   const logs: ExecutionLogItem[] = [];
 
   function log(nodeId: string, level: ExecutionLogItem["level"], message: string) {

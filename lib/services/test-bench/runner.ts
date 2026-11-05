@@ -34,8 +34,8 @@ export async function executeTestBenchWorkflow(
     if (node) Object.assign(node, { status, durationMs, inputJson, outputJson, error });
   };
 
-  const telegramId = params.telegramId ?? 2076665816;
-  const username = params.username ?? "zaidr49";
+  const telegramId = params.telegramId ?? Number(process.env.TEST_TELEGRAM_ID || 0);
+  const username = params.username ?? process.env.TEST_TELEGRAM_USERNAME ?? null;
   const rawUrl = params.rawUrl;
 
   // 1. Trigger
